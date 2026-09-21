@@ -1,7 +1,8 @@
 # Deploying to talents.fooxy.tv
 
 Same shape as paddington: the app in one container, a `cloudflared` sidecar on a
-compose profile publishing it. Runs on `swlxsvr01` (192.168.1.248) under `simon`.
+compose profile publishing it. Runs on a Linux box on the LAN; the paths below
+assume the repo is cloned to `~/git/workspace/cplus-talents`.
 
 ```
 ~/git/workspace/cplus-talents/        the app
