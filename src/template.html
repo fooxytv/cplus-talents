@@ -250,6 +250,33 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
   transition:width .18s ease-out;
 }
 .summary .hint{flex-basis:100%; text-align:center; color:#6e6f77}
+/* ---------- spellbook ---------- */
+.book{padding:16px 22px 24px; max-width:1180px; margin:0 auto}
+.book .empty{color:#6e6f77; font-size:13px; padding:20px 0; text-align:center}
+.book code{background:#1b1c22; border:1px solid #33343a; border-radius:3px; padding:1px 5px}
+.lvl-group{margin-bottom:18px}
+.lvl-group h4{
+  margin:0 0 8px; display:flex; align-items:center; gap:9px;
+  border-bottom:1px solid var(--line); padding-bottom:5px;
+}
+.lvl-group h4 .n{
+  font:10px/1 var(--font); letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--head); font-weight:600;
+}
+.lvl-group h4 .c{font-size:11px; color:#5f6068}
+.spells{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:7px}
+.spell{
+  display:flex; gap:9px; padding:7px 9px; background:#101116;
+  border:1px solid #26262b; border-radius:4px;
+}
+.spell.granted{border-left:3px solid var(--gold)}
+.spell img{width:28px; height:28px; border-radius:3px; box-shadow:0 0 0 1px #000; flex:none}
+.spell .txt{min-width:0}
+.spell .nm{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap}
+.spell .nm b{color:#e2ddd0; font-size:13px; font-weight:600}
+.spell .nm em{font-style:normal; font-size:11px; color:#6e6f77}
+.spell .ds{font-size:12px; color:#8d8d94; line-height:1.45; margin-top:2px}
+
 /* ---------- compare board ---------- */
 .board{
   display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start;
@@ -572,6 +599,7 @@ body.editing .tree-edit{display:block}
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">&#128275; Lock</button>
     <button class="btn" id="reset">Reset all</button>
+    <button class="btn" id="bookBtn">Spellbook</button>
     <button class="btn" id="cmpBtn">Compare</button>
     <button class="btn" id="infoBtn">Info</button>
     <button class="btn" id="editBtn" style="display:none">Edit mode</button>
@@ -594,6 +622,15 @@ body.editing .tree-edit{display:block}
 </div>
 <div id="edit-problems" style="padding:0 22px"></div>
 <div class="trees" id="trees"></div>
+<div class="board-bar" id="book-bar" style="display:none">
+  <span class="tag">Spellbook</span>
+  <span class="hint" id="book-note"></span>
+  <label class="hint" style="display:flex;align-items:center;gap:6px;cursor:pointer">
+    <input type="checkbox" id="bk-talents"> show granted &amp; talent abilities
+  </label>
+</div>
+<div class="book" id="book" style="display:none"></div>
+
 <div class="board-bar" id="board-bar" style="display:none">
   <span class="tag">Compare</span>
   <span class="hint">Every panel has its own points &middot; drag &#10303; to reorder
@@ -1074,7 +1111,7 @@ function update() {
   renderLevels();
 
   if (hovered) showTip(hovered.tree, hovered.talent);
-  if (!boardOn) location.replace("#" + encode());
+  if (!boardOn && !bookOn) location.replace("#" + encode());
 }
 
 /* ---------------- spec bar ---------------- */
@@ -1258,6 +1295,7 @@ function selectClass(k) {
 
   buildTrees();
   update();
+  if (bookOn) renderBook();
 }
 
 /** A draft from before an edit-mode change would index the wrong talents. */
@@ -1555,10 +1593,159 @@ function copyLink() {
   const base = ONLINE
     ? location.origin + (location.pathname.indexOf("/b/") === 0 ? "/" : location.pathname)
     : location.href.split("#")[0];
-  copy(base + "#" + (boardOn ? encodeBoard() : encode()),
-    boardOn ? "Link to this comparison copied" : "Link copied to clipboard");
+  copy(base + "#" + (bookOn ? encodeBook() : boardOn ? encodeBoard() : encode()),
+    bookOn ? "Link to this spellbook copied"
+      : boardOn ? "Link to this comparison copied" : "Link copied to clipboard");
 }
 
+
+/* ================= spellbook ================= */
+
+/**
+ * What a class learns, and at what level. Spellbooks are a few hundred KB each, so
+ * they are not baked into the page like the talents are - the server hands one over
+ * when this view is first opened, and it is kept for the rest of the session.
+ */
+let bookOn = false;
+let bookShowTalents = false;
+const books = {};              // edition id -> the fetched spellbook
+
+/** Training costs come in copper; 10 copper should not read as "0s". */
+function money(copper) {
+  const g = Math.floor(copper / 10000);
+  const sv = Math.floor((copper % 10000) / 100);
+  const c = copper % 100;
+  const bits = [];
+  if (g) bits.push(g + "g");
+  if (sv) bits.push(sv + "s");
+  if (c || !bits.length) bits.push(c + "c");
+  return bits.join(" ");
+}
+
+async function loadBook(edId) {
+  if (books[edId]) return books[edId];
+  if (!ONLINE) throw new Error("Spellbooks come from the server, and this page was opened from a file.");
+  books[edId] = await apiCall("/spellbook/" + encodeURIComponent(edId));
+  return books[edId];
+}
+
+function hasBook(edId) {
+  return Boolean(books[edId]) ||
+    (CONFIG.spellbooks || []).indexOf(edId) >= 0;
+}
+
+function setBook(on) {
+  bookOn = on;
+  if (on && boardOn) setCompare(false);
+  if (on && editing) setEditing(false);
+
+  document.getElementById("trees").style.display = on ? "none" : "";
+  document.getElementById("book").style.display = on ? "" : "none";
+  document.getElementById("book-bar").style.display = on ? "" : "none";
+  document.getElementById("summary").style.display = on ? "none" : "";
+  document.getElementById("levels").style.display = on ? "none" : "";
+  document.querySelector(".builds").style.display = on ? "none" : "";
+  document.getElementById("bookBtn").textContent = on ? "Leave spellbook" : "Spellbook";
+  document.getElementById("bookBtn").classList.toggle("on", on);
+
+  // the readout is about a build; the class row still is not, so it stays
+  for (const id of ["spent", "left", "doneAt"]) {
+    const el = document.getElementById(id);
+    (el.closest(".stat") || el).style.display = on ? "none" : "";
+  }
+  document.querySelector(".readout .lvl").style.display = on ? "none" : "";
+
+  if (on) { renderBook(); location.replace("#" + encodeBook()); }
+  else { document.getElementById("book").innerHTML = ""; location.replace("#" + encode()); }
+}
+
+// #book:<edition>:<class> - so a spellbook page can be linked to like anything else
+function encodeBook() { return "book:" + edition.id + ":" + slug(klass); }
+
+function decodeBook(code) {
+  const bits = code.slice(5).split(":");
+  const ed = editionById((bits[0] || "").toLowerCase());
+  if (!ed) return false;
+  const k = CLASS_ORDER.find(c => slug(c) === (bits[1] || "") && ed.classes[c]);
+  selectEdition(ed, k || undefined);
+  setBook(true);
+  return true;
+}
+
+async function renderBook() {
+  const host = document.getElementById("book");
+  const note = document.getElementById("book-note");
+  host.innerHTML = '<div class="empty">Loading…</div>';
+  note.textContent = "";
+
+  if (!hasBook(edition.id)) {
+    host.innerHTML = '<div class="empty">No spellbook for ' + esc(edition.name) +
+      ' yet — only the editions built with <code>tools/build-spellbook.js</code> have one.</div>';
+    return;
+  }
+
+  let book;
+  try { book = await loadBook(edition.id); }
+  catch (e) { host.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; return; }
+  if (!bookOn) return;                       // they left while it was loading
+
+  const all = book.classes[klass];
+  if (!all) {
+    host.innerHTML = '<div class="empty">' + esc(book.name) + ' has no ' + esc(klass) + '.</div>';
+    return;
+  }
+
+  // A trainer teaches the trained ones at the level shown. Everything else is
+  // granted - by a talent, or simply on levelling - and those all sit at level 1
+  // with no level of their own, which would swamp the first group.
+  const list = bookShowTalents ? all : all.filter(a => a.trained);
+  const granted = all.length - list.length;
+
+  note.textContent = book.name + " · " + klass + " · " + list.length +
+    (bookShowTalents ? " abilities" : " trained from a trainer") +
+    (granted ? " · " + granted + " more are granted" : "");
+  location.replace("#" + encodeBook());
+
+  const byLevel = new Map();
+  for (const a of list) {
+    if (!byLevel.has(a.level)) byLevel.set(a.level, []);
+    byLevel.get(a.level).push(a);
+  }
+
+  host.innerHTML = "";
+  for (const level of [...byLevel.keys()].sort((a, b) => a - b)) {
+    const group = document.createElement("section");
+    group.className = "lvl-group";
+
+    const h = document.createElement("h4");
+    h.innerHTML = '<span class="n"></span><span class="c"></span>';
+    h.querySelector(".n").textContent = "Level " + level;
+    h.querySelector(".c").textContent = byLevel.get(level).length;
+    group.appendChild(h);
+
+    const rows = document.createElement("div");
+    rows.className = "spells";
+    for (const a of byLevel.get(level)) {
+      const el = document.createElement("div");
+      el.className = "spell" + (a.trained ? "" : " granted");
+      el.innerHTML = '<img alt="" src="' + ICON(a.icon) +
+        '" onerror="this.src=\'' + ICON("inv_misc_questionmark") + '\'">' +
+        '<div class="txt"><div class="nm"><b></b><em></em></div><div class="ds"></div></div>';
+      el.querySelector(".nm b").textContent = a.name;
+      const em = el.querySelector(".nm em");
+      const bits = [];
+      if (a.rank) bits.push(a.rank);
+      if (a.talent) bits.push("talent");
+      else if (!a.trained) bits.push("granted");
+      if (a.cost) bits.push(money(a.cost));
+      em.textContent = bits.join(" · ");
+      el.querySelector(".ds").textContent = a.desc || "";
+      rows.appendChild(el);
+    }
+    group.appendChild(rows);
+    host.appendChild(group);
+  }
+}
 
 /* ================= compare board ================= */
 
@@ -1920,6 +2107,7 @@ function syncBoard() { renderBoard(); }
 
 function setCompare(on, keepBoard) {
   if (on && locked) { toast("Unlock the build first"); return; }
+  if (on && bookOn) setBook(false);
   if (on && editing) setEditing(false);
   boardOn = on;
 
@@ -2546,6 +2734,8 @@ document.getElementById("ed-revert").onclick = revertDataset;
 document.getElementById("ed-export").onclick = exportDataset;
 document.getElementById("ed-reset").onclick = resetDataset;
 document.getElementById("ed-history").onclick = openHistory;
+document.getElementById("bookBtn").onclick = () => setBook(!bookOn);
+document.getElementById("bk-talents").onchange = e => { bookShowTalents = e.target.checked; renderBook(); };
 document.getElementById("cmpBtn").onclick = () => setCompare(!boardOn);
 document.getElementById("bd-clear").onclick = () => { board = []; renderBoard(); };
 document.getElementById("infoBtn").onclick = openInfo;
@@ -2564,6 +2754,8 @@ addEventListener("hashchange", () => {
   const h = location.hash.slice(1);
   if (!h) return;
   if (h.indexOf("cmp:") === 0) { if (h !== encodeBoard()) decodeBoard(h); return; }
+  if (h.indexOf("book:") === 0) { if (h !== encodeBook()) decodeBook(h); return; }
+  if (bookOn) setBook(false);
   if (boardOn) setCompare(false);
   if (h !== encode()) decode(h);
 });
@@ -2597,6 +2789,7 @@ async function boot() {
   const asked = new URLSearchParams(location.search).get("ed");
   selectEdition((asked && editionById(asked.toLowerCase())) || EDITIONS[0]);
   if (code.indexOf("cmp:") === 0) { if (!decodeBoard(code)) selectClass(klass); }
+  else if (code.indexOf("book:") === 0) { if (!decodeBook(code)) selectClass(klass); }
   else if (!decode(code)) selectClass(klass);
 
   if (shareId) {

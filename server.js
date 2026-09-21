@@ -159,6 +159,17 @@ const slug = k => k.toLowerCase().replace(/[^a-z]/g, "");
 const SHIPPED = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "talents.json"), "utf8"));
 const LIBRARY_PATH = path.join(ROOT, "src", "library.json");
 const EDITION_DIR = path.join(ROOT, "src", "editions");
+const SPELLBOOK_DIR = path.join(ROOT, "src", "spellbooks");
+
+/**
+ * Spellbooks are big - a few hundred KB each - so unlike the talents they are not
+ * baked into the page; it asks for one when you open the view. Only ids that were
+ * found on disk at boot are servable, so the path can never be steered elsewhere.
+ */
+const SPELLBOOKS = new Set(
+  fs.existsSync(SPELLBOOK_DIR)
+    ? fs.readdirSync(SPELLBOOK_DIR).filter(f => f.endsWith(".json")).map(f => path.basename(f, ".json"))
+    : []);
 
 // Share codes depend on the talent layout, so everything reads the active dataset.
 let DATA = SHIPPED;
@@ -497,12 +508,22 @@ async function api(req, res, url) {
       // so the page can tell "no edit mode here" from "you just need the key"
       adminKeyRequired: NEEDS_KEY,
       localBuilds: LOCAL_BUILDS,
+      spellbooks: [...SPELLBOOKS],
       edited: Boolean(dataEditedAt),
       editedAt: dataEditedAt,
       maxPoints: MAX_POINTS,
       editions: [{ id: CUSTOM, name: "Classic+", maxPoints: MAX_POINTS }].concat(
         [...EDITIONS.values()].map(e => ({ id: e.id, name: e.name, maxPoints: e.maxPoints }))),
     });
+  }
+
+  // ---- spellbooks: what each class learns, and when ----
+  if (parts[1] === "spellbook") {
+    if (req.method !== "GET") return sendJson(res, 405, { error: "method not allowed" });
+    const id = parts[2];
+    // membership of the set built at boot, so no path from the url reaches disk
+    if (!id || !SPELLBOOKS.has(id)) return sendJson(res, 404, { error: "no spellbook for that edition" });
+    return sendFile(res, path.join(SPELLBOOK_DIR, id + ".json"));
   }
 
   // ---- suggestions: anyone may leave one, only an admin may read them ----

@@ -44,6 +44,7 @@ There are no npm dependencies anywhere — `node:http` and `node:sqlite` come wi
 | Action | Result |
 | --- | --- |
 | Edition logo (top row) | Switches which trees you are looking at |
+| Spellbook | What this class learns, and at what level |
 | Compare | Opens the board — trees from any editions, side by side |
 | Info | What the site is, and a box for suggestions |
 | Left click | Spend one point |
@@ -66,6 +67,44 @@ Under the trees, each spec gets its icon, its points and a bar. The bar is measu
 against the points that reach the **bottom of that tree** — 31 in Classic, so a full
 bar means the capstone is paid for. The deepest tree is outlined, since that is the
 spec you are actually playing.
+
+## Spellbook
+
+**Spellbook** lists a class's abilities by the level they are learned at, with
+icons and tooltip text. `#book:forever:warrior` links straight to one.
+
+By default it shows what a **trainer teaches you**. Everything else — talent
+spells, and abilities simply granted on levelling — has no level of its own and
+would otherwise pile up under level 1, so those are behind *show granted &
+talent abilities*, marked with a gold edge.
+
+Spellbooks are a few hundred KB each, so unlike the talents they are **not** baked
+into the page; the server hands one over when the view is first opened and it is
+kept for the session. That means this view needs the server — opened straight
+off disk it says so.
+
+```bash
+node tools/build-spellbook.js forever
+```
+
+Only `forever.json` is built so far. That one took a different route from the
+talent editions, because Forever's data does not come the same way:
+
+- **Its talent payload has no abilities at all** — the four expansions carry an
+  `abilities` block, Forever does not.
+- **The tooltip API has no Forever `dataEnv`.** Ids that look Forever-specific
+  resolve there as unrelated Cataclysm spells, which is worse than failing.
+
+So the tool reads Wowhead's class page, which embeds the list as a Listview data
+array, and takes icons and text from `/forever/tooltip/spell/<id>` — a
+flavour-prefixed path that really is edition-specific (a Forever-only spell
+resolves there and 404s under `/classic/`). The class page is HTML behind
+CloudFront, so it is loaded in headless Chrome rather than with `fetch`.
+
+That page lists everything a class *could* have, which is more than a spellbook
+wants, so rows are kept only when `cat` is 7 (class abilities — weapon skills and
+racials come under other categories) and `skill` is non-empty, which is what
+drops the 326 Season of Discovery rune engravings that leak into the data.
 
 ## Compare board
 
@@ -252,6 +291,7 @@ CREATE TABLE talent_history (
 | `PUT /api/talents` | Replace it (validated; **admin**) |
 | `DELETE /api/talents` | Drop the override, back to the shipped talents (**admin**) |
 | `GET /api/library` | All 1,840 Classic / TBC / Wrath talents |
+| `GET /api/spellbook/:id` | One edition's spellbook; only ids found on disk at boot |
 | `POST /api/suggestions` | `{body, author, edition}` — anyone may leave one |
 | `GET /api/suggestions` | Read them (**admin**) |
 | `POST /api/suggestions/:id` | Mark one handled (**admin**) |
@@ -390,6 +430,8 @@ src/template.html   the page without the talent data
 src/talents.json    the Classic+ talents — the editable ones
 src/editions/*.json the read-only editions (forever.json, ...)
 src/logos/*.png     expansion logos for the switcher, inlined by the build
+src/spellbooks/*.json  what each class learns and when, served on demand
+tools/build-spellbook.js  regenerates a spellbook from Wowhead's class pages
 src/favicon.svg     the tab icon, inlined by the build as a data URI
 deploy/             compose file + Cloudflare tunnel for the public site
 build.js            template + talents.json + editions/*.json + logos/*.png -> index.html
@@ -406,7 +448,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 126 assertions against the real page
+node test/run-tests.js        # 136 assertions against the real page
 docker compose up -d --build  # if you are running it in Docker
 ```
 

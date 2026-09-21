@@ -191,6 +191,31 @@ const suite = `
   ok('and is not flagged as over the cap', !doneAt.classList.contains('over'));
   resetAll();
 
+  /* ---- spellbook ---- */
+  selectEdition(EDITIONS[0]); selectClass('Warrior'); resetAll();
+  ok('training costs read as money, not seconds',
+    money(10) === '10c' && money(1000) === '10s' && money(12345) === '1g 23s 45c',
+    money(10) + ' / ' + money(1000) + ' / ' + money(12345));
+  ok('an edition with no spellbook is known to have none', hasBook('tbc') === false);
+  ok('spellbook mode is off to start with', bookOn === false);
+
+  setBook(true);
+  ok('opening the spellbook hides the trees',
+    bookOn === true && document.getElementById('trees').style.display === 'none');
+  ok('and puts a book link in the address bar', encodeBook().indexOf('book:') === 0);
+  ok('the link names the edition and class', encodeBook() === 'book:custom:warrior', encodeBook());
+  setBook(false);
+  ok('leaving the spellbook brings the trees back',
+    bookOn === false && document.getElementById('trees').style.display !== 'none');
+  ok('and empties it from the document',
+    document.getElementById('book').innerHTML === '');
+
+  ok('a book link for a class that exists is accepted',
+    decodeBook('book:custom:druid') === true && klass === 'Druid' && bookOn === true);
+  setBook(false);
+  ok('a book link for an unknown edition is refused', decodeBook('book:nosuch:druid') === false);
+  selectClass('Warrior'); resetAll();
+
   /* ---- compare board ---- */
   selectEdition(EDITIONS[0]); selectClass('Warrior'); level = 60; resetAll();
   arms = T('Arms');
