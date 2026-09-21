@@ -1,0 +1,19 @@
+services:
+  talents:
+    build: .
+    image: cplus-talents
+    container_name: cplus-talents
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      # Saved builds live here. Use a named volume so it survives `down` and
+      # `up --build`; `docker compose down -v` is what actually wipes it.
+      - talent-data:/data
+    environment:
+      DB_PATH: /data/talents.db
+      # Set to 0 to hide edit mode and make the talent API read-only.
+      EDIT_MODE: "1"
+    restart: unless-stopped
+
+volumes:
+  talent-data:

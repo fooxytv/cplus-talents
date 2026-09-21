@@ -1,0 +1,7 @@
+# The server runs on Linux in a container, so LF is canonical in the repo
+# regardless of what the working copy uses.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.db  binary

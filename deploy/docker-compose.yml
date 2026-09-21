@@ -1,0 +1,74 @@
+# Public deployment - talents.fooxy.tv
+#
+#   cd deploy
+#   cp .env.example .env     # then fill in ADMIN_KEY and CLOUDFLARE_TUNNEL_TOKEN
+#   docker compose --profile tunnel up -d --build
+#
+# Without --profile tunnel the app comes up on the LAN only (http://<host>:5502),
+# which is the right way to check it before letting the world in.
+#
+# What makes this safe to expose, unlike the root docker-compose.yml:
+#   ADMIN_KEY     the talent trees are read-only to everyone who does not hold it
+#   LOCAL_BUILDS  saved builds stay in each visitor's browser, not in one shared list
+#
+# Open the admin side with  https://talents.fooxy.tv/?admin=<ADMIN_KEY>  once; the
+# key is kept in that browser afterwards, so the edit bar is simply there next time.
+
+# containers come out as cplus-talents-talents-1 / -cloudflared-1, so this can
+# sit alongside a dev copy of the same app on one host without a name clash
+name: cplus-talents
+
+services:
+  talents:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: cplus-talents
+    ports:
+      # LAN only. Cloudflare reaches the container over the compose network,
+      # so this does not need to be open to the internet for the tunnel to work.
+      #
+      # Note TRUST_PROXY below: anything that can reach this port directly can
+      # claim any client IP it likes and sidestep the per-visitor limit. That is
+      # fine for the LAN; bind it to 127.0.0.1:5502 if you would rather it were
+      # not, and reach it over ssh.
+      - "${PORT:-5502}:8080"
+    volumes:
+      - talent-data:/data
+    environment:
+      DB_PATH: /data/talents.db
+      EDIT_MODE: "1"
+      ADMIN_KEY: ${ADMIN_KEY:?Set ADMIN_KEY in .env - without it anyone could rewrite the talent trees}
+      LOCAL_BUILDS: "1"
+      # cloudflared is the only thing in front, so its client-IP header is the
+      # real visitor - that is what the per-visitor suggestion limit counts
+      TRUST_PROXY: "1"
+      SUGGEST_PER_IP_PER_HOUR: "${SUGGEST_PER_IP_PER_HOUR:-5}"
+      SUGGEST_PER_HOUR: "${SUGGEST_PER_HOUR:-200}"
+    restart: unless-stopped
+    networks:
+      - talents-net
+
+  # Publishes the site at talents.fooxy.tv. Create the tunnel in the Cloudflare
+  # Zero Trust dashboard, point its public hostname at http://talents:8080, and
+  # put its token in .env.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: tunnel run
+    environment:
+      # not :?  - compose checks every service even when the profile is off, and
+      # that would stop you bringing the app up on the LAN without a token
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - talents
+    restart: unless-stopped
+    networks:
+      - talents-net
+
+networks:
+  talents-net:
+    driver: bridge
+
+volumes:
+  talent-data:

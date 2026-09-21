@@ -1,0 +1,2127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Classic+ Talent Calculator</title>
+<link rel="icon" href="__FAVICON__">
+<meta name="theme-color" content="#0f1014">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
+<style>
+:root{
+  --cell:44px; --gap:12px;
+  /* Wowhead's stack. They don't ship the webfont, so most visitors land on Arial;
+     loading Open Sans means everyone sees what the design intends. */
+  --font:"Open Sans",Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --gold:#ffd100; --head:#f2cd6b; --green:#3ddc00; --red:#ff2020;
+  --panel:#0d0e11; --line:#26262b;
+  --class-color:#C79C6E;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; display:flex; flex-direction:column;
+  background:#08090b;
+  background-image:radial-gradient(1200px 600px at 50% -10%,#16181d 0%,#08090b 70%);
+  color:#cdc8bb; font:14px/1.5 var(--font);
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit; color:inherit}
+
+/* ---------- edition switcher ---------- */
+.editions{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:8px 22px; border-bottom:1px solid var(--line);
+  background:linear-gradient(#0f1014,#0a0b0e);
+}
+.editions .lead{
+  font:10px/1 var(--font); letter-spacing:1.6px; text-transform:uppercase;
+  color:#5f6068; margin-right:4px;
+}
+.ed{
+  padding:5px 11px 6px; border:1px solid #2c2c30; border-radius:3px;
+  background:#101116; cursor:pointer; text-align:left; white-space:nowrap;
+  transition:border-color .12s, background .12s, color .12s;
+}
+.ed b{display:block; font:13px/1.25 var(--font); font-weight:600; color:#8f8f98}
+.ed em{display:block; font:10px/1 var(--font); font-style:normal; letter-spacing:.8px;
+  text-transform:uppercase; color:#5f6068; margin-top:3px}
+/* the expansion logos come in very different shapes, so each gets the same box
+   and sits inside it rather than setting the button's height itself */
+.ed.art{display:flex; align-items:center; justify-content:center; padding:5px 10px}
+.ed.art img{
+  width:112px; height:42px; object-fit:contain; display:block;
+  filter:grayscale(.55) brightness(.75); transition:filter .12s;
+}
+.ed:hover{border-color:#5d5e68; background:#181a20}
+.ed:hover b{color:#e2ddd0}
+.ed:hover.art img{filter:grayscale(.15) brightness(.95)}
+.ed.active.art img{filter:none}
+.ed.active{border-color:#8a7226; background:#1a1811; box-shadow:0 0 10px -3px rgba(255,209,0,.55)}
+.ed.active b{color:var(--gold)}
+.ed.active em{color:var(--head)}
+.ed.mine.active{border-color:#4a7a3a; background:#111a11; box-shadow:0 0 10px -3px rgba(90,200,90,.5)}
+.ed.mine.active b{color:#9fe08a}
+.ed.mine.active em{color:#6f9a63}
+.editions .about{
+  margin-left:auto; font-size:12px; color:#6e6f77; max-width:46ch; text-align:right;
+}
+.editions .about a{color:#8b8c96}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  padding:12px 22px; border-bottom:1px solid var(--line);
+  background:linear-gradient(#15161a,#0b0c0f);
+}
+.brand{font-size:16px; font-weight:600; color:var(--head); letter-spacing:.3px}
+.brand small{
+  display:block; font:10px/1 var(--font); color:#6d6d72; letter-spacing:1.6px;
+  text-transform:uppercase; margin-top:3px; font-weight:normal;
+}
+.classes{display:flex; gap:5px; flex-wrap:wrap}
+.cls{
+  width:58px; padding:4px 2px 5px; border:1px solid #2c2c30; border-radius:3px;
+  background:#101116; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  transition:border-color .12s, background .12s;
+}
+.cls img{
+  width:34px; height:34px; border-radius:2px; box-shadow:0 0 0 1px #000;
+  filter:grayscale(.45) brightness(.72); transition:filter .12s;
+}
+.cls span{font:10px/1 var(--font); letter-spacing:.4px; text-transform:uppercase; color:#6e6f77}
+.cls:hover img{filter:none}
+.cls:hover span{color:#b9b4a8}
+.cls.active{border-color:var(--c); background:#181a20; box-shadow:0 0 9px -3px var(--c)}
+.cls.active img{filter:none}
+.cls.active span{color:var(--c)}
+.readout{margin-left:auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.stat{font-size:12px; color:#83838a; white-space:nowrap}
+.stat b{color:#fff; font-size:15px; font-weight:600}
+.stat b.over{color:var(--red)}
+.lvl{display:flex; align-items:center; gap:7px}
+.lvl input{
+  width:54px; padding:4px 6px; background:#111216; color:#fff;
+  border:1px solid #33343a; border-radius:3px; font:13px var(--font); text-align:center;
+}
+.btn{
+  padding:6px 12px; background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
+  border-radius:3px; cursor:pointer; font-size:12px; color:#cfcabd; white-space:nowrap;
+}
+.btn:hover{border-color:#5d5e68; color:#fff; background:linear-gradient(#2e3037,#1c1d22)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+.btn:disabled:hover{border-color:#3a3b42; color:#cfcabd; background:linear-gradient(#25262c,#16171b); box-shadow:none}
+.btn.on{border-color:#8a7226; color:var(--gold); box-shadow:0 0 10px -3px rgba(255,209,0,.65)}
+.lock-badge{
+  display:none; align-items:center; gap:5px; font:10px/1 var(--font);
+  letter-spacing:1.3px; text-transform:uppercase; color:var(--gold);
+  border:1px solid #6a5a22; border-radius:3px; padding:5px 8px;
+}
+body.locked .lock-badge{display:inline-flex}
+body.locked .talent{cursor:default}
+body.locked .tree.spent .tree-clear{visibility:hidden}
+.btn.gold{border-color:#6a5a22; color:var(--head)}
+.btn.gold:hover{border-color:#9b8433; box-shadow:0 0 8px -2px rgba(255,209,0,.45)}
+
+/* ---------- trees ---------- */
+.trees{
+  display:flex; gap:14px; padding:20px 22px 8px; flex:1 0 auto;
+  justify-content:center; align-items:flex-start; overflow-x:auto;
+}
+.tree{
+  flex:0 0 auto; width:272px; border:1px solid var(--line); border-radius:4px;
+  background:var(--panel); overflow:hidden; box-shadow:0 3px 18px rgba(0,0,0,.65);
+}
+.tree-head{
+  display:flex; align-items:center; gap:8px; padding:9px 10px;
+  background:#16171c; border-bottom:1px solid #24252b;
+}
+.tree-icon{
+  width:30px; height:30px; border-radius:50%; border:2px solid var(--class-color);
+  box-shadow:0 0 0 1px #000, 0 0 9px -2px var(--class-color);
+}
+.tree-name{
+  font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1.1px;
+  color:var(--head); text-shadow:0 1px 2px #000; white-space:nowrap;
+}
+.tree-pts{margin-left:auto; font-size:12px; color:#6f7076; white-space:nowrap}
+.tree-pts.has{color:#fff}
+.tree-clear{
+  margin-left:4px; width:17px; height:17px; line-height:1; padding:0; border-radius:3px;
+  border:1px solid #3a3b42; background:#16171b; color:#8a8b93; cursor:pointer; font-size:11px;
+  visibility:hidden;
+}
+.tree-clear:hover{color:#ff6a6a; border-color:#6a3030}
+.tree.spent .tree-clear{visibility:visible}
+.grid-wrap{position:relative; padding:20px 20px 24px}
+.bg{
+  position:absolute; inset:0; background-size:cover; background-position:center top;
+  opacity:.88; filter:saturate(.95) brightness(.92);
+}
+/* just enough to ground the panel and keep the header edge dark */
+.veil{position:absolute; inset:0; background:linear-gradient(180deg,rgba(8,9,11,.12),rgba(8,9,11,.48))}
+.grid{
+  position:relative; display:grid; grid-template-columns:repeat(4,var(--cell));
+  gap:var(--gap); width:max-content; margin:0 auto;
+}
+.arrows{
+  position:absolute; inset:0; overflow:visible; pointer-events:none;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.95));
+}
+
+/* ---------- talent ---------- */
+.talent{
+  position:relative; width:var(--cell); height:var(--cell); padding:0; cursor:pointer;
+  background:#000; border:1px solid #4c4d55; border-radius:4px; line-height:0;
+  box-shadow:0 1px 4px rgba(0,0,0,.8);
+  transition:border-color .1s, box-shadow .1s;
+}
+.talent img{width:100%; height:100%; display:block; border-radius:3px}
+.talent.locked{border-color:#303137}
+.talent.locked img{filter:grayscale(1) brightness(.4)}
+.talent.open{border-color:#8a8372}
+.talent.open:hover{border-color:#b9ad8c}
+.talent.partial{border-color:var(--green); box-shadow:0 0 0 1px rgba(61,220,0,.3), 0 1px 4px rgba(0,0,0,.8)}
+.talent.maxed{border-color:var(--gold); box-shadow:0 0 0 1px rgba(255,209,0,.32), 0 1px 4px rgba(0,0,0,.8)}
+.talent .rank{
+  position:absolute; right:-4px; bottom:-4px; min-width:19px; padding:0 3px;
+  font:700 10px/13px var(--font); text-align:center; color:#c6c6c6;
+  background:#000; border:1px solid #45454a; border-radius:3px; text-shadow:0 1px 1px #000;
+}
+.talent.locked .rank{color:#77777c}
+.talent.open .rank{color:#dcdcdc}
+.talent.partial .rank{color:var(--green); border-color:#2b7c00}
+.talent.maxed .rank{color:var(--gold); border-color:#7d6400}
+
+/* ---------- tooltip ---------- */
+#tip{
+  position:fixed; z-index:80; width:326px; display:none; pointer-events:none;
+  background:rgba(10,12,18,.68); border:1px solid rgba(255,255,255,.14); border-radius:5px;
+  padding:10px 12px 11px; box-shadow:0 10px 30px rgba(0,0,0,.7);
+  backdrop-filter:blur(14px) saturate(1.2);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);
+  text-shadow:0 1px 2px rgba(0,0,0,.9);
+  line-height:1.35;
+}
+#tip .t-name{font-size:15px; font-weight:600; color:var(--gold); line-height:1.25}
+#tip .t-rank{color:#fff; margin-top:1px}
+#tip .t-req{color:var(--red); margin-top:3px}
+#tip .t-desc{color:var(--gold); margin-top:5px}
+#tip .t-nexth{color:#fff; margin-top:6px}
+#tip .t-next{color:#9a9a9a}
+#tip .t-hint{color:#1eff00; margin-top:6px}
+#tip .t-hint span{display:block}
+#tip .t-hint .muted{color:#9a9baa}
+
+/* ---------- bottom ---------- */
+.summary{
+  display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
+  padding:8px 22px 16px; color:#8d8d94; font-size:12px;
+}
+.summary .who{
+  font-size:13px; font-weight:600; color:var(--c); letter-spacing:.3px;
+  padding-right:4px;
+}
+.summary .spec{
+  display:flex; align-items:center; gap:8px; min-width:190px;
+  padding:5px 10px 6px; border:1px solid #26262b; border-radius:4px;
+  background:#101116; opacity:.62; transition:opacity .12s, border-color .12s;
+}
+.summary .spec.on{opacity:1; border-color:#33343a}
+.summary .spec.lead{border-color:var(--c); box-shadow:0 0 12px -5px var(--c)}
+.summary .spec img{
+  width:26px; height:26px; border-radius:3px; box-shadow:0 0 0 1px #000;
+  filter:grayscale(.6) brightness(.8);
+}
+.summary .spec.on img{filter:none}
+.sp-txt{flex:1; min-width:0}
+.sp-top{display:flex; align-items:baseline; gap:8px}
+.sp-nm{
+  font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:#8f8f98;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.summary .spec.on .sp-nm{color:#cdc8bb}
+.sp-pts{margin-left:auto; font-size:13px; font-weight:600; color:#6e6f77;
+  font-variant-numeric:tabular-nums}
+.summary .spec.on .sp-pts{color:#fff}
+.sp-bar{
+  height:5px; margin-top:4px; border-radius:3px; background:#1d1e24;
+  box-shadow:inset 0 0 0 1px #000; overflow:hidden;
+}
+.sp-bar i{
+  display:block; height:100%; width:0; border-radius:3px;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, #000), var(--c));
+  transition:width .18s ease-out;
+}
+.summary .hint{flex-basis:100%; text-align:center; color:#6e6f77}
+/* ---------- info / suggestions ---------- */
+#info{
+  position:fixed; inset:0; z-index:60; display:none;
+  background:rgba(4,5,7,.72); padding:28px 18px; overflow:auto;
+}
+#info.open{display:block}
+.info-box{
+  max-width:720px; margin:0 auto; background:#0f1014; border:1px solid #2f3038;
+  border-radius:5px; box-shadow:0 20px 60px -20px #000;
+}
+.info-head{
+  display:flex; align-items:center; gap:12px; padding:14px 18px;
+  border-bottom:1px solid var(--line);
+}
+.info-head h3{margin:0; font-size:15px; color:var(--head); font-weight:600}
+.info-head .btn{margin-left:auto}
+.info-body{padding:16px 18px 20px; font-size:13px; line-height:1.65; color:#b8b3a7}
+.info-body h4{
+  margin:18px 0 6px; font:10px/1 var(--font); letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--head); font-weight:600;
+}
+.info-body h4:first-child{margin-top:0}
+.info-body p{margin:0 0 9px}
+.info-body ul{margin:0 0 9px; padding-left:18px}
+.info-body li{margin-bottom:3px}
+.info-body kbd{
+  background:#1b1c22; border:1px solid #33343a; border-radius:3px;
+  padding:1px 5px; font:11px var(--font); color:#d8d3c6;
+}
+.info-body .muted{color:#6e6f77}
+.sugg{margin-top:6px; border-top:1px solid var(--line); padding-top:14px}
+.sugg textarea{
+  width:100%; min-height:82px; resize:vertical; padding:8px 10px;
+  background:#141220; color:#e2ddd0; border:1px solid #3d3357; border-radius:3px;
+  font:13px/1.5 var(--font);
+}
+.sugg input{
+  width:100%; padding:7px 10px; margin-top:7px;
+  background:#141220; color:#e2ddd0; border:1px solid #3d3357; border-radius:3px;
+  font:13px var(--font);
+}
+.sugg textarea::placeholder, .sugg input::placeholder{color:#6a6380}
+.sugg .row{display:flex; align-items:center; gap:10px; margin-top:9px}
+.sugg .row .note{font-size:11px; color:#6e6f77}
+.sugg .row .btn{margin-left:auto}
+.sugg-list{margin-top:10px; display:flex; flex-direction:column; gap:7px}
+.sugg-item{
+  background:#141519; border:1px solid #26262b; border-radius:3px; padding:8px 10px;
+}
+.sugg-item.done{opacity:.5}
+.sugg-item .meta{font-size:11px; color:#6e6f77; display:flex; gap:8px; align-items:center}
+.sugg-item .meta .btn{margin-left:auto; padding:2px 7px; font-size:11px}
+.sugg-item .txt{white-space:pre-wrap; margin-top:4px; color:#cdc8bb; font-size:12px}
+
+/* ---------- levelling path ---------- */
+.levels{border-top:1px solid var(--line); padding:12px 22px 16px}
+.levels .head{
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:9px;
+}
+.levels .head h4{
+  margin:0; font:10px/1 var(--font); letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--head); font-weight:600;
+}
+.levels .head .count{color:#6e6f77; font-size:12px}
+.levels .key{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap}
+.levels .key span{display:flex; align-items:center; gap:5px; font-size:11px; color:#7e7f88}
+.levels .key i{width:8px; height:8px; border-radius:2px; background:var(--c)}
+.steps{display:flex; gap:5px; flex-wrap:wrap}
+.step{
+  display:flex; align-items:center; gap:6px; padding:3px 7px 3px 4px;
+  background:#111216; border:1px solid #26262b; border-left:3px solid var(--c);
+  border-radius:3px; cursor:default; max-width:230px;
+}
+.step:hover{background:#1b1c22; border-color:#4a4b54; border-left-color:var(--c)}
+.step .lvl{
+  min-width:20px; text-align:right; font-size:11px; color:#6e6f77;
+  font-variant-numeric:tabular-nums;
+}
+.step img{width:20px; height:20px; border-radius:2px; box-shadow:0 0 0 1px #000}
+.step .nm{
+  font-size:12px; color:#cdc8bb; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.step .rk{font-size:11px; color:#7e7f88; font-variant-numeric:tabular-nums}
+.step.capped .rk{color:var(--gold)}
+.levels .empty{padding:0}
+
+.builds{
+  border-top:1px solid var(--line); background:#0b0c0f; padding:12px 22px 20px;
+  display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;
+}
+.builds input[type=text]{
+  padding:6px 9px; width:190px; background:#111216; color:#fff;
+  border:1px solid #33343a; border-radius:3px; font:13px var(--font);
+}
+.builds input[type=text]::placeholder{color:#5d5e66}
+.saved{display:flex; gap:7px; flex-wrap:wrap; flex:1 1 260px}
+.chip{
+  display:flex; align-items:center; gap:7px; padding:5px 7px 5px 9px;
+  background:#141519; border:1px solid #303138; border-left:3px solid var(--c,#666);
+  border-radius:3px; font-size:12px; cursor:pointer;
+}
+.chip:hover{background:#1b1c22; border-color:#4a4b54}
+.chip em{font-style:normal; color:#7e7f88; font-size:11px}
+.chip b{font-weight:normal; color:#e2ddd0}
+.chip button{border:0; background:none; color:#6b6c74; cursor:pointer; padding:0 2px; font-size:14px; line-height:1}
+.chip button:hover{color:#ff6a6a}
+.empty{color:#5d5e66; font-size:12px; padding:6px 0}
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  background:#15171c; border:1px solid #3c3d45; border-radius:4px; padding:9px 16px;
+  color:#e2ddd0; font-size:13px; box-shadow:0 6px 20px rgba(0,0,0,.7);
+  opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:90;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+@media (max-width:980px){ .trees{justify-content:flex-start} }
+
+/* ---------- edit mode ---------- */
+.edit-bar{
+  display:none; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:9px 22px; background:#17131f; border-bottom:1px solid #37304a;
+}
+body.editing .edit-bar{display:flex}
+.edit-bar .tag{
+  font:10px/1 var(--font); letter-spacing:1.3px; text-transform:uppercase;
+  color:#c9a4ff; border:1px solid #4b3c6b; border-radius:3px; padding:5px 8px;
+}
+.edit-bar .hint{color:#8d86a0; font-size:12px}
+.edit-bar .right{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+.dirty-dot{color:#ffd100; font-size:12px; display:none}
+body.dirty .dirty-dot{display:inline}
+
+.cell-add{
+  width:var(--cell); height:var(--cell); padding:0; cursor:pointer;
+  border:1px dashed #4d4e58; border-radius:4px; background:rgba(0,0,0,.35);
+  color:#6f7079; font-size:19px; line-height:1; display:none;
+}
+body.editing .cell-add{display:block}
+.cell-add:hover{border-color:var(--gold); color:var(--gold); background:rgba(255,209,0,.08)}
+body.editing .talent{cursor:grab}
+.talent.dragging{opacity:.35}
+.talent.drop-to{border-color:var(--gold) !important; box-shadow:0 0 0 2px rgba(255,209,0,.5) !important}
+.cell-add.drop-to{border-color:var(--gold); border-style:solid; background:rgba(255,209,0,.15)}
+.tree-edit{
+  margin-left:4px; width:17px; height:17px; padding:0; border-radius:3px; line-height:1;
+  border:1px solid #3a3b42; background:#16171b; color:#8a8b93; cursor:pointer; font-size:10px;
+  display:none;
+}
+body.editing .tree-edit{display:block}
+.tree-edit:hover{color:var(--gold); border-color:#6a5a22}
+
+/* ---------- inspector drawer ---------- */
+#inspector{
+  position:fixed; top:0; right:0; bottom:0; width:360px; z-index:70; display:none;
+  background:#101116; border-left:1px solid #2c2d35; box-shadow:-8px 0 30px rgba(0,0,0,.6);
+  overflow-y:auto; padding:16px 18px 28px;
+}
+#inspector.open{display:block}
+#inspector h3{
+  margin:0 0 14px; font-size:13px; font-weight:600; letter-spacing:1.3px;
+  text-transform:uppercase; color:var(--head);
+}
+.field{margin-bottom:12px}
+.field label{display:block; font-size:11px; color:#8a8b93; margin-bottom:4px}
+.field input, .field select, .field textarea{
+  width:100%; padding:7px 9px; background:#17181d; color:#e2ddd0;
+  border:1px solid #33343a; border-radius:3px; font:13px var(--font);
+}
+.field textarea{resize:vertical; min-height:52px; line-height:1.45}
+.field input:focus, .field select:focus, .field textarea:focus{outline:none; border-color:#6a5a22}
+.field.row{display:flex; gap:10px}
+.field.row > div{flex:1}
+.icon-row{display:flex; gap:9px; align-items:center}
+.icon-row img{width:38px; height:38px; border:1px solid #4c4d55; border-radius:4px; background:#000}
+.drawer-actions{display:flex; gap:8px; margin-top:18px; flex-wrap:wrap}
+.btn.danger{border-color:#6a3030; color:#ff8a8a}
+.btn.danger:hover{border-color:#a34848; color:#ffb3b3}
+
+/* ---------- add-talent modal ---------- */
+#modal{
+  position:fixed; inset:0; z-index:90; display:none;
+  background:rgba(4,5,8,.72); backdrop-filter:blur(3px);
+}
+#modal.open{display:flex; align-items:center; justify-content:center}
+.modal-box{
+  width:min(760px,92vw); max-height:86vh; display:flex; flex-direction:column;
+  background:#101116; border:1px solid #2f3038; border-radius:6px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+}
+.modal-head{
+  display:flex; align-items:center; gap:12px; padding:13px 16px;
+  border-bottom:1px solid #26272e;
+}
+.modal-head h3{
+  margin:0; font-size:13px; font-weight:600; letter-spacing:1.3px;
+  text-transform:uppercase; color:var(--head);
+}
+.modal-head .close{margin-left:auto}
+.tabs{display:flex; gap:6px; padding:11px 16px 0}
+.tab{
+  padding:6px 13px; border:1px solid #33343a; border-bottom:none;
+  border-radius:3px 3px 0 0; background:#15161b; color:#8a8b93; cursor:pointer; font-size:12px;
+}
+.tab.on{background:#1c1d24; color:var(--head); border-color:#4a4130}
+.modal-body{padding:14px 16px; overflow-y:auto; border-top:1px solid #26272e; margin-top:-1px}
+.filters{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap}
+.filters input{flex:1 1 220px}
+.filters input, .filters select{
+  padding:7px 9px; background:#17181d; color:#e2ddd0;
+  border:1px solid #33343a; border-radius:3px; font:13px var(--font);
+}
+.lib-list{display:flex; flex-direction:column; gap:5px}
+.lib-row{
+  display:flex; align-items:center; gap:11px; padding:7px 9px; cursor:pointer;
+  background:#15161b; border:1px solid #26272e; border-radius:4px;
+}
+.lib-row:hover{background:#1c1d25; border-color:#4a4b55}
+.lib-row img{width:32px; height:32px; border:1px solid #4c4d55; border-radius:4px; background:#000}
+.lib-row .nm{color:#e2ddd0; font-size:13px}
+.lib-row .meta{color:#7e7f88; font-size:11px}
+.lib-row .badge{
+  margin-left:auto; font:10px/1 var(--font); letter-spacing:.6px; text-transform:uppercase;
+  padding:4px 7px; border-radius:3px; border:1px solid #3a3b45; color:#9a9baa;
+}
+.lib-row .badge.tbc{color:#7fd77f; border-color:#2f5a2f}
+.lib-row .badge.wotlk{color:#7fc4ff; border-color:#2c4d6b}
+.lib-row .badge.classic{color:#d9b26a; border-color:#5c4a24}
+.lib-empty{color:#6b6c76; font-size:12px; padding:14px 2px}
+.ver-row{
+  display:flex; align-items:center; gap:11px; padding:8px 10px;
+  background:#15161b; border:1px solid #26272e; border-radius:4px;
+}
+.ver-row + .ver-row{margin-top:5px}
+.ver-row.current{border-color:#6a5a22; background:#1a1810}
+.ver-row .nm{color:#e2ddd0; font-size:13px}
+.ver-row .meta{color:#7e7f88; font-size:11px}
+.ver-row .right{margin-left:auto; display:flex; gap:6px; align-items:center}
+.ver-row .tagnow{font:10px/1 var(--font); letter-spacing:1px; text-transform:uppercase; color:var(--gold)}
+.edit-bar input[type=text]{
+  padding:6px 9px; width:190px; background:#141220; color:#e2ddd0;
+  border:1px solid #3d3357; border-radius:3px; font:13px var(--font);
+}
+.edit-bar input[type=text]::placeholder{color:#6a6380}
+.problems{
+  margin-top:10px; padding:9px 11px; background:rgba(120,20,20,.25);
+  border:1px solid #6a3030; border-radius:4px; color:#ffb3b3; font-size:12px;
+}
+.problems ul{margin:6px 0 0; padding-left:18px}
+</style>
+</head>
+<body>
+
+<div class="editions" id="editions"></div>
+
+<div class="topbar">
+  <div class="brand" id="brand">Classic+ Talents<small>1.12 Trees</small></div>
+  <div class="classes" id="classes"></div>
+  <div class="readout">
+    <div class="lvl"><span class="stat">Level</span><input id="level" type="number" min="10" max="60" value="60"></div>
+    <div class="stat">Points spent <b id="spent">0</b></div>
+    <div class="stat">Remaining <b id="left">51</b></div>
+    <button class="btn gold" id="link">Copy link</button>
+    <span class="lock-badge">&#128274; Locked</span>
+    <button class="btn" id="lockBtn">&#128275; Lock</button>
+    <button class="btn" id="reset">Reset all</button>
+    <button class="btn" id="infoBtn">Info</button>
+    <button class="btn" id="editBtn" style="display:none">Edit mode</button>
+  </div>
+</div>
+
+
+<div class="edit-bar">
+  <span class="tag">Edit mode</span>
+  <span class="hint">Drag talents between cells &middot; click one to edit it &middot; <b>+</b> adds a talent</span>
+  <span class="dirty-dot">&#9679; unsaved</span>
+  <div class="right">
+    <input type="text" id="ed-note" placeholder="what changed? (optional)" maxlength="60">
+    <button class="btn gold" id="ed-save">Save</button>
+    <button class="btn" id="ed-history">History</button>
+    <button class="btn" id="ed-revert">Revert</button>
+    <button class="btn" id="ed-export">Export JSON</button>
+    <button class="btn danger" id="ed-reset">Reset to shipped</button>
+  </div>
+</div>
+<div id="edit-problems" style="padding:0 22px"></div>
+<div class="trees" id="trees"></div>
+<div class="summary" id="summary"></div>
+<div class="levels" id="levels"></div>
+
+<div class="builds">
+  <input type="text" id="bname" placeholder="Build name…" maxlength="40">
+  <button class="btn gold" id="save">Save build</button>
+  <div class="saved" id="saved"></div>
+</div>
+
+
+<div id="inspector"></div>
+
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Add a talent</h3>
+      <button class="btn close" id="modal-close">Close</button>
+    </div>
+    <div class="tabs">
+      <button class="tab on" data-tab="library">From Classic / TBC / Wrath</button>
+      <button class="tab" data-tab="custom">Custom talent</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+<div id="info">
+  <div class="info-box">
+    <div class="info-head">
+      <h3 id="info-title">About this calculator</h3>
+      <button class="btn" id="info-close">Close</button>
+    </div>
+    <div class="info-body" id="info-body"></div>
+  </div>
+</div>
+<div id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+let DATA = __TALENT_DATA__;
+const SHIPPED_EDITIONS = __EDITIONS__;
+const LOGOS = __LOGOS__;   // expansion artwork for the switcher, inlined by build.js
+let CONFIG = { editMode: false, edited: false };
+let FINGERPRINTS = {};   // per class, for the active edition: which layout a code belongs to
+
+/**
+ * Editions. "custom" is the editable Classic+ dataset this server owns - it is the
+ * only one edit mode touches. The rest are read-only snapshots of Blizzard's own
+ * trees, baked in by build.js from src/editions/*.json.
+ */
+const CUSTOM = "custom";
+const EDITIONS = [{
+  id: CUSTOM,
+  name: "Classic+",
+  tagline: "Yours",
+  about: "Your own trees. Edit mode writes here; every other edition is read-only.",
+  maxLevel: 60,
+  maxPoints: 51,
+  get classes() { return DATA; },
+}].concat(SHIPPED_EDITIONS.map(e => ({
+  id: e.id,
+  name: e.name,
+  tagline: e.tagline,
+  about: e.about,
+  source: e.source,
+  maxLevel: e.maxLevel,
+  maxPoints: e.maxPoints,
+  classes: e.classes,
+})));
+
+// class names travel in codes, and "Death Knight" has a space in it
+const slug = k => k.toLowerCase().replace(/[^a-z]/g, "");
+const editionById = id => EDITIONS.find(e => e.id === id);
+let edition = EDITIONS[0];
+const isCustom = () => edition.id === CUSTOM;
+
+const CLASS_ORDER = ["Warrior","Paladin","Hunter","Rogue","Priest","Shaman","Mage","Warlock","Druid","Death Knight"];
+const CLASS_COLOR = {
+  Warrior:"#C79C6E", Paladin:"#F58CBA", Hunter:"#ABD473", Rogue:"#FFF569", Priest:"#FFFFFF",
+  Shaman:"#0070DE", Mage:"#69CCF0", Warlock:"#9482C9", Druid:"#FF7D0A",
+  "Death Knight":"#C41F3B"
+};
+// editions differ on which classes exist - only Wrath and Cata have a Death Knight
+const classList = () => CLASS_ORDER.filter(c => edition.classes[c]);
+const ICON = n => "https://wow.zamimg.com/images/wow/icons/large/" + n + ".jpg";
+// Wowhead keeps the tree art in per-expansion sets: "classic" has no Death Knight,
+// "wrath" has everything Wrath shipped, and Cataclysm renumbered into its own set.
+const BG = (id, set) =>
+  "https://wow.zamimg.com/images/wow/talents/backgrounds/" + (set || "classic") + "/" + id + ".jpg";
+const rootStyle = getComputedStyle(document.documentElement);
+const CELL = parseInt(rootStyle.getPropertyValue("--cell"), 10);
+const GAP = parseInt(rootStyle.getPropertyValue("--gap"), 10);
+const PITCH = CELL + GAP, COLS = 4, ROWS = 7;
+const FIRST_POINT_LEVEL = 10;
+
+const row = p => p.charCodeAt(0) - 97;
+const col = p => +p[1] - 1;
+
+let klass = "Warrior";
+let level = 60;
+let state = {};   // state[treeId][talentId] = rank
+let nodes = {};   // nodes[treeId][talentId] = {el, rankEl}
+let arrows = [];  // {tree, talent, path, head}
+let hovered = null;
+let locked = false;      // freezes the point spread so it cannot be clicked away
+
+/* ---------------- rules ---------------- */
+const classes = () => edition.classes;
+const trees = () => classes()[klass].trees;
+const talentById = (tree, id) => tree.talents.find(t => t.id === id);
+const availablePoints = () => Math.max(0, Math.min(edition.maxPoints, level - FIRST_POINT_LEVEL + 1));
+const treePoints = tree => tree.talents.reduce((n, t) => n + state[tree.id][t.id], 0);
+const totalPoints = () => trees().reduce((n, t) => n + treePoints(t), 0);
+
+// points spent in tiers strictly above this one — the only points that can satisfy a tier gate
+function pointsBelowTier(tree, tier, st) {
+  return tree.talents.reduce((n, t) => n + (row(t.pos) < tier ? st[tree.id][t.id] : 0), 0);
+}
+function prereqMet(tree, tal, st) {
+  if (!tal.prereq) return true;
+  const p = talentById(tree, tal.prereq);
+  return !p || st[tree.id][p.id] >= p.maxRank;
+}
+function tierMet(tree, tal, st) {
+  return pointsBelowTier(tree, row(tal.pos), st) >= tal.reqPoints;
+}
+function canLearn(tree, tal) {
+  return state[tree.id][tal.id] < tal.maxRank
+      && totalPoints() < availablePoints()
+      && tierMet(tree, tal, state)
+      && prereqMet(tree, tal, state);
+}
+// legal only if every spent point could have been spent in some order
+function isValid(st) {
+  return trees().every(tree =>
+    tree.talents.every(tal =>
+      st[tree.id][tal.id] === 0 || (tierMet(tree, tal, st) && prereqMet(tree, tal, st))
+    )
+  );
+}
+function clone(st) {
+  const out = {};
+  for (const k in st) out[k] = Object.assign({}, st[k]);
+  return out;
+}
+function learn(tree, tal, all) {
+  if (locked) return;
+  let n = 0;
+  while (canLearn(tree, tal)) { state[tree.id][tal.id]++; n++; if (!all) break; }
+  if (n) update();
+}
+function unlearn(tree, tal, all) {
+  if (locked) return;
+  let n = 0;
+  for (;;) {
+    if (state[tree.id][tal.id] === 0) break;
+    const next = clone(state);
+    next[tree.id][tal.id]--;
+    if (!isValid(next)) break;
+    state = next; n++;
+    if (!all) break;
+  }
+  if (n) update();
+}
+
+/* ---------------- build ---------------- */
+function newState() {
+  const st = {};
+  for (const tree of trees()) {
+    st[tree.id] = {};
+    for (const tal of tree.talents) st[tree.id][tal.id] = 0;
+  }
+  return st;
+}
+
+function buildEditionBar() {
+  const bar = document.getElementById("editions");
+  bar.innerHTML = '<span class="lead">Talents</span>';
+  for (const ed of EDITIONS) {
+    const b = document.createElement("button");
+    const logo = ed.id === CUSTOM ? null : LOGOS[ed.id];
+    b.className = "ed" + (ed.id === edition.id ? " active" : "") +
+      (ed.id === CUSTOM ? " mine" : "") + (logo ? " art" : "");
+    if (logo) {
+      // the name still has to reach anything that cannot see the picture
+      const img = document.createElement("img");
+      img.src = logo;
+      img.alt = ed.name;
+      b.appendChild(img);
+    } else {
+      b.innerHTML = "<b></b><em></em>";
+      b.querySelector("b").textContent = ed.name;
+      b.querySelector("em").textContent = ed.tagline;
+    }
+    b.title = ed.name + " — " + ed.about;
+    b.onclick = () => selectEdition(ed);
+    bar.appendChild(b);
+  }
+  const about = document.createElement("div");
+  about.className = "about";
+  about.textContent = edition.about;
+  if (edition.source) {
+    about.appendChild(document.createTextNode(" "));
+    const a = document.createElement("a");
+    a.href = edition.source;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    a.textContent = "Source";
+    about.appendChild(a);
+  }
+  bar.appendChild(about);
+}
+
+/**
+ * Switches dataset. Everything downstream - point budget, level cap, which classes
+ * exist, share codes, whether edit mode is offered - is read off the edition.
+ */
+function selectEdition(ed, wantClass) {
+  if (locked && ed.id !== edition.id) { toast("Unlock the build first"); return; }
+  if (editing && ed.id !== CUSTOM) {
+    if (dirty && !confirm("Leave edit mode? Unsaved talent changes will be lost.")) return;
+    setEditing(false);
+  }
+  const was = edition;
+  edition = ed;
+  refreshFingerprints();
+  buildEditionBar();
+
+  const brand = document.getElementById("brand");
+  brand.innerHTML = "<small></small>";
+  brand.insertBefore(document.createTextNode(ed.name + " Talents"), brand.firstChild);
+  brand.querySelector("small").textContent = ed.tagline;
+  document.title = ed.name + " Talent Calculator";
+
+  // sitting at one edition's cap means "max level", so follow the new cap rather
+  // than staying at 60 in Wrath and quietly handing out 51 points instead of 71
+  const lvl = document.getElementById("level");
+  if (level >= was.maxLevel || level > ed.maxLevel) level = ed.maxLevel;
+  lvl.max = ed.maxLevel;
+  lvl.value = level;
+
+  // edit mode writes to the Classic+ dataset, so it only makes sense there
+  const editBtn = document.getElementById("editBtn");
+  editBtn.style.display = CONFIG.editMode && ed.id === CUSTOM ? "" : "none";
+
+  // a class that does not exist here (Death Knight outside Wrath) falls back
+  const next = wantClass && classes()[wantClass] ? wantClass
+    : classes()[klass] ? klass : classList()[0];
+  selectClass(next);
+}
+
+function buildClassBar() {
+  const bar = document.getElementById("classes");
+  bar.innerHTML = "";
+  for (const k of classList()) {
+    const b = document.createElement("button");
+    b.className = "cls" + (k === klass ? " active" : "");
+    b.style.setProperty("--c", CLASS_COLOR[k]);
+    b.title = k;
+    // slug, not toLowerCase: the icon is class_deathknight, with no space in it
+    b.innerHTML = '<img alt="" src="' + ICON("class_" + slug(k)) + '"><span>' + k + '</span>';
+    b.onclick = () => selectClass(k);
+    bar.appendChild(b);
+  }
+}
+
+function svgEl(name, attrs) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+
+function drawArrow(svg, a) {
+  const r1 = row(a.from), c1 = col(a.from), r2 = row(a.to), c2 = col(a.to);
+  const x1 = c1 * PITCH, y1 = r1 * PITCH, x2 = c2 * PITCH, y2 = r2 * PITCH;
+  const cx1 = x1 + CELL / 2, cy1 = y1 + CELL / 2, cx2 = x2 + CELL / 2;
+
+  const OUT = 2;   // gap between the cell edge and the line
+  const TIP = 5;   // gap between the line end and the arrow tip
+  const W = 5;     // half-width of the head
+  const L = 8;     // length of the head
+
+  // a head pointing "down" | "right" | "left", with its tip at (x, y)
+  const headAt = (dir, x, y) => {
+    if (dir === "down") return x + "," + y + " " + (x - W) + "," + (y - L) + " " + (x + W) + "," + (y - L);
+    if (dir === "right") return x + "," + y + " " + (x - L) + "," + (y - W) + " " + (x - L) + "," + (y + W);
+    return x + "," + y + " " + (x + L) + "," + (y - W) + " " + (x + L) + "," + (y + W);
+  };
+
+  let d, head;
+  if (r1 === r2) {
+    // straight across, in whichever direction the prereq sits
+    const goingRight = c2 > c1;
+    const from = goingRight ? x1 + CELL + OUT : x1 - OUT;
+    const to = goingRight ? x2 - TIP : x2 + CELL + TIP;
+    const tip = goingRight ? x2 - 1 : x2 + CELL + 1;
+    d = "M" + from + " " + cy1 + " H" + to;
+    head = headAt(goingRight ? "right" : "left", tip, cy1);
+  } else if (c1 === c2) {
+    // straight down
+    d = "M" + cx1 + " " + (y1 + CELL + OUT) + " V" + (y2 - TIP);
+    head = headAt("down", cx1, y2 - 1);
+  } else {
+    // across first, then down into the top of the target
+    const from = c2 > c1 ? x1 + CELL + OUT : x1 - OUT;
+    d = "M" + from + " " + cy1 + " H" + cx2 + " V" + (y2 - TIP);
+    head = headAt("down", cx2, y2 - 1);
+  }
+
+  const path = svgEl("path", { d: d, fill: "none", "stroke-width": 2.5, "stroke-linecap": "square" });
+  const poly = svgEl("polygon", { points: head });
+  svg.appendChild(path); svg.appendChild(poly);
+  return { path: path, head: poly };
+}
+
+
+function buildTrees() {
+  const host = document.getElementById("trees");
+  host.innerHTML = "";
+  nodes = {}; arrows = [];
+
+  for (const tree of trees()) {
+    nodes[tree.id] = {};
+    const rows = Math.max(ROWS, Math.max.apply(null, tree.talents.map(t => row(t.pos) + 1)));
+
+    const panel = document.createElement("div");
+    panel.className = "tree";
+    panel.dataset.tree = tree.id;
+
+    const head = document.createElement("div");
+    head.className = "tree-head";
+    head.innerHTML =
+      '<img class="tree-icon" alt="" src="' + ICON(tree.icon) + '">' +
+      '<span class="tree-name"></span>' +
+      '<span class="tree-pts" data-pts>0 pts</span>' +
+      '<button class="tree-edit" title="Edit this tree">&#9998;</button>' +
+      '<button class="tree-clear" title="Clear this tree">&times;</button>';
+    head.querySelector(".tree-edit").onclick = () => editTree(tree);
+    head.querySelector(".tree-name").textContent = tree.name;
+    head.querySelector(".tree-clear").onclick = () => clearTree(tree);
+    panel.appendChild(head);
+
+    const wrap = document.createElement("div");
+    wrap.className = "grid-wrap";
+    const bg = document.createElement("div");
+    bg.className = "bg";
+    bg.style.backgroundImage = "url(" + BG(tree.bg, tree.bgSet) + ")";
+    const veil = document.createElement("div");
+    veil.className = "veil";
+    wrap.appendChild(bg); wrap.appendChild(veil);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    grid.style.gridTemplateRows = "repeat(" + rows + "," + CELL + "px)";
+
+    // absolutely positioned inside the grid, so it lines up with the tracks
+    // automatically and paints behind the talents that follow it
+    const svg = svgEl("svg", { class: "arrows" });
+    grid.appendChild(svg);
+
+    for (const tal of tree.talents) {
+      const b = document.createElement("button");
+      b.className = "talent";
+      b.style.gridColumn = col(tal.pos) + 1;
+      b.style.gridRow = row(tal.pos) + 1;
+      b.innerHTML =
+        '<img alt="" src="' + ICON(tal.icon) + '" onerror="this.src=\'' + ICON("inv_misc_questionmark") + '\'">' +
+        '<span class="rank">0/' + tal.maxRank + '</span>';
+      b.onclick = e => {
+        e.preventDefault();
+        if (editing) { openInspector(tree, tal); return; }
+        learn(tree, tal, e.shiftKey); showTip(tree, tal);
+      };
+      b.oncontextmenu = e => {
+        e.preventDefault();
+        if (editing) return;
+        unlearn(tree, tal, e.shiftKey); showTip(tree, tal);
+      };
+      b.onmouseenter = () => showTip(tree, tal);
+      b.onmouseleave = hideTip;
+      b.onmousemove = moveTip;
+      wireDrag(b, tree, tal);
+      grid.appendChild(b);
+      nodes[tree.id][tal.id] = { el: b, rankEl: b.querySelector(".rank") };
+    }
+
+    // every arrow is just a prereq link, so draw them once the cells exist
+    for (const tal of tree.talents) {
+      if (!tal.prereq) continue;
+      const pre = tree.talents.find(t => t.id === tal.prereq);
+      if (!pre) continue;
+      const g = drawArrow(svg, { from: pre.pos, to: tal.pos });
+      arrows.push({ tree: tree, talent: tal, path: g.path, head: g.head });
+    }
+
+    // one spare row of placeholders so the tree can grow downwards while editing
+    const taken = new Set(tree.talents.map(t => t.pos));
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const pos = String.fromCharCode(97 + r) + (c + 1);
+        if (taken.has(pos)) continue;
+        const cell = document.createElement("button");
+        cell.className = "cell-add";
+        cell.type = "button";
+        cell.textContent = "+";
+        cell.style.gridColumn = c + 1;
+        cell.style.gridRow = r + 1;
+        cell.title = "Add a talent at " + pos;
+        cell.onclick = () => openModal(tree, pos);
+        wireDrop(cell, tree, pos);
+        grid.appendChild(cell);
+      }
+    }
+
+    wrap.appendChild(grid);
+    panel.appendChild(wrap);
+    host.appendChild(panel);
+  }
+}
+
+/* ---------------- update ---------------- */
+function update() {
+  const avail = availablePoints();
+  const total = totalPoints();
+
+  for (const tree of trees()) {
+    const pts = treePoints(tree);
+    const panel = document.querySelector('.tree[data-tree="' + CSS.escape(tree.id) + '"]');
+    const ptsEl = panel.querySelector("[data-pts]");
+    ptsEl.textContent = pts + " pts";
+    ptsEl.classList.toggle("has", pts > 0);
+    panel.classList.toggle("spent", pts > 0);
+
+    for (const tal of tree.talents) {
+      const r = state[tree.id][tal.id];
+      const n = nodes[tree.id][tal.id];
+      const unlocked = tierMet(tree, tal, state) && prereqMet(tree, tal, state);
+      n.el.className = "talent " +
+        (r >= tal.maxRank ? "maxed" : r > 0 ? "partial" : unlocked ? "open" : "locked");
+      n.rankEl.textContent = r + "/" + tal.maxRank;
+    }
+  }
+
+  for (const a of arrows) {
+    const live = prereqMet(a.tree, a.talent, state) && tierMet(a.tree, a.talent, state);
+    const c = live ? "#ffd100" : "#5b5b60";
+    a.path.setAttribute("stroke", c);
+    a.head.setAttribute("fill", c);
+  }
+
+  document.getElementById("spent").textContent = total;
+  const leftEl = document.getElementById("left");
+  leftEl.textContent = avail - total;
+  leftEl.classList.toggle("over", total > avail);
+
+  renderSpecBar();
+  renderLevels();
+
+  if (hovered) showTip(hovered.tree, hovered.talent);
+  location.replace("#" + encode());
+}
+
+/* ---------------- spec bar ---------------- */
+
+/**
+ * How many points reach the bottom of a tree - the deepest tier gate plus the
+ * point that pays for it. That is the milestone a bar is measured against, so a
+ * full bar means "this tree is finished", whatever edition you are in.
+ */
+function treeDepth(tree) {
+  let deepest = 0;
+  for (const t of tree.talents) if (t.reqPoints > deepest) deepest = t.reqPoints;
+  return deepest + 1;
+}
+
+function renderSpecBar() {
+  const host = document.getElementById("summary");
+  host.innerHTML = "";
+
+  const name = document.createElement("div");
+  name.className = "who";
+  name.textContent = klass;
+  name.style.setProperty("--c", CLASS_COLOR[klass] || "#fff");
+  host.appendChild(name);
+
+  const counts = trees().map(t => treePoints(t));
+  const most = Math.max.apply(null, counts);
+
+  for (let i = 0; i < trees().length; i++) {
+    const tree = trees()[i];
+    const pts = counts[i];
+    const depth = treeDepth(tree);
+    const pct = Math.min(100, Math.round((pts / depth) * 100));
+
+    const el = document.createElement("div");
+    // the deepest tree is the spec you are actually playing, so it gets the accent
+    el.className = "spec" + (pts > 0 ? " on" : "") +
+      (pts > 0 && pts === most ? " lead" : "");
+    el.style.setProperty("--c", TREE_TINT[i % TREE_TINT.length]);
+    el.innerHTML =
+      '<img alt="">' +
+      '<div class="sp-txt"><div class="sp-top"><span class="sp-nm"></span>' +
+      '<span class="sp-pts"></span></div>' +
+      '<div class="sp-bar"><i></i></div></div>';
+
+    el.querySelector("img").src = ICON(tree.icon);
+    el.querySelector(".sp-nm").textContent = tree.name;
+    el.querySelector(".sp-pts").textContent = pts;
+    el.querySelector(".sp-bar i").style.width = pct + "%";
+    el.title = tree.name + ": " + pts + " of " + depth +
+      " points to the bottom of the tree";
+    host.appendChild(el);
+  }
+
+  const hint = document.createElement("div");
+  hint.className = "hint";
+  hint.textContent = locked
+    ? "Build locked — unlock to make changes"
+    : "Click to learn · right click to unlearn · shift-click for all ranks";
+  host.appendChild(hint);
+}
+
+/* ---------------- levelling path ---------------- */
+const TREE_TINT = ["#e0603a", "#4aa3d8", "#7ac943"];   // one per tree, left to right
+
+/**
+ * Works out an order the current build could actually have been levelled in.
+ *
+ * A build only stores ranks, not the order they were bought in - and a share code
+ * carries even less - so the order is derived rather than recorded: take the
+ * lowest unlocked rank still wanted, again and again. Any build the page will
+ * accept is reachable this way, because that is the same rule clicking enforces.
+ */
+function levelPath() {
+  const spent = {};
+  for (const tree of trees()) {
+    spent[tree.id] = {};
+    for (const tal of tree.talents) spent[tree.id][tal.id] = 0;
+  }
+
+  const steps = [];
+  const total = totalPoints();
+  for (let n = 0; n < total; n++) {
+    let pick = null;
+    for (const tree of trees()) {
+      for (const tal of sortedTalents(tree)) {
+        if (spent[tree.id][tal.id] >= state[tree.id][tal.id]) continue;   // none left to take here
+        if (!tierMet(tree, tal, spent) || !prereqMet(tree, tal, spent)) continue;
+        if (!pick || row(tal.pos) < row(pick.tal.pos)) pick = { tree: tree, tal: tal };
+      }
+    }
+    if (!pick) break;   // only reachable if the build is illegal, which update() prevents
+    const rank = ++spent[pick.tree.id][pick.tal.id];
+    steps.push({ tree: pick.tree, tal: pick.tal, rank: rank, level: FIRST_POINT_LEVEL + n });
+  }
+  return steps;
+}
+
+function renderLevels() {
+  const host = document.getElementById("levels");
+  const steps = levelPath();
+
+  if (!steps.length) {
+    host.innerHTML = '<div class="head"><h4>Levelling path</h4></div>' +
+      '<div class="empty">Spend a point and this shows the level each one goes in at, ' +
+      'starting from ' + FIRST_POINT_LEVEL + '.</div>';
+    return;
+  }
+
+  const head = document.createElement("div");
+  head.className = "head";
+  const h4 = document.createElement("h4");
+  h4.textContent = "Levelling path";
+  const count = document.createElement("span");
+  count.className = "count";
+  count.textContent = steps.length + " points · levels " +
+    steps[0].level + "–" + steps[steps.length - 1].level;
+  head.appendChild(h4);
+  head.appendChild(count);
+
+  const key = document.createElement("div");
+  key.className = "key";
+  trees().forEach((tree, i) => {
+    const s = document.createElement("span");
+    s.style.setProperty("--c", TREE_TINT[i % TREE_TINT.length]);
+    s.innerHTML = "<i></i>";
+    s.appendChild(document.createTextNode(tree.name));
+    key.appendChild(s);
+  });
+  head.appendChild(key);
+
+  const list = document.createElement("div");
+  list.className = "steps";
+  for (const step of steps) {
+    const tint = TREE_TINT[trees().indexOf(step.tree) % TREE_TINT.length];
+    const el = document.createElement("div");
+    el.className = "step" + (step.rank === step.tal.maxRank ? " capped" : "");
+    el.style.setProperty("--c", tint);
+    el.innerHTML = '<span class="lvl"></span><img alt="">' +
+      '<span class="nm"></span><span class="rk"></span>';
+    el.querySelector(".lvl").textContent = step.level;
+    el.querySelector("img").src = ICON(step.tal.icon);
+    el.querySelector(".nm").textContent = step.tal.name;
+    el.querySelector(".rk").textContent = step.rank + "/" + step.tal.maxRank;
+    el.title = "Level " + step.level + " — " + step.tal.name + " rank " + step.rank +
+      " (" + step.tree.name + ")";
+    // same tooltip the tree itself shows, so the rank text is one hover away
+    el.onmouseenter = () => showTip(step.tree, step.tal);
+    el.onmousemove = moveTip;
+    el.onmouseleave = hideTip;
+    list.appendChild(el);
+  }
+
+  host.innerHTML = "";
+  host.appendChild(head);
+  host.appendChild(list);
+}
+
+function clearTree(tree) {
+  if (locked) return;
+  for (const tal of tree.talents) state[tree.id][tal.id] = 0;
+  update();
+}
+function resetAll() {
+  if (locked) return;
+  state = newState();
+  update();
+}
+
+function selectClass(k) {
+  klass = k;
+  // drives the ring around each spec icon
+  document.documentElement.style.setProperty("--class-color", CLASS_COLOR[k]);
+  buildClassBar();
+  state = newState();
+  buildTrees();
+  update();
+}
+
+/* ---------------- lock ---------------- */
+function setLocked(on) {
+  locked = on;
+  document.body.classList.toggle("locked", on);
+
+  const btn = document.getElementById("lockBtn");
+  btn.innerHTML = on ? "&#128274; Unlock" : "&#128275; Lock";
+  btn.classList.toggle("on", on);
+  btn.title = on
+    ? "Unlock to change this build"
+    : "Freeze this build so clicks cannot change it";
+
+  // anything that would rewrite the point spread goes quiet while locked
+  document.getElementById("reset").disabled = on;
+  document.getElementById("level").disabled = on;
+  const editBtn = document.getElementById("editBtn");
+  if (editBtn) editBtn.disabled = on;
+
+  if (hovered) showTip(hovered.tree, hovered.talent);
+}
+
+/* ---------------- tooltip ---------------- */
+const tip = document.getElementById("tip");
+let lastX = 0, lastY = 0;
+
+function showTip(tree, tal) {
+  hovered = { tree: tree, talent: tal };
+  const r = state[tree.id][tal.id];
+  const shown = r > 0 ? r : 1;
+  const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+  let h = '<div class="t-name">' + esc(tal.name) + '</div>';
+  h += '<div class="t-rank">Rank ' + r + '/' + tal.maxRank + '</div>';
+  if (!tierMet(tree, tal, state))
+    h += '<div class="t-req">Requires ' + tal.reqPoints + ' points in ' + esc(tree.name) + '</div>';
+  if (!prereqMet(tree, tal, state))
+    h += '<div class="t-req">Requires ' + esc(tal.prereq) + '</div>';
+  h += '<div class="t-desc">' + esc(tal.ranks[shown - 1]) + '</div>';
+  if (r > 0 && r < tal.maxRank)
+    h += '<div class="t-nexth">Next rank:</div><div class="t-next">' + esc(tal.ranks[r]) + '</div>';
+
+  let hint = "";
+  if (locked) hint = '<span class="muted">Build locked</span>';
+  else if (canLearn(tree, tal)) hint += "<span>Click to learn</span>";
+  else if (r < tal.maxRank && totalPoints() >= availablePoints()) hint += "<span>No points remaining</span>";
+  if (!locked && r > 0) hint += "<span>Right click to unlearn</span>";
+  if (hint) h += '<div class="t-hint">' + hint + '</div>';
+
+  tip.innerHTML = h;
+  tip.style.display = "block";
+  place(lastX, lastY);
+}
+function moveTip(e) { lastX = e.clientX; lastY = e.clientY; place(lastX, lastY); }
+function place(x, y) {
+  const r = tip.getBoundingClientRect();
+  let left = x + 18, top = y + 16;
+  if (left + r.width > innerWidth - 8) left = Math.max(8, x - r.width - 18);
+  if (top + r.height > innerHeight - 8) top = Math.max(8, innerHeight - r.height - 8);
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+}
+function hideTip() { hovered = null; tip.style.display = "none"; }
+
+/* ---------------- share + saved builds ---------------- */
+const sortedTalents = tree => tree.talents.slice().sort((a, b) => a.pos < b.pos ? -1 : 1);
+
+/** FNV-1a, matching server.js, so a code can say which layout it was built against. */
+function hash32(str) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+/** Covers exactly what a code depends on: which talents, in which order, and how many ranks. */
+function fingerprintOf(data, k) {
+  let s = "";
+  for (const tree of data[k].trees) {
+    s += tree.id + "|";
+    for (const t of sortedTalents(tree)) s += t.id + ":" + t.maxRank + ";";
+  }
+  return hash32(s);
+}
+
+/** Recomputed whenever the active dataset changes, so it is never stale. */
+function refreshFingerprints() {
+  FINGERPRINTS = {};
+  for (const k of Object.keys(classes())) FINGERPRINTS[k] = fingerprintOf(classes(), k);
+}
+
+// Codes carry their edition as a prefix ("forever:druid-5000...."). A bare code
+// means the Classic+ trees, which is what every code written before editions was.
+function encode() {
+  let s = "";
+  for (const tree of trees()) for (const tal of sortedTalents(tree)) s += state[tree.id][tal.id];
+  s = s.replace(/0+$/, "");
+  const stamp = FINGERPRINTS[klass] ? "." + FINGERPRINTS[klass] : "";
+  const prefix = isCustom() ? "" : edition.id + ":";
+  return prefix + slug(klass) + (s ? "-" + s : "") + stamp;
+}
+function decode(code) {
+  if (!code) return false;
+
+  const colon = code.indexOf(":");
+  const edId = colon > 0 ? code.slice(0, colon).toLowerCase() : CUSTOM;
+  const ed = editionById(edId);
+  if (!ed) {
+    toast('That build is for the "' + code.slice(0, colon) + '" talents, which this page does not have');
+    return false;
+  }
+  if (colon > 0) code = code.slice(colon + 1);
+
+  const dot = code.lastIndexOf(".");
+  const stamp = dot > 0 ? code.slice(dot + 1) : null;
+  if (stamp) code = code.slice(0, dot);
+
+  const i = code.indexOf("-");
+  const name = slug(i < 0 ? code : code.slice(0, i));
+  const k = CLASS_ORDER.find(c => slug(c) === name && ed.classes[c]);
+  if (!k) return false;
+  if (ed !== edition) selectEdition(ed, k); else selectClass(k);
+
+  // a code is just positions, so one from a different layout would land on the
+  // wrong talents - better to say so than to show a build that is not theirs
+  if (stamp && FINGERPRINTS[k] && stamp !== FINGERPRINTS[k]) {
+    toast("That build was made for a different version of the " + k + " talents");
+    update();
+    return true;
+  }
+
+  const digits = i < 0 ? "" : code.slice(i + 1);
+  let n = 0;
+  for (const tree of trees()) for (const tal of sortedTalents(tree)) {
+    const v = parseInt(digits[n++], 10);
+    state[tree.id][tal.id] = isNaN(v) ? 0 : Math.min(v, tal.maxRank);
+  }
+  if (!isValid(state) || totalPoints() > availablePoints()) {
+    state = newState();
+    toast("That build does not fit the current talents, so it was not loaded");
+  }
+  update();
+  return true;
+}
+
+// Where saved builds go. On a public server they stay in the visitor's own browser
+// (LOCAL_BUILDS), and so do they when the page is opened straight off disk. Either
+// way a build is shared by its URL, which already carries the whole thing.
+const ONLINE = location.protocol === "http:" || location.protocol === "https:";
+let LOCAL_BUILDS = !ONLINE;
+const useLocalBuilds = () => LOCAL_BUILDS || !ONLINE;
+const KEY = "cplus-talents-builds";
+const localAll = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } };
+const localPut = b => { try { localStorage.setItem(KEY, JSON.stringify(b)); } catch (e) {} };
+
+async function apiCall(path, options) {
+  const res = await fetch("/api" + path, options);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.error || ("request failed (" + res.status + ")"));
+    err.problems = body.problems;
+    throw err;
+  }
+  return body;
+}
+
+async function listBuilds() {
+  if (useLocalBuilds()) return localAll();
+  return (await apiCall("/builds")).builds;
+}
+
+async function createBuild(name, code) {
+  if (!useLocalBuilds()) return apiCall("/builds", {
+    method: "POST",
+    headers: Object.assign({ "content-type": "application/json" }, adminHeaders()),
+    body: JSON.stringify({ name: name, code: code }),
+  });
+  const all = localAll();
+  const entry = {
+    id: "local-" + Date.now(), name: name, klass: klass, code: code,
+    edition: edition.id,
+    points: totalPoints(), spec: trees().map(t => treePoints(t)).join("/"),
+  };
+  const at = all.findIndex(b => b.name === name);
+  if (at >= 0) all[at] = entry; else all.unshift(entry);
+  localPut(all);
+  return entry;
+}
+
+async function removeBuild(id) {
+  if (!useLocalBuilds()) {
+    return apiCall("/builds/" + encodeURIComponent(id), {
+      method: "DELETE", headers: adminHeaders(),
+    });
+  }
+  localPut(localAll().filter(b => b.id !== id));
+}
+
+async function renderSaved() {
+  const host = document.getElementById("saved");
+  let builds;
+  try {
+    builds = await listBuilds();
+  } catch (e) {
+    host.innerHTML = '<div class="empty">Could not reach the build store — ' + e.message + '</div>';
+    return;
+  }
+  host.innerHTML = "";
+  if (!builds.length) {
+    host.innerHTML = '<div class="empty">' + (useLocalBuilds()
+      ? "No saved builds yet — name one and hit Save build. They stay in this browser; share a build with its link."
+      : "No saved builds yet — name one and hit Save build.") + '</div>';
+    return;
+  }
+  for (const b of builds) {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.style.setProperty("--c", CLASS_COLOR[b.klass] || "#666");
+    // the build is entirely in its own URL, so that is what gets shared - a
+    // /b/<id> link would need the server to be holding everyone's builds
+    const shareUrl = b.code
+      ? (ONLINE ? location.origin + location.pathname.replace(/^\/b\/.*/, "/") : location.href.split("#")[0]) + "#" + b.code
+      : null;
+
+    chip.innerHTML = '<b></b><em></em>' +
+      (shareUrl ? '<button class="chip-link" title="Copy a link to this build">&#128279;</button>' : '') +
+      '<button title="Delete">&times;</button>';
+    chip.querySelector("b").textContent = b.name;
+    const ed = editionById(b.edition || CUSTOM);
+    chip.querySelector("em").textContent =
+      (ed && ed.id !== CUSTOM ? ed.name + " · " : "") + b.klass + " " + b.spec;
+    chip.onclick = () => { if (decode(b.code)) toast('Loaded "' + b.name + '"'); };
+
+    const link = chip.querySelector(".chip-link");
+    if (link) link.onclick = e => {
+      e.stopPropagation();
+      copy(shareUrl, "Link to this build copied");
+    };
+    chip.querySelectorAll("button")[shareUrl ? 1 : 0].onclick = async e => {
+      e.stopPropagation();
+      try { await removeBuild(b.id); await renderSaved(); }
+      catch (err) { toast(err.message); }
+    };
+    host.appendChild(chip);
+  }
+}
+
+async function saveBuild() {
+  const input = document.getElementById("bname");
+  const name = input.value.trim() || (klass + " " + totalPoints() + " pts");
+  try {
+    const saved = await createBuild(name, encode());
+    input.value = "";
+    await renderSaved();
+    toast('Saved "' + saved.name + '"');
+  } catch (e) {
+    toast("Save failed: " + e.message);
+  }
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+function copy(url, msg) {
+  const ok = () => toast(msg);
+  if (navigator.clipboard && ONLINE) {
+    navigator.clipboard.writeText(url).then(ok, () => prompt("Copy this link:", url));
+  } else {
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); ok(); } catch (e) { prompt("Copy this link:", url); }
+    ta.remove();
+  }
+}
+function copyLink() {
+  // a /b/<id> share page still copies a link to the calculator itself
+  const base = ONLINE
+    ? location.origin + (location.pathname.indexOf("/b/") === 0 ? "/" : location.pathname)
+    : location.href.split("#")[0];
+  copy(base + "#" + encode(), "Link copied to clipboard");
+}
+
+
+/* ================= info + suggestions ================= */
+
+/** The admin key, if this visitor has one. ?admin=<key> puts it here and keeps it. */
+let adminKey = "";
+try {
+  const asked = new URLSearchParams(location.search).get("admin");
+  if (asked) { localStorage.setItem("cplus-admin", asked); adminKey = asked; }
+  else adminKey = localStorage.getItem("cplus-admin") || "";
+} catch (e) { /* private browsing - the key just will not stick */ }
+
+const adminHeaders = () => (adminKey ? { "x-admin-key": adminKey } : {});
+
+function openInfo() {
+  const el = document.getElementById("info-body");
+  const editions = EDITIONS.map(e => e.name).join(", ");
+
+  el.innerHTML =
+    '<h4>What this is</h4>' +
+    '<p>A talent calculator for World of Warcraft. Pick an edition along the top, pick a ' +
+    'class, and spend points - the same tier and prerequisite rules the game enforces.</p>' +
+    '<p>Six sets of trees are here: <b>' + esc(editions) + '</b>. ' +
+    "<b>Classic+</b> is this server's own custom set; the rest are Blizzard's, " +
+    "read-only, kept for comparison.</p>" +
+
+    '<h4>Sharing a build</h4>' +
+    '<p>The address bar updates as you click, so <b>the URL is the build</b>. Copy it, ' +
+    'paste it anywhere, and whoever opens it sees exactly what you made - no account, ' +
+    'nothing stored on the server. <kbd>Copy link</kbd> puts it on your clipboard.</p>' +
+
+    '<h4>Saved builds</h4>' +
+    '<p>' + (LOCAL_BUILDS
+      ? 'Saving keeps a build <b>in this browser only</b>. Nobody else sees your list, and ' +
+        'clearing your browser data clears it - so for anything you want to keep, save the link.'
+      : 'Saved builds live on this server and everyone can see them.') + '</p>' +
+
+    '<h4>Levelling path</h4>' +
+    '<p>Under the trees is an order the build could be levelled in, one point per level ' +
+    'from ' + FIRST_POINT_LEVEL + '. It is worked out from the build, so it is always a ' +
+    'legal path - not necessarily the order you clicked in.</p>' +
+
+    '<div class="sugg">' +
+      '<h4>Suggestions</h4>' +
+      '<p class="muted">Found something wrong, or want a tree changed? Say so here.</p>' +
+      '<textarea id="sg-body" maxlength="1000" placeholder="What would you change?"></textarea>' +
+      '<input id="sg-author" maxlength="60" placeholder="Name or Discord (optional)">' +
+      '<div class="row"><span class="note" id="sg-note"></span>' +
+      '<button class="btn gold" id="sg-send">Send suggestion</button></div>' +
+    '</div>' +
+    (adminKey ? '<div class="sugg"><h4>Suggestions received</h4>' +
+       '<div class="sugg-list" id="sg-list">Loading…</div></div>' : '');
+
+  document.getElementById("sg-send").onclick = sendSuggestion;
+  if (adminKey) loadSuggestions();
+  document.getElementById("info").classList.add("open");
+}
+
+function closeInfo() { document.getElementById("info").classList.remove("open"); }
+
+async function sendSuggestion() {
+  const body = document.getElementById("sg-body");
+  const author = document.getElementById("sg-author");
+  const note = document.getElementById("sg-note");
+  const text = body.value.trim();
+
+  if (text.length < 4) { note.textContent = "A few more words, please."; return; }
+  if (!ONLINE) { note.textContent = "Suggestions need the server - this page is open from a file."; return; }
+
+  note.textContent = "Sending…";
+  try {
+    await apiCall("/suggestions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ body: text, author: author.value, edition: edition.id }),
+    });
+    body.value = ""; author.value = "";
+    note.textContent = "Sent - thank you.";
+    if (adminKey) loadSuggestions();
+  } catch (e) {
+    note.textContent = e.message;
+  }
+}
+
+/** Only ever reachable with the admin key; the server refuses it otherwise. */
+async function loadSuggestions() {
+  const host = document.getElementById("sg-list");
+  if (!host) return;
+  try {
+    const res = await apiCall("/suggestions", { headers: adminHeaders() });
+    if (!res.suggestions.length) { host.textContent = "Nothing yet."; return; }
+    host.innerHTML = "";
+    for (const s of res.suggestions) {
+      const el = document.createElement("div");
+      el.className = "sugg-item" + (s.handled ? " done" : "");
+      el.innerHTML = '<div class="meta"><span class="when"></span><span class="who"></span>' +
+        '<button class="btn" data-done>' + (s.handled ? "Reopen" : "Done") + '</button>' +
+        '<button class="btn danger" data-del>Delete</button></div><div class="txt"></div>';
+      el.querySelector(".when").textContent = new Date(s.created_at).toLocaleString();
+      el.querySelector(".who").textContent =
+        (s.author ? s.author + " · " : "") + (s.edition || "");
+      el.querySelector(".txt").textContent = s.body;
+      el.querySelector("[data-done]").onclick = async () => {
+        await apiCall("/suggestions/" + s.id, { method: "POST", headers: adminHeaders() });
+        loadSuggestions();
+      };
+      el.querySelector("[data-del]").onclick = async () => {
+        if (!confirm("Delete this suggestion?")) return;
+        await apiCall("/suggestions/" + s.id, { method: "DELETE", headers: adminHeaders() });
+        loadSuggestions();
+      };
+      host.appendChild(el);
+    }
+  } catch (e) {
+    host.textContent = e.message;
+  }
+}
+
+/* ================= edit mode ================= */
+let editing = false;
+let dirty = false;
+let library = null;          // lazily fetched from /api/library
+let inspecting = null;       // { tree, talent }
+let addingAt = null;         // { tree, pos } while the add dialog is open
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const rowOf = pos => pos.charCodeAt(0) - 97;
+const posOf = (r, c) => String.fromCharCode(97 + r) + (c + 1);
+
+function markDirty() {
+  dirty = true;
+  document.body.classList.add("dirty");
+}
+
+/** Talent ids are referenced by prereqs, so they must stay unique within a tree. */
+function uniqueId(tree, base) {
+  let id = base, n = 2;
+  while (tree.talents.some(t => t.id === id)) id = base + " (" + n++ + ")";
+  return id;
+}
+
+function setEditing(on) {
+  if (on && locked) { toast("Unlock the build first"); return; }
+  // only the Classic+ dataset is writable; the rest are Blizzard's, read-only
+  if (on && !isCustom()) { toast("Switch to the Classic+ talents to edit them"); return; }
+  editing = on;
+  document.body.classList.toggle("editing", on);
+  document.getElementById("editBtn").textContent = on ? "Leave edit mode" : "Edit mode";
+  closeInspector();
+  if (!on) closeModal();
+  buildTrees();
+  update();
+}
+
+/* ---------- moving talents ---------- */
+function moveTalent(fromTreeId, talentId, toTreeId, toPos) {
+  const from = trees().find(t => t.id === fromTreeId);
+  const to = trees().find(t => t.id === toTreeId);
+  if (!from || !to) return;
+  const tal = from.talents.find(t => t.id === talentId);
+  if (!tal) return;
+
+  const occupant = to.talents.find(t => t.pos === toPos && t !== tal);
+  if (occupant) {
+    // swap, but only within one tree - a cross-tree swap would break both prereqs
+    if (from !== to) { toast("Drop onto an empty cell to move between trees"); return; }
+    occupant.pos = tal.pos;
+    occupant.reqPoints = rowOf(occupant.pos) * 5;
+  }
+  if (from !== to) {
+    from.talents.splice(from.talents.indexOf(tal), 1);
+    // prereqs are tree-local, so moving trees clears links in both directions
+    from.talents.forEach(t => { if (t.prereq === tal.id) delete t.prereq; });
+    delete tal.prereq;
+    tal.id = uniqueId(to, tal.name);
+    to.talents.push(tal);
+  }
+  tal.pos = toPos;
+  tal.reqPoints = rowOf(toPos) * 5;
+
+  markDirty();
+  state = newState();
+  buildTrees();
+  update();
+}
+
+/* ---------- inspector ---------- */
+function openInspector(tree, tal) {
+  inspecting = { tree: tree, talent: tal };
+  const el = document.getElementById("inspector");
+  const others = tree.talents.filter(t => t.id !== tal.id && rowOf(t.pos) <= rowOf(tal.pos));
+
+  el.innerHTML =
+    '<h3>Edit talent</h3>' +
+    '<div class="field"><label>Name</label><input id="f-name" value="' + esc(tal.name) + '"></div>' +
+    '<div class="field"><label>Icon (wowhead name)</label><div class="icon-row">' +
+      '<img id="f-icon-img" src="' + ICON(tal.icon) + '" alt="">' +
+      '<input id="f-icon" value="' + esc(tal.icon) + '"></div></div>' +
+    '<div class="field row">' +
+      '<div><label>Max rank</label><input id="f-max" type="number" min="1" max="5" value="' + tal.maxRank + '"></div>' +
+      '<div><label>Cell</label><input value="' + tal.pos + ' (row ' + (rowOf(tal.pos) + 1) + ')" disabled></div>' +
+    '</div>' +
+    '<div class="field"><label>Requires (draws the arrow)</label><select id="f-prereq">' +
+      '<option value="">Nothing</option>' +
+      others.map(o => '<option value="' + esc(o.id) + '"' + (tal.prereq === o.id ? ' selected' : '') +
+        '>' + esc(o.name) + ' (' + o.pos + ')</option>').join("") +
+    '</select></div>' +
+    '<div id="f-ranks"></div>' +
+    '<div class="drawer-actions">' +
+      '<button class="btn danger" id="f-del">Delete talent</button>' +
+      '<button class="btn" id="f-close">Close</button>' +
+    '</div>';
+
+  const renderRanks = () => {
+    document.getElementById("f-ranks").innerHTML = tal.ranks.map((r, i) =>
+      '<div class="field"><label>Rank ' + (i + 1) + ' description</label>' +
+      '<textarea data-rank="' + i + '">' + esc(r) + '</textarea></div>').join("");
+    el.querySelectorAll("[data-rank]").forEach(ta => {
+      ta.oninput = () => { tal.ranks[+ta.dataset.rank] = ta.value; markDirty(); };
+    });
+  };
+  renderRanks();
+
+  document.getElementById("f-name").oninput = e => {
+    tal.name = e.target.value;
+    markDirty(); refreshTalent(tree, tal);
+  };
+  const iconInput = document.getElementById("f-icon");
+  iconInput.oninput = () => {
+    tal.icon = iconInput.value.trim();
+    document.getElementById("f-icon-img").src = ICON(tal.icon);
+    markDirty(); refreshTalent(tree, tal);
+  };
+  document.getElementById("f-max").oninput = e => {
+    const n = Math.max(1, Math.min(5, parseInt(e.target.value, 10) || 1));
+    while (tal.ranks.length < n) tal.ranks.push(tal.ranks[tal.ranks.length - 1] || "");
+    tal.ranks.length = n;
+    tal.maxRank = n;
+    markDirty(); renderRanks(); state = newState(); buildTrees(); update();
+  };
+  document.getElementById("f-prereq").onchange = e => {
+    if (e.target.value) tal.prereq = e.target.value; else delete tal.prereq;
+    markDirty(); state = newState(); buildTrees(); update();
+  };
+  document.getElementById("f-del").onclick = () => {
+    tree.talents.splice(tree.talents.indexOf(tal), 1);
+    tree.talents.forEach(t => { if (t.prereq === tal.id) delete t.prereq; });
+    markDirty(); closeInspector(); state = newState(); buildTrees(); update();
+  };
+  document.getElementById("f-close").onclick = closeInspector;
+  el.classList.add("open");
+}
+
+function closeInspector() {
+  inspecting = null;
+  document.getElementById("inspector").classList.remove("open");
+}
+
+/** Cheap in-place refresh so typing a name doesn't rebuild the whole grid. */
+function refreshTalent(tree, tal) {
+  const n = nodes[tree.id] && nodes[tree.id][tal.id];
+  if (!n) return;
+  const img = n.el.querySelector("img");
+  if (img.getAttribute("src") !== ICON(tal.icon)) img.src = ICON(tal.icon);
+}
+
+/* ---------- add talent ---------- */
+function openModal(tree, pos) {
+  addingAt = { tree: tree, pos: pos };
+  document.querySelector("#modal .modal-head h3").textContent = "Add a talent";
+  document.querySelector("#modal .tabs").style.display = "";
+  document.getElementById("modal").classList.add("open");
+  showTab("library");
+}
+
+/* ---------- version history ---------- */
+function openHistory() {
+  addingAt = null;
+  document.querySelector("#modal .modal-head h3").textContent = "Talent history";
+  document.querySelector("#modal .tabs").style.display = "none";
+  document.getElementById("modal").classList.add("open");
+
+  const body = document.getElementById("modal-body");
+  body.innerHTML = '<div class="lib-empty">Loading versions…</div>';
+
+  apiCall("/talents/history", { headers: adminHeaders() }).then(res => {
+    const versions = res.versions || [];
+    if (!versions.length) { body.innerHTML = '<div class="lib-empty">No versions recorded yet.</div>'; return; }
+
+    body.innerHTML =
+      '<div class="lib-empty">Every save and reset is recorded here. The newest ' +
+      res.keep + ' are kept.</div>' +
+      versions.map((v, i) =>
+        '<div class="ver-row' + (i === 0 ? ' current' : '') + '">' +
+          '<div><div class="nm">' + esc(v.note) + '</div>' +
+          '<div class="meta">' + new Date(v.saved_at).toLocaleString() +
+          ' &middot; ' + v.talents + ' talents in ' + v.classes + ' classes</div></div>' +
+          '<div class="right">' +
+            (i === 0 ? '<span class="tagnow">Newest</span>' : '') +
+            '<button class="btn" data-restore="' + v.id + '">Restore</button>' +
+          '</div>' +
+        '</div>').join("");
+
+    body.querySelectorAll("[data-restore]").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.restore;
+        if (!confirm("Restore this version? The talents you have now are saved to history first.")) return;
+        btn.disabled = true;
+        try {
+          await apiCall("/talents/history/" + id + "/restore",
+            { method: "POST", headers: adminHeaders() });
+          const ds = await apiCall("/talents");
+          DATA = ds.talents;
+          refreshFingerprints();
+          dirty = false;
+          document.body.classList.remove("dirty");
+          closeModal();
+          closeInspector();
+          state = newState();
+          buildClassBar(); buildTrees(); update();
+          toast("Restored version " + id);
+        } catch (e) {
+          btn.disabled = false;
+          toast("Restore failed: " + e.message);
+        }
+      };
+    });
+  }).catch(e => {
+    body.innerHTML = '<div class="lib-empty">Could not load history — ' + esc(e.message) + '</div>';
+  });
+}
+function closeModal() {
+  addingAt = null;
+  document.getElementById("modal").classList.remove("open");
+}
+
+function showTab(which) {
+  document.querySelectorAll("#modal .tab").forEach(t => t.classList.toggle("on", t.dataset.tab === which));
+  const body = document.getElementById("modal-body");
+  if (which === "custom") {
+    body.innerHTML =
+      '<div class="field"><label>Name</label><input id="c-name" placeholder="My Talent"></div>' +
+      '<div class="field"><label>Icon (wowhead name)</label><div class="icon-row">' +
+        '<img id="c-icon-img" src="' + ICON("inv_misc_questionmark") + '" alt="">' +
+        '<input id="c-icon" value="inv_misc_questionmark"></div></div>' +
+      '<div class="field"><label>Max rank</label><input id="c-max" type="number" min="1" max="5" value="1"></div>' +
+      '<div class="field"><label>Rank 1 description</label><textarea id="c-desc" placeholder="What the talent does."></textarea></div>' +
+      '<div class="drawer-actions"><button class="btn gold" id="c-add">Add talent</button></div>';
+    const ic = document.getElementById("c-icon");
+    ic.oninput = () => { document.getElementById("c-icon-img").src = ICON(ic.value.trim()); };
+    document.getElementById("c-add").onclick = () => {
+      const name = document.getElementById("c-name").value.trim() || "New Talent";
+      const max = Math.max(1, Math.min(5, parseInt(document.getElementById("c-max").value, 10) || 1));
+      const desc = document.getElementById("c-desc").value.trim() || "Does something.";
+      insertTalent({ name: name, icon: ic.value.trim() || "inv_misc_questionmark",
+        maxRank: max, ranks: Array.from({ length: max }, () => desc) });
+    };
+    return;
+  }
+
+  body.innerHTML =
+    '<div class="filters">' +
+      '<input id="l-q" placeholder="Search talents by name...">' +
+      '<select id="l-exp"><option value="">All expansions</option><option>Classic</option><option>TBC</option><option>WotLK</option></select>' +
+      '<select id="l-cls"><option value="">All classes</option></select>' +
+    '</div><div class="lib-list" id="l-list"><div class="lib-empty">Loading library...</div></div>';
+
+  const run = () => renderLibrary();
+  document.getElementById("l-q").oninput = run;
+  document.getElementById("l-exp").onchange = run;
+  document.getElementById("l-cls").onchange = run;
+
+  if (library) { fillClasses(); renderLibrary(); }
+  else {
+    apiCall("/library").then(data => {
+      library = data.talents || [];
+      fillClasses(); renderLibrary();
+    }).catch(e => {
+      document.getElementById("l-list").innerHTML =
+        '<div class="lib-empty">Could not load the library - ' + esc(e.message) + '</div>';
+    });
+  }
+}
+
+function fillClasses() {
+  const sel = document.getElementById("l-cls");
+  if (!sel || sel.options.length > 1) return;
+  [...new Set(library.map(t => t.klass))].sort().forEach(c => {
+    const o = document.createElement("option");
+    o.textContent = c;
+    sel.appendChild(o);
+  });
+  if (library.some(t => t.klass === klass)) sel.value = klass;
+}
+
+function renderLibrary() {
+  const list = document.getElementById("l-list");
+  if (!list || !library) return;
+  const q = document.getElementById("l-q").value.trim().toLowerCase();
+  const exp = document.getElementById("l-exp").value;
+  const cls = document.getElementById("l-cls").value;
+
+  const hits = library.filter(t =>
+    (!exp || t.expansion === exp) &&
+    (!cls || t.klass === cls) &&
+    (!q || t.name.toLowerCase().includes(q))
+  ).slice(0, 200);
+
+  if (!hits.length) { list.innerHTML = '<div class="lib-empty">Nothing matches that search.</div>'; return; }
+
+  list.innerHTML = hits.map(t =>
+    '<div class="lib-row" data-key="' + esc(t.key) + '">' +
+      '<img src="' + ICON(t.icon) + '" alt="" onerror="this.src=\'' + ICON("inv_misc_questionmark") + '\'">' +
+      '<div><div class="nm">' + esc(t.name) + '</div>' +
+      '<div class="meta">' + esc(t.klass) + ' / ' + esc(t.tree) + ' - ' + t.maxRank + ' rank' + (t.maxRank > 1 ? 's' : '') + '</div></div>' +
+      '<span class="badge ' + t.expansion.toLowerCase() + '">' + esc(t.expansion) + '</span>' +
+    '</div>').join("");
+
+  list.querySelectorAll(".lib-row").forEach(rowEl => {
+    rowEl.onclick = () => {
+      const t = library.find(x => x.key === rowEl.dataset.key);
+      if (t) insertTalent({ name: t.name, icon: t.icon, maxRank: t.maxRank, ranks: t.ranks.slice() });
+    };
+  });
+}
+
+function insertTalent(spec) {
+  if (!addingAt) return;
+  const tree = addingAt.tree, pos = addingAt.pos;
+  tree.talents.push({
+    id: uniqueId(tree, spec.name),
+    name: spec.name,
+    pos: pos,
+    icon: spec.icon,
+    maxRank: spec.maxRank,
+    reqPoints: rowOf(pos) * 5,
+    ranks: spec.ranks,
+  });
+  markDirty();
+  closeModal();
+  state = newState();
+  buildTrees();
+  update();
+}
+
+/* ---------- tree metadata ---------- */
+function editTree(tree) {
+  const el = document.getElementById("inspector");
+  inspecting = null;
+  el.innerHTML =
+    '<h3>Edit tree</h3>' +
+    '<div class="field"><label>Name</label><input id="t-name" value="' + esc(tree.name) + '"></div>' +
+    '<div class="field"><label>Icon (wowhead name)</label><div class="icon-row">' +
+      '<img id="t-icon-img" src="' + ICON(tree.icon) + '" alt="">' +
+      '<input id="t-icon" value="' + esc(tree.icon) + '"></div></div>' +
+    '<div class="field"><label>Background (talent tab id)</label><input id="t-bg" type="number" value="' + (tree.bg || "") + '"></div>' +
+    '<div class="drawer-actions"><button class="btn" id="t-close">Close</button></div>';
+
+  document.getElementById("t-name").oninput = e => { tree.name = e.target.value; markDirty(); update(); };
+  const ti = document.getElementById("t-icon");
+  ti.oninput = () => {
+    tree.icon = ti.value.trim();
+    document.getElementById("t-icon-img").src = ICON(tree.icon);
+    markDirty(); buildTrees(); update();
+  };
+  document.getElementById("t-bg").oninput = e => {
+    tree.bg = parseInt(e.target.value, 10) || tree.bg;
+    markDirty(); buildTrees(); update();
+  };
+  document.getElementById("t-close").onclick = closeInspector;
+  el.classList.add("open");
+}
+
+/* ---------- save / revert / export ---------- */
+async function saveDataset() {
+  const box = document.getElementById("edit-problems");
+  box.innerHTML = "";
+  try {
+    await apiCall("/talents", {
+      method: "PUT",
+      headers: Object.assign({ "content-type": "application/json" }, adminHeaders()),
+      body: JSON.stringify({ talents: DATA, note: document.getElementById("ed-note").value }),
+    });
+    dirty = false;
+    document.body.classList.remove("dirty");
+    refreshFingerprints();
+    document.getElementById("ed-note").value = "";
+    update();
+    toast("Talents saved — a version was recorded");
+  } catch (e) {
+    box.innerHTML = '<div class="problems">' + esc(e.message) +
+      (e.problems ? '<ul>' + e.problems.map(p => '<li>' + esc(p) + '</li>').join("") + '</ul>' : '') +
+      '</div>';
+    toast("Save failed");
+  }
+}
+
+async function revertDataset() {
+  try {
+    const res = await apiCall("/talents");
+    DATA = res.talents;
+    refreshFingerprints();
+    dirty = false;
+    document.body.classList.remove("dirty");
+    document.getElementById("edit-problems").innerHTML = "";
+    closeInspector();
+    state = newState();
+    buildClassBar(); buildTrees(); update();
+    toast("Reverted to the saved talents");
+  } catch (e) { toast(e.message); }
+}
+
+async function resetDataset() {
+  if (!confirm("Discard every edit and go back to the talents this build shipped with?")) return;
+  try {
+    await apiCall("/talents", { method: "DELETE", headers: adminHeaders() });
+    await revertDataset();
+    toast("Back to the shipped talents");
+  } catch (e) { toast(e.message); }
+}
+
+function exportDataset() {
+  const blob = new Blob([JSON.stringify(DATA, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "talents.json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  toast("Downloaded talents.json - drop it into src/ and rebuild");
+}
+
+/* ---------- drag and drop (edit mode) ---------- */
+let dragSrc = null;
+
+function wireDrag(el, tree, tal) {
+  el.draggable = true;
+  el.ondragstart = e => {
+    if (!editing) { e.preventDefault(); return; }
+    dragSrc = { treeId: tree.id, talentId: tal.id };
+    el.classList.add("dragging");
+    try { e.dataTransfer.setData("text/plain", tal.id); } catch (err) {}
+    e.dataTransfer.effectAllowed = "move";
+  };
+  el.ondragend = () => { dragSrc = null; el.classList.remove("dragging"); };
+  wireDrop(el, tree, tal.pos);
+}
+
+function wireDrop(el, tree, pos) {
+  el.ondragover = e => {
+    if (!editing || !dragSrc) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    el.classList.add("drop-to");
+  };
+  el.ondragleave = () => el.classList.remove("drop-to");
+  el.ondrop = e => {
+    e.preventDefault();
+    el.classList.remove("drop-to");
+    if (!editing || !dragSrc) return;
+    const src = dragSrc;
+    dragSrc = null;
+    moveTalent(src.treeId, src.talentId, tree.id, pos);
+  };
+}
+
+/* ---------------- boot ---------------- */
+document.getElementById("reset").onclick = resetAll;
+document.getElementById("link").onclick = copyLink;
+document.getElementById("save").onclick = saveBuild;
+document.getElementById("bname").onkeydown = e => { if (e.key === "Enter") saveBuild(); };
+document.getElementById("level").oninput = e => {
+  const v = parseInt(e.target.value, 10);
+  if (!isNaN(v)) { level = Math.max(10, Math.min(edition.maxLevel, v)); update(); }
+};
+document.getElementById("trees").oncontextmenu = e => e.preventDefault();
+document.getElementById("lockBtn").onclick = () => setLocked(!locked);
+document.getElementById("editBtn").onclick = () => setEditing(!editing);
+document.getElementById("ed-save").onclick = saveDataset;
+document.getElementById("ed-revert").onclick = revertDataset;
+document.getElementById("ed-export").onclick = exportDataset;
+document.getElementById("ed-reset").onclick = resetDataset;
+document.getElementById("ed-history").onclick = openHistory;
+document.getElementById("infoBtn").onclick = openInfo;
+document.getElementById("info-close").onclick = closeInfo;
+document.getElementById("info").onclick = e => { if (e.target.id === "info") closeInfo(); };
+document.getElementById("modal-close").onclick = closeModal;
+document.getElementById("modal").onclick = e => { if (e.target.id === "modal") closeModal(); };
+document.querySelectorAll("#modal .tab").forEach(t => { t.onclick = () => showTab(t.dataset.tab); });
+addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  if (document.getElementById("info").classList.contains("open")) closeInfo();
+  else if (document.getElementById("modal").classList.contains("open")) closeModal();
+  else closeInspector();
+});
+addEventListener("hashchange", () => {
+  const h = location.hash.slice(1);
+  if (h && h !== encode()) decode(h);
+});
+
+// /b/<id> is a saved build's share link; anything else may carry a #code
+const shareId = ONLINE && location.pathname.indexOf("/b/") === 0
+  ? location.pathname.slice(3)
+  : null;
+
+async function boot() {
+  // the server's dataset wins, so edits show up for everyone who loads the page
+  if (ONLINE) {
+    try {
+      const [cfg, ds] = await Promise.all([
+        apiCall("/config", { headers: adminHeaders() }),
+        apiCall("/talents"),
+      ]);
+      CONFIG = cfg;
+      if (typeof cfg.localBuilds === "boolean") LOCAL_BUILDS = cfg.localBuilds;
+      if (ds && ds.talents) DATA = ds.talents;
+    } catch (e) {
+      // no server, or it is unhappy - carry on with the talents baked into the page
+    }
+  }
+  const wantsEdit = CONFIG.editMode && /[?&]edit=1(&|$)/.test(location.search);
+
+  // read the code first: selecting an edition rewrites the hash to the empty build
+  const code = location.hash.slice(1);
+
+  // ?ed=forever picks an edition without needing a build code; a code names its own
+  const asked = new URLSearchParams(location.search).get("ed");
+  selectEdition((asked && editionById(asked.toLowerCase())) || EDITIONS[0]);
+  if (!decode(code)) selectClass(klass);
+
+  if (shareId) {
+    try {
+      const b = await apiCall("/builds/" + encodeURIComponent(shareId));
+      if (decode(b.code)) {
+        document.getElementById("bname").value = b.name;
+        toast('Loaded "' + b.name + '"');
+      }
+    } catch (e) {
+      toast("Could not load that build: " + e.message);
+    }
+  }
+  renderSaved();
+  if (wantsEdit) setEditing(true);
+
+  // first time here, say what the place is - once, then never again
+  try {
+    if (!localStorage.getItem("cplus-seen")) {
+      localStorage.setItem("cplus-seen", "1");
+      if (!code && !shareId) openInfo();
+    }
+  } catch (e) { /* private browsing - they just do not get the greeting */ }
+}
+
+boot();
+</script>
+</body>
+</html>

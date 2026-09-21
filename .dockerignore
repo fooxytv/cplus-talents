@@ -1,0 +1,8 @@
+data
+node_modules
+.git
+test
+tools/.cache
+index.html
+*.md
+deploy

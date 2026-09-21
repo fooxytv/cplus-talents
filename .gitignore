@@ -1,0 +1,8 @@
+data/
+tools/.cache/
+node_modules/
+deploy/.env
+
+# built from src/ by `node build.js` - regenerated, so not worth versioning
+# (the Dockerfile builds it during the image build)
+index.html
