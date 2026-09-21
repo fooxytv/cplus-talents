@@ -103,10 +103,17 @@ button{font:inherit; color:inherit}
   padding:6px 12px; background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
   border-radius:3px; cursor:pointer; font-size:12px; color:#cfcabd; white-space:nowrap;
 }
-.btn:hover{border-color:#5d5e68; color:#fff; background:linear-gradient(#2e3037,#1c1d22)}
+/* Gold edge to match the palette, but the text stays light: the active state
+   below is gold text, and hover must not be mistaken for it on a toggle. */
+.btn:hover{
+  border-color:#7a6828; color:#efe7d2;
+  background:linear-gradient(#2d2e35,#1b1c21);
+  box-shadow:0 0 9px -4px rgba(255,209,0,.5);
+}
 .btn:active{transform:translateY(1px)}
 .btn:disabled{opacity:.4; cursor:not-allowed}
 .btn:disabled:hover{border-color:#3a3b42; color:#cfcabd; background:linear-gradient(#25262c,#16171b); box-shadow:none}
+.btn.danger:hover{border-color:#a34848; color:#ffb3b3; box-shadow:0 0 9px -4px rgba(255,80,80,.5)}
 .btn.on{border-color:#8a7226; color:var(--gold); box-shadow:0 0 10px -3px rgba(255,209,0,.65)}
 .lock-badge{
   display:none; align-items:center; gap:5px; font:10px/1 var(--font);
@@ -623,6 +630,7 @@ body.editing .tree-edit{display:block}
     <div class="stat">Remaining <b id="left">51</b></div>
     <div class="stat" id="doneAt" style="display:none">Complete at <b>&nbsp;</b></div>
     <button class="btn gold" id="link">Copy link</button>
+    <button class="btn" id="addonBtn" title="Copy this build for the in-game addon">For game</button>
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">Lock</button>
     <button class="btn" id="reset">Reset all</button>
@@ -1631,6 +1639,45 @@ function copyLink() {
       : boardOn ? "Link to this comparison copied" : "Link copied to clipboard");
 }
 
+
+/* ================= export for the addon ================= */
+
+/**
+ * A build in a form the companion addon can apply in game.
+ *
+ *   cpt1|forever|WARRIOR|Fury 31/20|Booming Voice=5,Cruelty=5,...
+ *
+ * Talents travel by NAME, not by position. The addon looks each one up with
+ * GetTalentInfo at apply time, so it cannot land points on the wrong talent if
+ * this page's tree order ever differs from the client's - which would cost real
+ * respec gold to undo.
+ */
+const ADDON_PREFIX = "cpt1";
+const GAME_CLASS = k => k.toUpperCase().replace(/[^A-Z]/g, "");
+
+function exportForAddon(name) {
+  const parts = [];
+  for (const tree of trees()) {
+    for (const tal of sortedTalents(tree)) {
+      const r = state[tree.id][tal.id];
+      // "=" and "," separate the list, and "|" separates the fields
+      if (r > 0) parts.push(tal.name.replace(/[|,=]/g, " ") + "=" + r);
+    }
+  }
+  return [
+    ADDON_PREFIX,
+    edition.id,
+    GAME_CLASS(klass),
+    (name || klass + " " + totalPoints()).replace(/\|/g, " "),
+    parts.join(","),
+  ].join("|");
+}
+
+function copyForAddon() {
+  if (!totalPoints()) { toast("Spend some points first"); return; }
+  const name = (document.getElementById("bname").value || "").trim();
+  copy(exportForAddon(name), "Copied — in game: /cplus import, then paste");
+}
 
 /* ================= spellbook ================= */
 
@@ -2826,6 +2873,7 @@ const BTN_ICONS = {
   link: "inv_misc_enggizmos_27",
   reset: "spell_arcane_massdispel",
   lockBtn: "inv_misc_key_03",
+  addonBtn: "inv_misc_enggizmos_swissarmy",
 };
 /** Changes a button's words without disturbing the icon beside them. */
 function setBtnLabel(id, text) {
@@ -2853,6 +2901,7 @@ function iconifyButtons() {
 }
 iconifyButtons();
 
+document.getElementById("addonBtn").onclick = copyForAddon;
 document.getElementById("bookBtn").onclick = () => setBook(!bookOn);
 document.getElementById("bk-talents").onchange = e => { bookShowTalents = e.target.checked; renderBook(); };
 const bkSearch = document.getElementById("bk-search");

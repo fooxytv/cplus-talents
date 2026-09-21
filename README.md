@@ -45,6 +45,7 @@ There are no npm dependencies anywhere — `node:http` and `node:sqlite` come wi
 | --- | --- |
 | Edition logo (top row) | Switches which trees you are looking at |
 | Spellbook | What this class learns, and at what level |
+| For game | Copies the build for the in-game addon |
 | Compare | Opens the board — trees from any editions, side by side |
 | Info | What the site is, and a box for suggestions |
 | Left click | Spend one point |
@@ -67,6 +68,26 @@ Under the trees, each spec gets its icon, its points and a bar. The bar is measu
 against the points that reach the **bottom of that tree** — 31 in Classic, so a full
 bar means the capstone is paid for. The deepest tree is outlined, since that is the
 spec you are actually playing.
+
+## Taking a build into the game
+
+**For game** copies the build in a form the companion addon in [`addon/`](addon/)
+can apply. Classic has no native talent import — retail's loadout strings do not
+exist here — so an addon is the only way to have the points spent for you.
+
+```
+cpt1|forever|WARRIOR|Fury 31/20|Booming Voice=5,Cruelty=5,...
+```
+
+**Talents travel by name, not by position.** The addon resolves each one with
+`GetTalentInfo` when you apply, so it cannot land points on the wrong talent if
+this page's tree order ever differs from the client's — which would cost real
+respec gold to undo. Nothing is spent until you press Apply, and any problem
+refuses the whole build rather than doing half of it.
+
+Several builds can be kept as loadouts in game and switched between. See
+[addon/README.md](addon/README.md) — including the warning that it has not yet
+been run in a live client.
 
 ## Spellbook
 
@@ -440,6 +461,9 @@ src/talents.json    the Classic+ talents — the editable ones
 src/editions/*.json the read-only editions (forever.json, ...)
 src/logos/*.png     expansion logos for the switcher, inlined by the build
 src/edition-icons/*.png  round expansion badges for the compare board
+addon/CPlusTalents/ the in-game addon that applies an exported build
+addon/test-addon.lua     36 assertions against a stubbed WoW client
+addon/test-roundtrip.js  the page's export, parsed by the real addon
 src/spellbooks/*.json  what each class learns and when, served on demand
 tools/build-spellbook.js  regenerates a spellbook from Wowhead's class pages
 src/favicon.svg     the tab icon, inlined by the build as a data URI
@@ -459,6 +483,8 @@ After any edit:
 ```bash
 node build.js                 # validates the data, then writes index.html
 node test/run-tests.js        # 139 assertions against the real page
+lua  addon/test-addon.lua     # 36 assertions against a stubbed WoW client
+node addon/test-roundtrip.js  # page export -> addon parse, so the two cannot drift
 docker compose up -d --build  # if you are running it in Docker
 ```
 

@@ -1,0 +1,9 @@
+## Interface: 11507
+## Title: CPlus Talents
+## Notes: Import talent builds from a CPlus talent calculator and apply them.
+## Author: fooxytv
+## Version: 1.0.0
+## SavedVariablesPerCharacter: CPlusTalentsDB
+## IconTexture: Interface\Icons\inv_misc_book_09
+
+CPlusTalents.lua
