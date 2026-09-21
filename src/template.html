@@ -96,6 +96,7 @@ button{font:inherit; color:inherit}
 .readout{margin-left:auto; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
 .stat{font-size:12px; color:#83838a; white-space:nowrap}
 .stat b{color:#fff; font-size:15px; font-weight:600}
+#doneAt.over b{color:var(--red)}
 .stat b.over{color:var(--red)}
 .lvl{display:flex; align-items:center; gap:7px}
 .lvl input{
@@ -513,6 +514,7 @@ body.editing .tree-edit{display:block}
     <div class="lvl"><span class="stat">Level</span><input id="level" type="number" min="10" max="60" value="60"></div>
     <div class="stat">Points spent <b id="spent">0</b></div>
     <div class="stat">Remaining <b id="left">51</b></div>
+    <div class="stat" id="doneAt" style="display:none">Complete at <b>&nbsp;</b></div>
     <button class="btn gold" id="link">Copy link</button>
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">&#128275; Lock</button>
@@ -638,6 +640,16 @@ const col = p => +p[1] - 1;
 let klass = "Warrior";
 let level = 60;
 let state = {};   // state[treeId][talentId] = rank
+/**
+ * One build kept per class, per edition, so flicking through classes to compare
+ * does not throw away what you were in the middle of. stateKey records which of
+ * them `state` currently is, so a stash always lands in the right slot even when
+ * the edition changed on the way.
+ */
+const drafts = {};
+let stateKey = null;
+const draftKey = (edId, k) => edId + "::" + k;
+function stashDraft() { if (stateKey) drafts[stateKey] = state; }
 let nodes = {};   // nodes[treeId][talentId] = {el, rankEl}
 let arrows = [];  // {tree, talent, path, head}
 let hovered = null;
@@ -981,6 +993,23 @@ function update() {
   leftEl.textContent = avail - total;
   leftEl.classList.toggle("over", total > avail);
 
+  // the level this build is finally finished at - one point per level from the
+  // first, so the last point goes in at FIRST_POINT_LEVEL + total - 1
+  const doneAt = document.getElementById("doneAt");
+  if (total > 0) {
+    const level = FIRST_POINT_LEVEL + total - 1;
+    doneAt.style.display = "";
+    doneAt.querySelector("b").textContent = level;
+    doneAt.classList.toggle("over", level > edition.maxLevel);
+    doneAt.title = level > edition.maxLevel
+      ? "More points than " + edition.name + " gives you by level " + edition.maxLevel
+      : "Spending one point per level from " + FIRST_POINT_LEVEL +
+        ", the last one goes in at level " + level;
+  } else {
+    doneAt.style.display = "none";
+  }
+
+  stashDraft();     // so the draft is whatever is on screen, not a stale copy
   renderSpecBar();
   renderLevels();
 
@@ -1156,13 +1185,28 @@ function resetAll() {
 }
 
 function selectClass(k) {
+  stashDraft();                     // keep whatever we were just looking at
   klass = k;
   // drives the ring around each spec icon
   document.documentElement.style.setProperty("--class-color", CLASS_COLOR[k]);
   buildClassBar();
-  state = newState();
+
+  stateKey = draftKey(edition.id, k);
+  const kept = drafts[stateKey];
+  // a kept build is only good while the talents behind it are the same ones
+  state = kept && fitsCurrentTalents(kept) ? kept : newState();
+
   buildTrees();
   update();
+}
+
+/** A draft from before an edit-mode change would index the wrong talents. */
+function fitsCurrentTalents(st) {
+  for (const tree of trees()) {
+    if (!st[tree.id]) return false;
+    for (const tal of tree.talents) if (typeof st[tree.id][tal.id] !== "number") return false;
+  }
+  return true;
 }
 
 /* ---------------- lock ---------------- */

@@ -143,6 +143,54 @@ const suite = `
   learn(fury, tal(fury, 'Bloodthirst'));
   ok('capstone blocked without its prereq', state[fury.id]['Bloodthirst'] === 0);
 
+  /* ---- per-class drafts ---- */
+  selectEdition(EDITIONS[0]);
+  selectClass('Warrior'); level = 60; resetAll();
+  let wArms = T('Arms');
+  learn(wArms, tal(wArms, 'Improved Heroic Strike'), true);   // 3 points
+  const warriorPts = totalPoints();
+
+  selectClass('Mage');
+  ok('a fresh class starts empty', totalPoints() === 0);
+  const mFire = T('Fire');
+  learn(mFire, mFire.talents.filter(t => t.reqPoints === 0)[0], true);
+  const magePts = totalPoints();
+  ok('the new class can be built on', magePts > 0);
+
+  selectClass('Warrior');
+  ok('going back keeps the first build', totalPoints() === warriorPts);
+  selectClass('Mage');
+  ok('and the second one too', totalPoints() === magePts);
+
+  // drafts are per edition as well as per class
+  selectEdition(editionById('forever'));
+  ok('the same class in another edition starts empty', totalPoints() === 0);
+  selectEdition(EDITIONS[0]);
+  ok('and coming back still has the Classic+ build', totalPoints() === magePts);
+
+  selectClass('Warrior'); resetAll();
+  ok('reset clears only the class it is on', totalPoints() === 0);
+  selectClass('Mage');
+  ok('the other class is untouched by that reset', totalPoints() === magePts);
+  resetAll(); selectClass('Warrior'); resetAll();
+
+  /* ---- level needed ---- */
+  const doneAt = document.getElementById('doneAt');
+  ok('no finish level with nothing spent', doneAt.style.display === 'none');
+
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);     // 3 points
+  ok('the finish level shows once points are in', doneAt.style.display !== 'none');
+  ok('3 points finishes at level 12',
+    doneAt.querySelector('b').textContent === '12', doneAt.querySelector('b').textContent);
+  ok('it agrees with the levelling path',
+    doneAt.querySelector('b').textContent === String(levelPath()[levelPath().length - 1].level));
+
+  learn(arms, tal(arms, 'Deflection'), true);                 // 5 more, 8 total
+  ok('it tracks as points go in', doneAt.querySelector('b').textContent === '17');
+  ok('and is not flagged as over the cap', !doneAt.classList.contains('over'));
+  resetAll();
+
   /* ---- favicon ---- */
   const icon = document.querySelector('link[rel="icon"]');
   ok('the page declares a tab icon', Boolean(icon));
