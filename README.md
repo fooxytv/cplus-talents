@@ -73,6 +73,10 @@ spec you are actually playing.
 **Spellbook** lists a class's abilities by the level they are learned at, with
 icons and tooltip text. `#book:forever:warrior` links straight to one.
 
+The search box filters by name, rank and description, highlighting the hit. A
+search looks through everything, granted abilities included — when you are
+hunting for one ability by name you do not want it hidden behind a checkbox.
+
 By default it shows what a **trainer teaches you**. Everything else — talent
 spells, and abilities simply granted on levelling — has no level of its own and
 would otherwise pile up under level 1, so those are behind *show granted &
@@ -448,7 +452,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 136 assertions against the real page
+node test/run-tests.js        # 139 assertions against the real page
 docker compose up -d --build  # if you are running it in Docker
 ```
 

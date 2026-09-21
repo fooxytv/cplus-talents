@@ -216,6 +216,24 @@ const suite = `
   ok('a book link for an unknown edition is refused', decodeBook('book:nosuch:druid') === false);
   selectClass('Warrior'); resetAll();
 
+  // search
+  ok('a match is wrapped for highlighting', (() => {
+    const el = document.createElement('div');
+    markMatch(el, 'Battle Shout', 'shout');
+    return el.querySelector('mark') && el.querySelector('mark').textContent === 'Shout' &&
+           el.textContent === 'Battle Shout';
+  })());
+  ok('no needle leaves the text alone', (() => {
+    const el = document.createElement('div');
+    markMatch(el, 'Battle Shout', '');
+    return !el.querySelector('mark') && el.textContent === 'Battle Shout';
+  })());
+  ok('markMatch never interprets markup', (() => {
+    const el = document.createElement('div');
+    markMatch(el, '<img src=x onerror=1> Shout', 'shout');
+    return el.querySelector('img') === null && el.textContent.indexOf('<img') === 0;
+  })());
+
   /* ---- compare board ---- */
   selectEdition(EDITIONS[0]); selectClass('Warrior'); level = 60; resetAll();
   arms = T('Arms');
