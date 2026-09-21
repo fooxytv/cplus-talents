@@ -310,6 +310,10 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
   user-select:none;
 }
 .slot-head .grip:active{cursor:grabbing}
+.slot-head .edicon{
+  width:21px; height:21px; object-fit:contain; flex:none;
+  filter:saturate(.9);
+}
 .slot-head .edtag{
   font:9px/1 var(--font); letter-spacing:1.1px; text-transform:uppercase;
   color:var(--head); border:1px solid #6a5a22; border-radius:2px;
@@ -699,6 +703,8 @@ body.editing .tree-edit{display:block}
 let DATA = __TALENT_DATA__;
 const SHIPPED_EDITIONS = __EDITIONS__;
 const LOGOS = __LOGOS__;   // expansion artwork for the switcher, inlined by build.js
+const ED_ICONS = __EDITION_ICONS__;   // the small round badges the board headers use
+const FAVICON = "__FAVICON__";
 let CONFIG = { editMode: false, edited: false };
 let FINGERPRINTS = {};   // per class, for the active edition: which layout a code belongs to
 
@@ -1887,16 +1893,25 @@ function renderBoard() {
     // header: where this tree came from, its points, and the handles
     const head = document.createElement("div");
     head.className = "slot-head";
-    // the expansion logos are wordmarks - unreadable at header size, so the
-    // edition is spelled out instead
+    // the wordmark logos are unreadable this small, so each edition gets its
+    // round badge instead; Classic+ is not one of Blizzard's, so it keeps a tag
+    const badge = ED_ICONS[p.ed.id] || (p.ed.id === CUSTOM ? FAVICON : null);
     head.innerHTML = '<span class="grip" title="Drag to reorder">&#10303;</span>' +
-      '<span class="edtag"></span><span class="who"></span><span class="pts"></span>' +
+      (badge ? '<img class="edicon" alt="">' : '<span class="edtag"></span>') +
+      '<span class="who"></span><span class="pts"></span>' +
       '<button class="x" title="Remove this panel">&times;</button>';
-    head.querySelector(".edtag").textContent = p.ed.name;
+    if (badge) {
+      const bi = head.querySelector(".edicon");
+      bi.src = badge;
+      bi.alt = p.ed.name;
+      bi.title = p.ed.name;
+    } else {
+      head.querySelector(".edtag").textContent = p.ed.name;
+    }
     const who = head.querySelector(".who");
     who.innerHTML = "<b></b>";
     who.querySelector("b").textContent = tree.name;
-    who.appendChild(document.createTextNode(" · " + p.klass));
+    who.appendChild(document.createTextNode(" · " + p.klass + " · " + p.ed.name));
     head.querySelector(".pts").textContent = panelPoints(p);
     head.querySelector(".x").onclick = () => { board.splice(i, 1); syncBoard(); };
     slot.appendChild(head);

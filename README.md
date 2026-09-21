@@ -117,6 +117,11 @@ anywhere: Forever's Arms next to Vanilla's Arms next to Wrath's, or a Cataclysm
 Death Knight tree beside a Classic+ one. `×` removes a panel, `+` adds one, and
 the grip reorders them.
 
+Each panel is headed by its edition's round badge — the wordmark logos used by
+the switcher are unreadable at that size. Classic+ has no Blizzard badge, so it
+wears the page's own favicon. The edition is named in the line beside it too, so
+nothing is lost if an image does not load.
+
 **Each panel is its own little build.** Its own points, its own tier gates, its own
 cap taken from the edition it came from — because a 41-point Cataclysm tree and a
 71-point Wrath tree do not share a budget in any meaningful way. Clicking works
@@ -434,6 +439,7 @@ src/template.html   the page without the talent data
 src/talents.json    the Classic+ talents — the editable ones
 src/editions/*.json the read-only editions (forever.json, ...)
 src/logos/*.png     expansion logos for the switcher, inlined by the build
+src/edition-icons/*.png  round expansion badges for the compare board
 src/spellbooks/*.json  what each class learns and when, served on demand
 tools/build-spellbook.js  regenerates a spellbook from Wowhead's class pages
 src/favicon.svg     the tab icon, inlined by the build as a data URI

@@ -24,6 +24,7 @@ const dataPath = path.join(root, "src", "talents.json");
 const editionDir = path.join(root, "src", "editions");
 const logoDir = path.join(root, "src", "logos");
 const faviconPath = path.join(root, "src", "favicon.svg");
+const edIconDir = path.join(root, "src", "edition-icons");
 const outPath = path.join(root, "index.html");
 
 // the order the switcher shows them in; anything else found is appended
@@ -68,6 +69,15 @@ if (fs.existsSync(logoDir)) {
 const missingLogos = editions.filter(e => !logos[e.id]).map(e => e.id);
 if (missingLogos.length) console.warn(`  no logo for ${missingLogos.join(", ")} - those tabs fall back to text`);
 
+// Small round expansion badges for the compare board's panel headers.
+const edIcons = {};
+if (fs.existsSync(edIconDir)) {
+  for (const file of fs.readdirSync(edIconDir).filter(f => f.endsWith(".png"))) {
+    edIcons[path.basename(file, ".png")] =
+      "data:image/png;base64," + fs.readFileSync(path.join(edIconDir, file)).toString("base64");
+  }
+}
+
 // The tab icon, inlined as a data URI: no extra request, and it still shows when
 // index.html is opened straight off disk. Percent-encoded rather than base64 so it
 // stays readable and does not grow by a third.
@@ -82,7 +92,7 @@ if (fs.existsSync(faviconPath)) {
   console.warn("  src/favicon.svg is missing - the page will have no tab icon");
 }
 
-for (const token of ["__TALENT_DATA__", "__EDITIONS__", "__LOGOS__", "__FAVICON__"]) {
+for (const token of ["__TALENT_DATA__", "__EDITIONS__", "__LOGOS__", "__EDITION_ICONS__", "__FAVICON__"]) {
   if (!tpl.includes(token)) {
     console.error(`src/template.html is missing the ${token} placeholder`);
     process.exit(1);
@@ -93,6 +103,7 @@ fs.writeFileSync(outPath, tpl
   .replace("__TALENT_DATA__", JSON.stringify(data))
   .replace("__EDITIONS__", JSON.stringify(editions))
   .replace("__LOGOS__", JSON.stringify(logos))
+  .replace("__EDITION_ICONS__", JSON.stringify(edIcons))
   .replace("__FAVICON__", favicon));
 
 const count = d => Object.values(d).reduce(
