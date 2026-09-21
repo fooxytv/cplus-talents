@@ -49,6 +49,17 @@ button{font:inherit; color:inherit}
   .bk-find input{width:100%}
   .board-bar .hint{display:none}
 }
+/*
+ * On a phone the three trees stack instead of sitting in a sideways strip:
+ * scrolling down through them is natural, scrolling a strip sideways is not.
+ * Above this a tablet still fits two at once, where the strip is worth keeping.
+ */
+@media (max-width: 700px) {
+  .trees{
+    flex-direction:column; align-items:center;
+    overflow-x:visible; gap:16px;
+  }
+}
 @media (max-width: 520px) {
   .ed.art img{width:84px; height:32px}
   .cls{width:48px}

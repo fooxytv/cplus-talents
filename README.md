@@ -549,8 +549,10 @@ Notes on the fields that bite:
 ## Narrow screens
 
 Builds are shared as links, so a good share of visitors arrive on a phone. The
-page works down to 390px: the bars wrap, and the three trees scroll sideways
-inside their own strip rather than dragging the document with them.
+page works down to 390px: the bars wrap, and the three trees **stack** below
+700px — scrolling down through them is natural on a phone, scrolling a strip
+sideways is not. Between 700px and full width they stay in a row that scrolls
+inside its own strip rather than dragging the document with it.
 
 **The talent grid keeps its cell size at every width.** `--cell` is read once at
 load and the prerequisite arrows are drawn in those pixels, so shrinking the grid
