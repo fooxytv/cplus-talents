@@ -250,6 +250,15 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
   transition:width .18s ease-out;
 }
 .summary .hint{flex-basis:100%; text-align:center; color:#6e6f77}
+/* ---------- toolbar button icons ---------- */
+.btn.ico{display:inline-flex; align-items:center; gap:7px}
+.btn.ico img{
+  width:18px; height:18px; border-radius:2px; box-shadow:0 0 0 1px #000;
+  filter:saturate(.85) brightness(.92); transition:filter .12s;
+}
+.btn.ico:hover img, .btn.ico.on img{filter:none}
+.btn.ico:disabled img{filter:grayscale(1) brightness(.6)}
+
 /* ---------- spellbook ---------- */
 .bk-find{position:relative; display:flex; align-items:center}
 .bk-find input{
@@ -615,7 +624,7 @@ body.editing .tree-edit{display:block}
     <div class="stat" id="doneAt" style="display:none">Complete at <b>&nbsp;</b></div>
     <button class="btn gold" id="link">Copy link</button>
     <span class="lock-badge">&#128274; Locked</span>
-    <button class="btn" id="lockBtn">&#128275; Lock</button>
+    <button class="btn" id="lockBtn">Lock</button>
     <button class="btn" id="reset">Reset all</button>
     <button class="btn" id="bookBtn">Spellbook</button>
     <button class="btn" id="cmpBtn">Compare</button>
@@ -1337,7 +1346,7 @@ function setLocked(on) {
   document.body.classList.toggle("locked", on);
 
   const btn = document.getElementById("lockBtn");
-  btn.innerHTML = on ? "&#128274; Unlock" : "&#128275; Lock";
+  setBtnLabel("lockBtn", on ? "Unlock" : "Lock");
   btn.classList.toggle("on", on);
   btn.title = on
     ? "Unlock to change this build"
@@ -1691,7 +1700,7 @@ function setBook(on) {
   document.getElementById("summary").style.display = on ? "none" : "";
   document.getElementById("levels").style.display = on ? "none" : "";
   document.querySelector(".builds").style.display = on ? "none" : "";
-  document.getElementById("bookBtn").textContent = on ? "Leave spellbook" : "Spellbook";
+  setBtnLabel("bookBtn", on ? "Leave spellbook" : "Spellbook");
   document.getElementById("bookBtn").classList.toggle("on", on);
 
   // the readout is about a build; the class row still is not, so it stays
@@ -2192,7 +2201,7 @@ function setCompare(on, keepBoard) {
   document.getElementById("levels").style.display = on ? "none" : "";
   document.querySelector(".builds").style.display = on ? "none" : "";
   document.body.classList.toggle("comparing", on);
-  document.getElementById("cmpBtn").textContent = on ? "Leave compare" : "Compare";
+  setBtnLabel("cmpBtn", on ? "Leave compare" : "Compare");
   document.getElementById("cmpBtn").classList.toggle("on", on);
 
   // the readout is about one build, which the board is not
@@ -2369,7 +2378,7 @@ function setEditing(on) {
   if (on && !isCustom()) { toast("Switch to the Classic+ talents to edit them"); return; }
   editing = on;
   document.body.classList.toggle("editing", on);
-  document.getElementById("editBtn").textContent = on ? "Leave edit mode" : "Edit mode";
+  setBtnLabel("editBtn", on ? "Leave edit mode" : "Edit mode");
   closeInspector();
   if (!on) closeModal();
   buildTrees();
@@ -2805,6 +2814,45 @@ document.getElementById("ed-revert").onclick = revertDataset;
 document.getElementById("ed-export").onclick = exportDataset;
 document.getElementById("ed-reset").onclick = resetDataset;
 document.getElementById("ed-history").onclick = openHistory;
+/**
+ * Toolbar buttons get a WoW icon beside their label. The label stays: an icon
+ * alone is a guessing game, and these all do quite different things.
+ */
+const BTN_ICONS = {
+  bookBtn: "inv_misc_book_09",
+  cmpBtn: "inv_misc_spyglass_02",
+  infoBtn: "inv_misc_note_01",
+  editBtn: "inv_misc_gear_01",
+  link: "inv_misc_enggizmos_27",
+  reset: "spell_arcane_massdispel",
+  lockBtn: "inv_misc_key_03",
+};
+/** Changes a button's words without disturbing the icon beside them. */
+function setBtnLabel(id, text) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  const span = b.querySelector("span");
+  if (span) span.textContent = text; else b.textContent = text;
+}
+
+function iconifyButtons() {
+  for (const id of Object.keys(BTN_ICONS)) {
+    const b = document.getElementById(id);
+    if (!b || b.querySelector("img")) continue;
+    const label = b.textContent;
+    b.textContent = "";
+    b.classList.add("ico");
+    const img = document.createElement("img");
+    img.src = ICON(BTN_ICONS[id]);
+    img.alt = "";
+    const span = document.createElement("span");
+    span.textContent = label;
+    b.appendChild(img);
+    b.appendChild(span);
+  }
+}
+iconifyButtons();
+
 document.getElementById("bookBtn").onclick = () => setBook(!bookOn);
 document.getElementById("bk-talents").onchange = e => { bookShowTalents = e.target.checked; renderBook(); };
 const bkSearch = document.getElementById("bk-search");
