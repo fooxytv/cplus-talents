@@ -100,11 +100,18 @@ screenshot) has handed over write access to the trees.
 
 ## Updating
 
+The server is a clone of the repo, so an update is a pull:
+
 ```bash
-cd ~/git/workspace/cplus-talents
-# copy the new code up, then:
-cd deploy && docker compose --profile tunnel up -d --build
+~/git/workspace/cplus-talents/deploy/update.sh
 ```
+
+That pulls `main` (`--ff-only`, so a diverged checkout stops rather than quietly
+merging), rebuilds, waits for the health check, and fails loudly if `editMode`
+comes back `true` for an anonymous request — which would mean `ADMIN_KEY` had
+stopped reaching the container.
+
+`.env` is gitignored and never touched by a pull.
 
 The named volume `talent-data` survives rebuilds. `docker compose down` keeps it;
 `docker compose down -v` deletes the suggestions and the edited trees.
