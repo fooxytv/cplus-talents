@@ -138,6 +138,11 @@ anywhere: Forever's Arms next to Vanilla's Arms next to Wrath's, or a Cataclysm
 Death Knight tree beside a Classic+ one. `×` removes a panel, `+` adds one, and
 the grip reorders them.
 
+Panels lay out **three across, then down**, so six trees fit on a normal screen
+as a 3×2 grid and anything beyond that flows onto the next row. A row that
+simply wrapped at whatever fitted put six shoulder to shoulder on a wide screen,
+which is hard to read across. Two columns below 940px, one below 640px.
+
 Each panel is headed by its edition's round badge — the wordmark logos used by
 the switcher are unreadable at that size. Classic+ has no Blizzard badge, so it
 wears the page's own favicon. The edition is named in the line beside it too, so
@@ -490,7 +495,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 151 assertions against the real page
+node test/run-tests.js        # 155 assertions against the real page
 lua  addon/test-addon.lua     # 36 assertions against a stubbed WoW client
 node addon/test-roundtrip.js  # page export -> addon parse, so the two cannot drift
 docker compose up -d --build  # if you are running it in Docker

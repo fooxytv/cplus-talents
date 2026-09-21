@@ -296,6 +296,23 @@ const suite = `
   board.splice(0, 1); renderBoard();
   ok('a panel can be removed', board.length === 3);
 
+  // the board lays out as a grid, so panels flow onto the next row instead of
+  // being squeezed shoulder to shoulder in one long line
+  board = [];
+  for (const id of ['forever', 'classic', 'tbc', 'wotlk', 'cata']) {
+    const p = newPanel(id, 'Warrior', 'Arms');
+    if (p) board.push(p);
+  }
+  renderBoard();
+  const boardEl = document.getElementById('board');
+  const cols = getComputedStyle(boardEl).gridTemplateColumns.split(' ').filter(Boolean).length;
+  ok('the board is a grid', getComputedStyle(boardEl).display === 'grid');
+  ok('it is at most three columns wide', cols > 0 && cols <= 3, cols);
+  ok('every panel is on it, however many rows that takes',
+    document.querySelectorAll('.board .slot').length === board.length);
+  ok('and the add button comes after them',
+    document.querySelectorAll('.board .add').length === 1);
+
   ok('rubbish cmp codes are refused', decodeBoard('cmp:nosuch.warrior.arms') === false);
 
   setCompare(false);
