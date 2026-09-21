@@ -453,6 +453,48 @@ const suite = `
   learn(arms, tal(arms, 'Anger Management'));
   path = levelPath();
 
+  // a build that arrived from a link gets a seeded history, so a talent clicked
+  // afterwards is appended rather than dragging the whole path back to grid order
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);   // 3 points, row a
+  const seedCode = encode();
+  resetAll();
+  decode(seedCode);
+  ok('a link gets a history to build on', levelPath().length === totalPoints());
+
+  learn(arms, tal(arms, 'Deflection'), true);               // clicked after loading
+  path = levelPath();
+  ok('a click after a link is appended, not sorted in',
+    path[path.length - 1].tal.name === 'Deflection' &&
+    path[0].tal.name === 'Improved Heroic Strike',
+    path.map(s => s.tal.name).join());
+  ok('and the loaded points keep their levels',
+    path[0].level === 10 && path[2].level === 12);
+
+  // a deep talent clicked as soon as it unlocks stays where it was taken
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);
+  learn(arms, tal(arms, 'Deflection'), true);
+  const deepCode = encode();
+  resetAll();
+  decode(deepCode);
+  const tm2 = tal(T('Arms'), 'Tactical Mastery');
+  learn(T('Arms'), tm2);
+  const posAfter = levelPath().findIndex(s => s.tal.name === 'Tactical Mastery');
+  learn(T('Arms'), tal(T('Arms'), 'Improved Rend'), true);
+  ok('a deep talent does not slide to the end when more is spent after it',
+    levelPath().findIndex(s => s.tal.name === 'Tactical Mastery') === posAfter,
+    posAfter + ' -> ' + levelPath().findIndex(s => s.tal.name === 'Tactical Mastery'));
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);
+  learn(arms, tal(arms, 'Deflection'), true);
+  learn(arms, tal(arms, 'Tactical Mastery'), true);
+  learn(arms, tal(arms, 'Anger Management'));
+  path = levelPath();
+
   // and it survives a share code, which carries no ordering at all
   const pathCode = encode();
   resetAll();

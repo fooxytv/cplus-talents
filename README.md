@@ -173,10 +173,16 @@ does not matter, so reshuffling your picks into grid order told you nothing and 
 the goalposts while you worked.
 
 A share code carries ranks, not the order they went in, so a build arriving from a
-link has no history to show. There the order is **derived** instead: take the lowest
-unlocked rank still wanted, over and over, which fills top down, tier by tier,
-interleaving trees rather than finishing one first. That is one valid path among many,
-and not a recommendation about what to take first while levelling.
+link has no history to show. There the order is **derived**: take the lowest unlocked
+rank still wanted, over and over, which fills top down, tier by tier, interleaving
+trees rather than finishing one first. That is one valid path among many, and not a
+recommendation about what to take first while levelling.
+
+That derived order is then **kept as the build's history**, so anything you click
+afterwards is appended to it. Without that the record could never account for the
+whole build, and a single later click would be outnumbered and send the whole path
+back to grid order — which is how a capstone taken at point 31 came out shown as
+point 51.
 
 Either way every step passes the same tier and prerequisite rules a click does, so the
 path can be followed straight down without ever being stuck.
@@ -484,7 +490,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 147 assertions against the real page
+node test/run-tests.js        # 151 assertions against the real page
 lua  addon/test-addon.lua     # 36 assertions against a stubbed WoW client
 node addon/test-roundtrip.js  # page export -> addon parse, so the two cannot drift
 docker compose up -d --build  # if you are running it in Docker

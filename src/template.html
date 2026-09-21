@@ -1301,9 +1301,14 @@ const TREE_TINT = ["#e0603a", "#4aa3d8", "#7ac943"];   // one per tree, left to 
  * accept is reachable this way, because that is the same rule clicking enforces.
  */
 function levelPath() {
-  const recorded = pathFromOrder();
-  if (recorded) return recorded;
+  return pathFromOrder() || derivedPath();
+}
 
+/**
+ * A legal order worked out from the build alone, for when there is no record of
+ * how it was actually built - a shared link carries ranks, not their order.
+ */
+function derivedPath() {
   const spent = {};
   for (const tree of trees()) {
     spent[tree.id] = {};
@@ -1329,9 +1334,20 @@ function levelPath() {
 }
 
 /**
+ * Seeds the record from a derived order, for a build that arrived without one.
+ * Without this the record could never account for the whole build, so a single
+ * later click would be outnumbered and the whole path would fall back to the
+ * derived order - which is how a capstone clicked at point 31 ended up shown
+ * as point 51.
+ */
+function seedOrder() {
+  spendOrder = derivedPath().map(step => orderKey(step.tree, step.tal));
+}
+
+/**
  * The path as it was actually clicked. Returns null when the record does not
- * account for exactly the build on screen - after loading a link, say - and the
- * derived order is used instead.
+ * account for exactly the build on screen, which means it is stale - the
+ * talents changed underneath it - and a fresh derived order is used instead.
  */
 function pathFromOrder() {
   if (spendOrder.length !== totalPoints()) return null;
@@ -1446,6 +1462,7 @@ function selectClass(k) {
   const usable = kept && kept.st && fitsCurrentTalents(kept.st);
   state = usable ? kept.st : newState();
   spendOrder = usable && kept.order ? kept.order : [];
+  if (spendOrder.length !== totalPoints()) seedOrder();
 
   buildTrees();
   update();
@@ -1600,8 +1617,10 @@ function decode(code) {
     const v = parseInt(digits[n++], 10);
     state[tree.id][tal.id] = isNaN(v) ? 0 : Math.min(v, tal.maxRank);
   }
+  seedOrder();              // give it a plausible history so later clicks append
   if (!isValid(state) || totalPoints() > availablePoints()) {
     state = newState();
+    spendOrder = [];
     toast("That build does not fit the current talents, so it was not loaded");
   }
   update();
