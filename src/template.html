@@ -71,12 +71,8 @@ button{font:inherit; color:inherit}
   padding:12px 22px; border-bottom:1px solid var(--line);
   background:linear-gradient(#15161a,#0b0c0f);
 }
-.brand{font-size:16px; font-weight:600; color:var(--head); letter-spacing:.3px}
-.brand small{
-  display:block; font:10px/1 var(--font); color:#6d6d72; letter-spacing:1.6px;
-  text-transform:uppercase; margin-top:3px; font-weight:normal;
-}
 .classes{display:flex; gap:5px; flex-wrap:wrap}
+.topbar{padding-left:22px}
 .cls{
   width:58px; padding:4px 2px 5px; border:1px solid #2c2c30; border-radius:3px;
   background:#101116; cursor:pointer;
@@ -254,6 +250,64 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
   transition:width .18s ease-out;
 }
 .summary .hint{flex-basis:100%; text-align:center; color:#6e6f77}
+/* ---------- compare board ---------- */
+.board{
+  display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start;
+  justify-content:center; padding:18px 22px 6px;
+}
+.board .tree{margin:0}
+.board .slot{position:relative}
+.board .slot.dragging{opacity:.4}
+.board .slot.over{outline:2px dashed var(--gold); outline-offset:4px; border-radius:6px}
+.slot-head{
+  display:flex; align-items:center; gap:7px; padding:5px 8px;
+  background:#101116; border:1px solid #2c2c30; border-bottom:0;
+  border-radius:4px 4px 0 0;
+}
+.slot-head .grip{
+  cursor:grab; color:#5f6068; font-size:13px; line-height:1; padding:0 2px;
+  user-select:none;
+}
+.slot-head .grip:active{cursor:grabbing}
+.slot-head .edtag{
+  font:9px/1 var(--font); letter-spacing:1.1px; text-transform:uppercase;
+  color:var(--head); border:1px solid #6a5a22; border-radius:2px;
+  padding:3px 5px; flex:none; background:#1a1811;
+}
+.slot-head .who{
+  font:11px/1.2 var(--font); color:#8f8f98; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;
+}
+.slot-head .who b{color:#cdc8bb; font-weight:600}
+.slot-head .pts{font-size:12px; color:#fff; font-weight:600; font-variant-numeric:tabular-nums}
+.slot-head .x{
+  border:0; background:none; color:#6b6c74; cursor:pointer; font-size:15px;
+  line-height:1; padding:0 2px;
+}
+.slot-head .x:hover{color:#ff6a6a}
+.board .add{
+  width:150px; min-height:160px; border:1px dashed #3a3b42; border-radius:5px;
+  background:#0d0e11; color:#6e6f77; cursor:pointer; font:13px var(--font);
+  display:flex; align-items:center; justify-content:center;
+}
+.board .add:hover{border-color:var(--gold); color:var(--head)}
+.board-bar{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:10px 22px; border-bottom:1px solid var(--line); background:#101014;
+}
+.board-bar .tag{
+  font:10px/1 var(--font); letter-spacing:1.6px; text-transform:uppercase;
+  color:var(--gold); border:1px solid #6a5a22; border-radius:3px; padding:4px 7px;
+}
+.board-bar .hint{font-size:12px; color:#6e6f77}
+.board-bar .right{margin-left:auto; display:flex; gap:7px}
+.pick{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.pick label{display:flex; flex-direction:column; gap:4px; font-size:11px; color:#8f8f98}
+.pick select{
+  padding:6px 9px; background:#141220; color:#e2ddd0; border:1px solid #3d3357;
+  border-radius:3px; font:13px var(--font); min-width:150px;
+}
+
 /* ---------- info / suggestions ---------- */
 #info{
   position:fixed; inset:0; z-index:60; display:none;
@@ -508,7 +562,6 @@ body.editing .tree-edit{display:block}
 <div class="editions" id="editions"></div>
 
 <div class="topbar">
-  <div class="brand" id="brand">Classic+ Talents<small>1.12 Trees</small></div>
   <div class="classes" id="classes"></div>
   <div class="readout">
     <div class="lvl"><span class="stat">Level</span><input id="level" type="number" min="10" max="60" value="60"></div>
@@ -519,6 +572,7 @@ body.editing .tree-edit{display:block}
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">&#128275; Lock</button>
     <button class="btn" id="reset">Reset all</button>
+    <button class="btn" id="cmpBtn">Compare</button>
     <button class="btn" id="infoBtn">Info</button>
     <button class="btn" id="editBtn" style="display:none">Edit mode</button>
   </div>
@@ -540,6 +594,15 @@ body.editing .tree-edit{display:block}
 </div>
 <div id="edit-problems" style="padding:0 22px"></div>
 <div class="trees" id="trees"></div>
+<div class="board-bar" id="board-bar" style="display:none">
+  <span class="tag">Compare</span>
+  <span class="hint">Every panel has its own points &middot; drag &#10303; to reorder
+    &middot; <b>&times;</b> removes one &middot; this board is yours alone, nothing is saved</span>
+  <div class="right">
+    <button class="btn" id="bd-clear">Clear board</button>
+  </div>
+</div>
+<div class="board" id="board" style="display:none"></div>
 <div class="summary" id="summary"></div>
 <div class="levels" id="levels"></div>
 
@@ -766,10 +829,7 @@ function selectEdition(ed, wantClass) {
   refreshFingerprints();
   buildEditionBar();
 
-  const brand = document.getElementById("brand");
-  brand.innerHTML = "<small></small>";
-  brand.insertBefore(document.createTextNode(ed.name + " Talents"), brand.firstChild);
-  brand.querySelector("small").textContent = ed.tagline;
+  // no name in the bar - the edition tabs above already say which set this is
   document.title = ed.name + " Talent Calculator";
 
   // sitting at one edition's cap means "max level", so follow the new cap rather
@@ -1014,7 +1074,7 @@ function update() {
   renderLevels();
 
   if (hovered) showTip(hovered.tree, hovered.talent);
-  location.replace("#" + encode());
+  if (!boardOn) location.replace("#" + encode());
 }
 
 /* ---------------- spec bar ---------------- */
@@ -1495,9 +1555,415 @@ function copyLink() {
   const base = ONLINE
     ? location.origin + (location.pathname.indexOf("/b/") === 0 ? "/" : location.pathname)
     : location.href.split("#")[0];
-  copy(base + "#" + encode(), "Link copied to clipboard");
+  copy(base + "#" + (boardOn ? encodeBoard() : encode()),
+    boardOn ? "Link to this comparison copied" : "Link copied to clipboard");
 }
 
+
+/* ================= compare board ================= */
+
+/**
+ * A scratch board of talent trees pulled from any edition, side by side, so you
+ * can see how the same spec differs between them. Each panel is its own little
+ * build - its own points, its own tier gates - because a Forever tree and a Cata
+ * tree do not share a budget in any meaningful way.
+ *
+ * Panels are {ed, klass, tree, st}. `st` is keyed the same as the main build's
+ * state ({[treeId]: {talentId: rank}}), so tierMet/prereqMet work on it unchanged.
+ */
+let boardOn = false;
+let board = [];          // the panels, left to right
+let boardNodes = [];     // per panel: {talentId: {el, rankEl}}
+let boardArrows = [];    // per panel: [{talent, path, head}]
+
+const panelTree = p => p.ed.classes[p.klass].trees.find(t => t.name === p.tree);
+const panelPoints = p => {
+  const tree = panelTree(p);
+  return tree ? tree.talents.reduce((n, t) => n + (p.st[tree.id][t.id] || 0), 0) : 0;
+};
+
+function newPanel(edId, k, treeName) {
+  const ed = editionById(edId);
+  if (!ed || !ed.classes[k]) return null;
+  const tree = ed.classes[k].trees.find(t => t.name === treeName);
+  if (!tree) return null;
+  const st = {};
+  st[tree.id] = {};
+  for (const tal of tree.talents) st[tree.id][tal.id] = 0;
+  return { ed: ed, klass: k, tree: tree.name, st: st };
+}
+
+/* ---- rules, per panel ---- */
+
+function panelCanLearn(p, tree, tal) {
+  return p.st[tree.id][tal.id] < tal.maxRank
+      && panelPoints(p) < p.ed.maxPoints
+      && tierMet(tree, tal, p.st)
+      && prereqMet(tree, tal, p.st);
+}
+/** Legal only if every point spent could have been spent in some order. */
+function panelValid(p, tree, st) {
+  return tree.talents.every(tal =>
+    st[tree.id][tal.id] === 0 || (tierMet(tree, tal, st) && prereqMet(tree, tal, st)));
+}
+function panelLearn(p, tree, tal, all) {
+  let n = 0;
+  while (panelCanLearn(p, tree, tal)) { p.st[tree.id][tal.id]++; n++; if (!all) break; }
+  if (n) updateBoard();
+}
+function panelUnlearn(p, tree, tal, all) {
+  let n = 0;
+  for (;;) {
+    if (p.st[tree.id][tal.id] === 0) break;
+    const next = { [tree.id]: Object.assign({}, p.st[tree.id]) };
+    next[tree.id][tal.id]--;
+    if (!panelValid(p, tree, next)) break;
+    p.st = next; n++;
+    if (!all) break;
+  }
+  if (n) updateBoard();
+}
+
+/* ---- rendering ---- */
+
+function renderBoard() {
+  const host = document.getElementById("board");
+  host.innerHTML = "";
+  boardNodes = []; boardArrows = [];
+
+  board.forEach((p, i) => {
+    const tree = panelTree(p);
+    if (!tree) return;
+    const myNodes = {}; const myArrows = [];
+    boardNodes[i] = myNodes; boardArrows[i] = myArrows;
+
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.dataset.slot = i;
+
+    // header: where this tree came from, its points, and the handles
+    const head = document.createElement("div");
+    head.className = "slot-head";
+    // the expansion logos are wordmarks - unreadable at header size, so the
+    // edition is spelled out instead
+    head.innerHTML = '<span class="grip" title="Drag to reorder">&#10303;</span>' +
+      '<span class="edtag"></span><span class="who"></span><span class="pts"></span>' +
+      '<button class="x" title="Remove this panel">&times;</button>';
+    head.querySelector(".edtag").textContent = p.ed.name;
+    const who = head.querySelector(".who");
+    who.innerHTML = "<b></b>";
+    who.querySelector("b").textContent = tree.name;
+    who.appendChild(document.createTextNode(" · " + p.klass));
+    head.querySelector(".pts").textContent = panelPoints(p);
+    head.querySelector(".x").onclick = () => { board.splice(i, 1); syncBoard(); };
+    slot.appendChild(head);
+
+    // the tree itself, reusing the same markup the normal view uses
+    const panel = document.createElement("div");
+    panel.className = "tree";
+    const rows = Math.max(ROWS, Math.max.apply(null, tree.talents.map(t => row(t.pos) + 1)));
+
+    const wrap = document.createElement("div");
+    wrap.className = "grid-wrap";
+    const bg = document.createElement("div");
+    bg.className = "bg";
+    bg.style.backgroundImage = "url(" + BG(tree.bg, tree.bgSet) + ")";
+    const veil = document.createElement("div");
+    veil.className = "veil";
+    wrap.appendChild(bg); wrap.appendChild(veil);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    grid.style.gridTemplateRows = "repeat(" + rows + "," + CELL + "px)";
+    const svg = svgEl("svg", { class: "arrows" });
+    grid.appendChild(svg);
+
+    for (const tal of tree.talents) {
+      const b = document.createElement("button");
+      b.className = "talent";
+      b.style.gridColumn = col(tal.pos) + 1;
+      b.style.gridRow = row(tal.pos) + 1;
+      b.innerHTML =
+        '<img alt="" src="' + ICON(tal.icon) + '" onerror="this.src=\'' + ICON("inv_misc_questionmark") + '\'">' +
+        '<span class="rank">0/' + tal.maxRank + '</span>';
+      b.onclick = e => { e.preventDefault(); panelLearn(p, tree, tal, e.shiftKey); showTipFor(p, tree, tal); };
+      b.oncontextmenu = e => { e.preventDefault(); panelUnlearn(p, tree, tal, e.shiftKey); showTipFor(p, tree, tal); };
+      b.onmouseenter = () => showTipFor(p, tree, tal);
+      b.onmouseleave = hideTip;
+      b.onmousemove = moveTip;
+      grid.appendChild(b);
+      myNodes[tal.id] = { el: b, rankEl: b.querySelector(".rank") };
+    }
+
+    for (const tal of tree.talents) {
+      if (!tal.prereq) continue;
+      const pre = tree.talents.find(t => t.id === tal.prereq);
+      if (!pre) continue;
+      const g = drawArrow(svg, { from: pre.pos, to: tal.pos });
+      myArrows.push({ talent: tal, path: g.path, head: g.head });
+    }
+
+    wrap.appendChild(grid);
+    panel.appendChild(wrap);
+    slot.appendChild(panel);
+    wireSlotDrag(slot, i);
+    host.appendChild(slot);
+  });
+
+  const add = document.createElement("button");
+  add.className = "add";
+  add.textContent = "+  Add a tree";
+  add.onclick = openPicker;
+  host.appendChild(add);
+
+  updateBoard();
+}
+
+/** Repaints ranks, locks and arrows for every panel. */
+function updateBoard() {
+  board.forEach((p, i) => {
+    const tree = panelTree(p);
+    const myNodes = boardNodes[i];
+    if (!tree || !myNodes) return;
+
+    for (const tal of tree.talents) {
+      const r = p.st[tree.id][tal.id];
+      const n = myNodes[tal.id];
+      if (!n) continue;
+      const open = tierMet(tree, tal, p.st) && prereqMet(tree, tal, p.st);
+      n.el.className = "talent " +
+        (r >= tal.maxRank ? "maxed" : r > 0 ? "partial" : open ? "open" : "locked");
+      n.rankEl.textContent = r + "/" + tal.maxRank;
+    }
+    for (const a of (boardArrows[i] || [])) {
+      const live = prereqMet(tree, a.talent, p.st) && tierMet(tree, a.talent, p.st);
+      const c = live ? "#ffd100" : "#5b5b60";
+      a.path.setAttribute("stroke", c);
+      a.head.setAttribute("fill", c);
+    }
+    const head = document.querySelector('.slot[data-slot="' + i + '"] .slot-head .pts');
+    if (head) head.textContent = panelPoints(p);
+  });
+
+  if (boardOn) location.replace("#" + encodeBoard());
+}
+
+/** The normal tooltip, but reading a panel's own state rather than the build's. */
+function showTipFor(p, tree, tal) {
+  const r = p.st[tree.id][tal.id];
+  const shown = r > 0 ? r : 1;
+  const e = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+  let h = '<div class="t-name">' + e(tal.name) + '</div>';
+  h += '<div class="t-rank">Rank ' + r + "/" + tal.maxRank + '</div>';
+  h += '<div class="t-req" style="color:#8f8f98">' + e(p.ed.name) + " · " + e(p.klass) + '</div>';
+  if (!tierMet(tree, tal, p.st))
+    h += '<div class="t-req">Requires ' + tal.reqPoints + " points in " + e(tree.name) + '</div>';
+  if (!prereqMet(tree, tal, p.st))
+    h += '<div class="t-req">Requires ' + e(tal.prereq) + '</div>';
+  h += '<div class="t-desc">' + e(tal.ranks[shown - 1]) + '</div>';
+  if (r > 0 && r < tal.maxRank)
+    h += '<div class="t-nexth">Next rank:</div><div class="t-next">' + e(tal.ranks[r]) + '</div>';
+
+  hovered = null;            // the main view's tooltip refresh must not fight this
+  tip.innerHTML = h;
+  tip.style.display = "block";
+  place(lastX, lastY);
+}
+
+/* ---- reordering ---- */
+
+let slotDrag = null;
+function wireSlotDrag(slot, i) {
+  const grip = slot.querySelector(".grip");
+  grip.draggable = true;
+  grip.ondragstart = e => {
+    slotDrag = i;
+    slot.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(i));   // firefox needs a payload
+  };
+  grip.ondragend = () => { slotDrag = null; renderBoard(); };
+
+  slot.ondragover = e => {
+    if (slotDrag === null || slotDrag === i) return;
+    e.preventDefault();
+    slot.classList.add("over");
+  };
+  slot.ondragleave = () => slot.classList.remove("over");
+  slot.ondrop = e => {
+    e.preventDefault();
+    slot.classList.remove("over");
+    if (slotDrag === null || slotDrag === i) return;
+    const moved = board.splice(slotDrag, 1)[0];
+    board.splice(i, 0, moved);
+    slotDrag = null;
+    syncBoard();
+  };
+}
+
+/* ---- the picker ---- */
+
+function openPicker() {
+  addingAt = null;
+  document.querySelector("#modal .modal-head h3").textContent = "Add a tree to the board";
+  document.querySelector("#modal .tabs").style.display = "none";
+
+  const body = document.getElementById("modal-body");
+  body.innerHTML =
+    '<div class="pick">' +
+      '<label>Edition<select id="pk-ed"></select></label>' +
+      '<label>Class<select id="pk-cls"></select></label>' +
+      '<label>Tree<select id="pk-tree"></select></label>' +
+    '</div>' +
+    '<div class="drawer-actions"><button class="btn gold" id="pk-add">Add it</button></div>';
+
+  const edSel = document.getElementById("pk-ed");
+  const clsSel = document.getElementById("pk-cls");
+  const treeSel = document.getElementById("pk-tree");
+
+  for (const ed of EDITIONS) {
+    const o = document.createElement("option");
+    o.value = ed.id; o.textContent = ed.name;
+    edSel.appendChild(o);
+  }
+  // sensible defaults: whatever is already on screen
+  edSel.value = (board.length ? board[board.length - 1].ed.id : edition.id);
+
+  const fillClasses = () => {
+    const ed = editionById(edSel.value);
+    clsSel.innerHTML = "";
+    for (const k of CLASS_ORDER.filter(c => ed.classes[c])) {
+      const o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      clsSel.appendChild(o);
+    }
+    const want = board.length ? board[board.length - 1].klass : klass;
+    if (ed.classes[want]) clsSel.value = want;
+    fillTrees();
+  };
+  const fillTrees = () => {
+    const ed = editionById(edSel.value);
+    treeSel.innerHTML = "";
+    for (const t of ed.classes[clsSel.value].trees) {
+      const o = document.createElement("option");
+      o.value = t.name; o.textContent = t.name;
+      treeSel.appendChild(o);
+    }
+  };
+  edSel.onchange = fillClasses;
+  clsSel.onchange = fillTrees;
+  fillClasses();
+
+  document.getElementById("pk-add").onclick = () => {
+    const p = newPanel(edSel.value, clsSel.value, treeSel.value);
+    if (p) { board.push(p); closeModal(); syncBoard(); }
+  };
+  document.getElementById("modal").classList.add("open");
+}
+
+/* ---- share codes ---- */
+
+// #cmp:forever.warrior.arms-5320,classic.warrior.arms-3520
+function encodeBoard() {
+  return "cmp:" + board.map(p => {
+    const tree = panelTree(p);
+    let digits = "";
+    for (const tal of sortedTalents(tree)) digits += p.st[tree.id][tal.id];
+    digits = digits.replace(/0+$/, "");
+    return [p.ed.id, slug(p.klass), slug(tree.name)].join(".") + (digits ? "-" + digits : "");
+  }).join(",");
+}
+
+function decodeBoard(code) {
+  const parts = code.slice(4).split(",").filter(Boolean);
+  const next = [];
+  let dropped = 0;
+
+  for (const part of parts) {
+    const dash = part.indexOf("-");
+    const path = (dash < 0 ? part : part.slice(0, dash)).split(".");
+    const digits = dash < 0 ? "" : part.slice(dash + 1);
+    if (path.length !== 3 || !/^\d*$/.test(digits)) { dropped++; continue; }
+
+    const ed = editionById(path[0]);
+    if (!ed) { dropped++; continue; }
+    const k = CLASS_ORDER.find(c => slug(c) === path[1] && ed.classes[c]);
+    if (!k) { dropped++; continue; }
+    const tree = ed.classes[k].trees.find(t => slug(t.name) === path[2]);
+    if (!tree) { dropped++; continue; }
+
+    const p = newPanel(ed.id, k, tree.name);
+    let n = 0;
+    for (const tal of sortedTalents(tree)) {
+      const v = parseInt(digits[n++], 10);
+      p.st[tree.id][tal.id] = isNaN(v) ? 0 : Math.min(v, tal.maxRank);
+    }
+    // a code from a changed layout could describe a build that cannot be spent
+    if (!panelValid(p, tree, p.st) || panelPoints(p) > ed.maxPoints) {
+      for (const tal of tree.talents) p.st[tree.id][tal.id] = 0;
+      dropped++;
+    }
+    next.push(p);
+  }
+
+  if (!next.length) return false;
+  board = next;
+  setCompare(true, true);
+  if (dropped) toast(dropped + " panel" + (dropped > 1 ? "s" : "") + " in that link did not fit these talents");
+  return true;
+}
+
+/* ---- mode ---- */
+
+function syncBoard() { renderBoard(); }
+
+function setCompare(on, keepBoard) {
+  if (on && locked) { toast("Unlock the build first"); return; }
+  if (on && editing) setEditing(false);
+  boardOn = on;
+
+  document.getElementById("trees").style.display = on ? "none" : "";
+  document.getElementById("board").style.display = on ? "" : "none";
+  document.getElementById("board-bar").style.display = on ? "" : "none";
+  // these drive the single build, which the board is not
+  document.getElementById("editions").style.display = on ? "none" : "";
+  document.getElementById("classes").style.display = on ? "none" : "";
+  document.getElementById("summary").style.display = on ? "none" : "";
+  document.getElementById("levels").style.display = on ? "none" : "";
+  document.querySelector(".builds").style.display = on ? "none" : "";
+  document.body.classList.toggle("comparing", on);
+  document.getElementById("cmpBtn").textContent = on ? "Leave compare" : "Compare";
+  document.getElementById("cmpBtn").classList.toggle("on", on);
+
+  // the readout is about one build, which the board is not
+  for (const id of ["spent", "left", "doneAt"]) {
+    const el = document.getElementById(id);
+    const box = el.closest(".stat") || el;
+    box.style.display = on ? "none" : "";
+  }
+  document.querySelector(".readout .lvl").style.display = on ? "none" : "";
+
+  if (on) {
+    // start from what you were just looking at, so it is never an empty board
+    if (!keepBoard && !board.length) {
+      for (const t of trees()) {
+        const p = newPanel(edition.id, klass, t.name);
+        if (!p) continue;
+        for (const tal of t.talents) p.st[t.id][tal.id] = state[t.id][tal.id];
+        board.push(p);
+      }
+    }
+    renderBoard();
+  } else {
+    // keep `board` so coming back is where you left it, but take its panels out
+    // of the document - hidden nodes still answer querySelectorAll
+    document.getElementById("board").innerHTML = "";
+    boardNodes = []; boardArrows = [];
+    hideTip();
+    location.replace("#" + encode());
+  }
+}
 
 /* ================= info + suggestions ================= */
 
@@ -2080,6 +2546,8 @@ document.getElementById("ed-revert").onclick = revertDataset;
 document.getElementById("ed-export").onclick = exportDataset;
 document.getElementById("ed-reset").onclick = resetDataset;
 document.getElementById("ed-history").onclick = openHistory;
+document.getElementById("cmpBtn").onclick = () => setCompare(!boardOn);
+document.getElementById("bd-clear").onclick = () => { board = []; renderBoard(); };
 document.getElementById("infoBtn").onclick = openInfo;
 document.getElementById("info-close").onclick = closeInfo;
 document.getElementById("info").onclick = e => { if (e.target.id === "info") closeInfo(); };
@@ -2094,7 +2562,10 @@ addEventListener("keydown", e => {
 });
 addEventListener("hashchange", () => {
   const h = location.hash.slice(1);
-  if (h && h !== encode()) decode(h);
+  if (!h) return;
+  if (h.indexOf("cmp:") === 0) { if (h !== encodeBoard()) decodeBoard(h); return; }
+  if (boardOn) setCompare(false);
+  if (h !== encode()) decode(h);
 });
 
 // /b/<id> is a saved build's share link; anything else may carry a #code
@@ -2125,7 +2596,8 @@ async function boot() {
   // ?ed=forever picks an edition without needing a build code; a code names its own
   const asked = new URLSearchParams(location.search).get("ed");
   selectEdition((asked && editionById(asked.toLowerCase())) || EDITIONS[0]);
-  if (!decode(code)) selectClass(klass);
+  if (code.indexOf("cmp:") === 0) { if (!decodeBoard(code)) selectClass(klass); }
+  else if (!decode(code)) selectClass(klass);
 
   if (shareId) {
     try {

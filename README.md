@@ -44,6 +44,7 @@ There are no npm dependencies anywhere — `node:http` and `node:sqlite` come wi
 | Action | Result |
 | --- | --- |
 | Edition logo (top row) | Switches which trees you are looking at |
+| Compare | Opens the board — trees from any editions, side by side |
 | Info | What the site is, and a box for suggestions |
 | Left click | Spend one point |
 | Right click | Remove one point |
@@ -65,6 +66,31 @@ Under the trees, each spec gets its icon, its points and a bar. The bar is measu
 against the points that reach the **bottom of that tree** — 31 in Classic, so a full
 bar means the capstone is paid for. The deepest tree is outlined, since that is the
 spec you are actually playing.
+
+## Compare board
+
+**Compare** in the top bar swaps the three trees for a board you can fill from
+anywhere: Forever's Arms next to Vanilla's Arms next to Wrath's, or a Cataclysm
+Death Knight tree beside a Classic+ one. `×` removes a panel, `+` adds one, and
+the grip reorders them.
+
+**Each panel is its own little build.** Its own points, its own tier gates, its own
+cap taken from the edition it came from — because a 41-point Cataclysm tree and a
+71-point Wrath tree do not share a budget in any meaningful way. Clicking works
+exactly as it does in the normal view.
+
+Boards get their own link, so a comparison can be sent to someone:
+
+```
+#cmp:forever.warrior.arms-3320,classic.warrior.arms-3520,wotlk.warrior.arms
+```
+
+Each panel is `edition.class.tree` plus its points. A panel naming an edition,
+class or tree this page does not have is dropped, and one whose points no longer
+fit its talents comes back empty rather than wrong.
+
+Nothing about the board touches the server, and it leaves your normal build alone
+— leaving compare puts you back exactly where you were.
 
 ## Levelling path
 
@@ -380,7 +406,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 89 assertions against the real page
+node test/run-tests.js        # 126 assertions against the real page
 docker compose up -d --build  # if you are running it in Docker
 ```
 

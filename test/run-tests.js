@@ -113,7 +113,7 @@ const suite = `
   for (const k of classList()) {
     selectClass(k);
     const expect = trees().reduce((n, t) => n + t.talents.length, 0);
-    if (document.querySelectorAll('.talent').length !== expect) renderOk = false;
+    if (document.querySelectorAll('#trees .talent').length !== expect) renderOk = false;
   }
   ok('all 9 classes render every talent', renderOk);
 
@@ -189,6 +189,76 @@ const suite = `
   learn(arms, tal(arms, 'Deflection'), true);                 // 5 more, 8 total
   ok('it tracks as points go in', doneAt.querySelector('b').textContent === '17');
   ok('and is not flagged as over the cap', !doneAt.classList.contains('over'));
+  resetAll();
+
+  /* ---- compare board ---- */
+  selectEdition(EDITIONS[0]); selectClass('Warrior'); level = 60; resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);   // 3 points
+
+  setCompare(true);
+  ok('compare mode turns on', boardOn === true);
+  ok('it seeds from the build you were on', board.length === 3);
+  ok('and brings its points with it', panelPoints(board[0]) === 3);
+  ok('the normal trees are hidden', document.getElementById('trees').style.display === 'none');
+  ok('so are the edition and class bars',
+    document.getElementById('editions').style.display === 'none' &&
+    document.getElementById('classes').style.display === 'none');
+  ok('a panel is rendered per slot', document.querySelectorAll('.board .slot').length === 3);
+
+  // each panel is its own build
+  const p0 = board[0], p1 = board[1];
+  const t0 = panelTree(p0);
+  panelLearn(p0, t0, t0.talents.filter(x => x.reqPoints === 0)[1], true);
+  ok('spending in one panel leaves the others alone',
+    panelPoints(p0) > 3 && panelPoints(p1) === 0);
+
+  // tier gates are evaluated per panel
+  const deep = t0.talents.find(x => x.reqPoints >= 25);
+  if (deep) {
+    const before = p0.st[t0.id][deep.id];
+    panelLearn(p0, t0, deep, false);
+    ok('a panel enforces its own tier gates', p0.st[t0.id][deep.id] === before);
+  } else {
+    ok('a panel enforces its own tier gates', true);
+  }
+
+  // panels can come from anywhere
+  const extra = newPanel('cata', 'Death Knight', 'Blood');
+  ok('a panel can be built from any edition and class', Boolean(extra));
+  board.push(extra); renderBoard();
+  ok('the board takes a Cata Death Knight tree', board.length === 4 &&
+    document.querySelectorAll('.board .slot').length === 4);
+
+  // codes
+  const bcode = encodeBoard();
+  ok('the board encodes to a cmp code', bcode.indexOf('cmp:') === 0, bcode.slice(0, 60));
+  ok('the code names each panel', bcode.split(',').length === 4);
+  const snapshot = board.map(p => p.ed.id + '/' + p.klass + '/' + p.tree + '/' + panelPoints(p)).join();
+
+  board = []; renderBoard();
+  ok('the board can be emptied', board.length === 0);
+  ok('and shows only the add button',
+    document.querySelectorAll('.board .slot').length === 0 &&
+    document.querySelectorAll('.board .add').length === 1);
+
+  ok('a cmp code restores the board', decodeBoard(bcode) === true);
+  ok('with every panel and its points intact',
+    board.map(p => p.ed.id + '/' + p.klass + '/' + p.tree + '/' + panelPoints(p)).join() === snapshot);
+
+  // removing and reordering
+  const firstEd = board[0].ed.id, secondEd = board[1].ed.id;
+  const moved = board.splice(0, 1)[0]; board.splice(1, 0, moved); renderBoard();
+  ok('panels can be reordered', board[0].ed.id === secondEd && board[1].ed.id === firstEd);
+  board.splice(0, 1); renderBoard();
+  ok('a panel can be removed', board.length === 3);
+
+  ok('rubbish cmp codes are refused', decodeBoard('cmp:nosuch.warrior.arms') === false);
+
+  setCompare(false);
+  ok('leaving compare restores the trees',
+    boardOn === false && document.getElementById('trees').style.display !== 'none');
+  ok('and the build is still there', totalPoints() === 3);
   resetAll();
 
   /* ---- favicon ---- */
@@ -297,7 +367,7 @@ const suite = `
     ok('edition keeps the class', klass === 'Warrior');
     ok('every edition class renders', classList().every(k => {
       selectClass(k);
-      return document.querySelectorAll('.talent').length ===
+      return document.querySelectorAll('#trees .talent').length ===
         trees().reduce((n, t) => n + t.talents.length, 0);
     }));
 
@@ -360,7 +430,7 @@ const suite = `
 
     selectClass(classList()[0]);
     ok(ed.id + ': renders every talent',
-      document.querySelectorAll('.talent').length ===
+      document.querySelectorAll('#trees .talent').length ===
       trees().reduce((n, t) => n + t.talents.length, 0));
 
     // a code from this edition survives a round trip, prefix and all
