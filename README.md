@@ -167,17 +167,19 @@ Under the trees is the order the build could be levelled in — first point at 1
 level after that, each step showing the talent, the rank it reaches and which tree it is
 in. Hovering a step gives the same tooltip the tree does.
 
-A build only stores ranks, not the order they were bought in, and a share code carries
-even less — so the order is **derived, not recorded**. It takes the lowest unlocked rank
-still wanted, over and over, which means:
+**While you are clicking, it is the order you actually clicked in.** A new point
+goes on the bottom and nothing above it renumbers. Within a tier the order genuinely
+does not matter, so reshuffling your picks into grid order told you nothing and moved
+the goalposts while you worked.
 
-- It is always a legal path: every step passes the same tier and prerequisite rules a
-  click does, so you can follow it straight down without ever being stuck.
-- It fills top down, tier by tier, interleaving trees rather than finishing one first.
-- It is one valid path, not necessarily the one you clicked in, and not a recommendation
-  about what to take first while levelling.
+A share code carries ranks, not the order they went in, so a build arriving from a
+link has no history to show. There the order is **derived** instead: take the lowest
+unlocked rank still wanted, over and over, which fills top down, tier by tier,
+interleaving trees rather than finishing one first. That is one valid path among many,
+and not a recommendation about what to take first while levelling.
 
-Because it is derived, it survives a `#code` or a `/b/<id>` link intact.
+Either way every step passes the same tier and prerequisite rules a click does, so the
+path can be followed straight down without ever being stuck.
 
 ## Editions
 
@@ -482,7 +484,7 @@ After any edit:
 
 ```bash
 node build.js                 # validates the data, then writes index.html
-node test/run-tests.js        # 139 assertions against the real page
+node test/run-tests.js        # 147 assertions against the real page
 lua  addon/test-addon.lua     # 36 assertions against a stubbed WoW client
 node addon/test-roundtrip.js  # page export -> addon parse, so the two cannot drift
 docker compose up -d --build  # if you are running it in Docker
