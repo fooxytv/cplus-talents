@@ -538,6 +538,18 @@ Notes on the fields that bite:
   to show art. Any icon name under `wow.zamimg.com/images/wow/icons/large/` works; a name that
   404s falls back to a question mark.
 
+## Narrow screens
+
+Builds are shared as links, so a good share of visitors arrive on a phone. The
+page works down to 390px: the bars wrap, and the three trees scroll sideways
+inside their own strip rather than dragging the document with them.
+
+**The talent grid keeps its cell size at every width.** `--cell` is read once at
+load and the prerequisite arrows are drawn in those pixels, so shrinking the grid
+on small screens would leave the arrows pointing at nothing. Scrolling the strip
+is the honest fix; the compare board stacks its panels instead, and the spellbook
+drops to one column.
+
 ## Typography
 
 The page uses Wowhead's own stack, `"Open Sans", Arial, "Helvetica Neue", Helvetica, sans-serif`

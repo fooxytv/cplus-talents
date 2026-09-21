@@ -29,6 +29,42 @@ body{
 }
 button{font:inherit; color:inherit}
 
+/* ---------- narrow screens ---------- */
+/*
+ * The talent grid keeps its cell size at every width: --cell is read once at
+ * load and the prereq arrows are drawn in those pixels, so shrinking it here
+ * would leave the arrows pointing at nothing. The trees scroll sideways inside
+ * their own strip instead, which is what the min-width:0 above makes possible.
+ */
+@media (max-width: 860px) {
+  .editions, .topbar, .trees, .board, .summary, .levels, .builds, .book, .board-bar{
+    padding-left:12px; padding-right:12px;
+  }
+  .topbar{gap:12px}
+  .readout{margin-left:0; width:100%; gap:12px; justify-content:flex-start}
+  .editions .lead{display:none}
+  .spells{grid-template-columns:1fr}
+  .step{max-width:none}
+  .info-body, .bk-find input{width:auto}
+  .bk-find input{width:100%}
+  .board-bar .hint{display:none}
+}
+@media (max-width: 520px) {
+  .ed.art img{width:84px; height:32px}
+  .cls{width:48px}
+  .cls img{width:28px; height:28px}
+  .cls span{font-size:9px}
+  .btn{padding:5px 9px}
+  .levels .key{margin-left:0; width:100%}
+}
+/* the strips that scroll sideways say so, rather than hiding it */
+.trees::-webkit-scrollbar, .board::-webkit-scrollbar{height:9px}
+.trees::-webkit-scrollbar-thumb, .board::-webkit-scrollbar-thumb{
+  background:#2f3039; border-radius:5px;
+}
+.trees::-webkit-scrollbar-track, .board::-webkit-scrollbar-track{background:transparent}
+.trees, .board{scrollbar-width:thin; scrollbar-color:#2f3039 transparent}
+
 /* ---------- edition switcher ---------- */
 .editions{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
@@ -129,7 +165,11 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
 /* ---------- trees ---------- */
 .trees{
   display:flex; gap:14px; padding:20px 22px 8px; flex:1 0 auto;
-  justify-content:center; align-items:flex-start; overflow-x:auto;
+  justify-content:safe center; align-items:flex-start; overflow-x:auto;
+  /* a flex item's min-width is auto, so without this the three trees refuse to
+     shrink and drag the whole document wider than the screen - which is what
+     used to push the top bars off the side of a phone */
+  min-width:0;
 }
 .tree{
   flex:0 0 auto; width:272px; border:1px solid var(--line); border-radius:4px;
@@ -310,7 +350,7 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
 /* ---------- compare board ---------- */
 .board{
   display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start;
-  justify-content:center; padding:18px 22px 6px;
+  justify-content:safe center; padding:18px 22px 6px; min-width:0;
 }
 .board .tree{margin:0}
 .board .slot{position:relative}
