@@ -64,10 +64,6 @@ button{font:inherit; color:inherit}
 .ed.mine.active{border-color:#4a7a3a; background:#111a11; box-shadow:0 0 10px -3px rgba(90,200,90,.5)}
 .ed.mine.active b{color:#9fe08a}
 .ed.mine.active em{color:#6f9a63}
-.editions .about{
-  margin-left:auto; font-size:12px; color:#6e6f77; max-width:46ch; text-align:right;
-}
-.editions .about a{color:#8b8c96}
 
 /* ---------- top bar ---------- */
 .topbar{
@@ -739,19 +735,8 @@ function buildEditionBar() {
     b.onclick = () => selectEdition(ed);
     bar.appendChild(b);
   }
-  const about = document.createElement("div");
-  about.className = "about";
-  about.textContent = edition.about;
-  if (edition.source) {
-    about.appendChild(document.createTextNode(" "));
-    const a = document.createElement("a");
-    a.href = edition.source;
-    a.target = "_blank";
-    a.rel = "noreferrer";
-    a.textContent = "Source";
-    about.appendChild(a);
-  }
-  bar.appendChild(about);
+  // the description used to sit along the right of this bar; it says the same
+  // thing as each tab's hover title, and the Info panel covers it properly
 }
 
 /**
