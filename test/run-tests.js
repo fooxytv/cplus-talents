@@ -388,6 +388,71 @@ const suite = `
   }
   ok('each tree is filled top down', downwards);
 
+  // the path must follow what you clicked, not a tidy-looking reshuffle
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Rend'), true);            // row a, col 3
+  const afterFirst = levelPath().map(s => s.tal.name).join();
+  ok('the first talent taken starts the path',
+    afterFirst.indexOf('Improved Rend') === 0, afterFirst);
+
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);   // row a, col 1
+  path = levelPath();
+  ok('a later click is appended, not inserted above',
+    path[0].tal.name === 'Improved Rend' &&
+    path[path.length - 1].tal.name === 'Improved Heroic Strike',
+    path.map(s => s.tal.name).join());
+  ok('and the earlier levels do not shift',
+    path[0].level === 10 && path[1].level === 11 && path[2].level === 12);
+
+  // unlearning takes the right one back out
+  unlearn(arms, tal(arms, 'Improved Heroic Strike'));
+  path = levelPath();
+  ok('unlearning drops the last rank of that talent',
+    path.length === totalPoints() &&
+    path.filter(s => s.tal.name === 'Improved Heroic Strike').length === 2);
+  ok('and the rest keep their place', path[0].tal.name === 'Improved Rend');
+
+  // clearing a tree forgets only that tree
+  resetAll();
+  let fury3 = T('Fury');
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Rend'), true);
+  learn(fury3, tal(fury3, 'Booming Voice'), true);
+  clearTree(fury3);
+  path = levelPath();
+  ok('clearing a tree forgets only its own points',
+    path.length === totalPoints() && path.every(s => s.tree.name === 'Arms'),
+    path.map(s => s.tree.name).join());
+
+  // a build with no history still gets a legal derived path
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);
+  learn(arms, tal(arms, 'Deflection'), true);
+  learn(arms, tal(arms, 'Tactical Mastery'), true);
+  const histCode = encode();
+  resetAll();
+  decode(histCode);
+  ok('a link with no history still produces a path',
+    levelPath().length === totalPoints());
+  ok('and that path is still legal', (() => {
+    const sim = {};
+    for (const tr of trees()) { sim[tr.id] = {}; for (const t of tr.talents) sim[tr.id][t.id] = 0; }
+    for (const s of levelPath()) {
+      if (!tierMet(s.tree, s.tal, sim) || !prereqMet(s.tree, s.tal, sim)) return false;
+      sim[s.tree.id][s.tal.id]++;
+    }
+    return true;
+  })());
+  resetAll();
+  arms = T('Arms');
+  learn(arms, tal(arms, 'Improved Heroic Strike'), true);
+  learn(arms, tal(arms, 'Deflection'), true);
+  learn(arms, tal(arms, 'Tactical Mastery'), true);
+  learn(arms, tal(arms, 'Anger Management'));
+  path = levelPath();
+
   // and it survives a share code, which carries no ordering at all
   const pathCode = encode();
   resetAll();
@@ -516,9 +581,19 @@ const suite = `
   selectEdition(EDITIONS[0]);
   ok('unknown editions are rejected, not guessed', decode('nosuchedition:warrior-5') === false);
 
-  document.title = 'ZZ' + out.join(' @@ ') + ' @@ ' + pass + ' passed, ' + fail + ' failed' + 'ZZ';
+  report(out.join(' @@ ') + ' @@ ' + pass + ' passed, ' + fail + ' failed');
   } catch (err) {
-    document.title = 'ZZERROR: ' + (err && err.message) + ' @@ ' + String(err.stack).slice(0, 240) + 'ZZ';
+    report('ERROR: ' + (err && err.message) + ' @@ ' + String(err.stack).slice(0, 240));
+  }
+
+  // Results go in a node of their own, not document.title: update() rewrites the
+  // hash, the queued hashchange lands after this runs, and decoding it calls
+  // selectEdition - which sets the title and would wipe the results.
+  function report(text) {
+    const el = document.createElement('div');
+    el.id = '__results';
+    el.textContent = text;
+    document.body.appendChild(el);
   }
 })();
 `;
@@ -533,8 +608,11 @@ const dom = execFileSync(chrome, [
   "--dump-dom", "file:///" + tmp.replace(/\\/g, "/"),
 ], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
 
-const title = (dom.match(/<title>([^<]*)<\/title>/) || [])[1] || "";
-const body = (title.match(/^ZZ([\s\S]*)ZZ$/) || [])[1];
+const found = dom.match(/<div id="__results">([\s\S]*?)<\/div>/);
+const body = found && found[1]
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/&amp;/g, "&");
 if (!body) {
   console.error("The suite did not run — the page reported no result.");
   process.exit(1);

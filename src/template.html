@@ -830,7 +830,34 @@ let state = {};   // state[treeId][talentId] = rank
 const drafts = {};
 let stateKey = null;
 const draftKey = (edId, k) => edId + "::" + k;
-function stashDraft() { if (stateKey) drafts[stateKey] = state; }
+/**
+ * The order points were actually clicked in. The levelling path used to be
+ * derived from the finished build every time, which meant a talent you took
+ * first could be renumbered to last as soon as you spent in a cell to its left
+ * - technically a legal order, but not yours, and not advice: within a tier the
+ * order does not matter at all.
+ *
+ * Every entry got past canLearn when it was clicked, so a recorded order is
+ * always a legal one. A build arriving from a link has no history, and falls
+ * back to the derived order.
+ */
+let spendOrder = [];
+const orderKey = (tree, tal) => tree.id + "::" + tal.id;
+
+function recordSpend(tree, tal) { spendOrder.push(orderKey(tree, tal)); }
+function forgetSpend(tree, tal) {
+  const k = orderKey(tree, tal);
+  for (let i = spendOrder.length - 1; i >= 0; i--) {
+    if (spendOrder[i] === k) { spendOrder.splice(i, 1); return; }
+  }
+}
+function forgetTree(tree) {
+  spendOrder = spendOrder.filter(k => k.indexOf(tree.id + "::") !== 0);
+}
+
+function stashDraft() {
+  if (stateKey) drafts[stateKey] = { st: state, order: spendOrder };
+}
 let nodes = {};   // nodes[treeId][talentId] = {el, rankEl}
 let arrows = [];  // {tree, talent, path, head}
 let hovered = null;
@@ -878,7 +905,12 @@ function clone(st) {
 function learn(tree, tal, all) {
   if (locked) return;
   let n = 0;
-  while (canLearn(tree, tal)) { state[tree.id][tal.id]++; n++; if (!all) break; }
+  while (canLearn(tree, tal)) {
+    state[tree.id][tal.id]++;
+    recordSpend(tree, tal);
+    n++;
+    if (!all) break;
+  }
   if (n) update();
 }
 function unlearn(tree, tal, all) {
@@ -889,7 +921,9 @@ function unlearn(tree, tal, all) {
     const next = clone(state);
     next[tree.id][tal.id]--;
     if (!isValid(next)) break;
-    state = next; n++;
+    state = next;
+    forgetSpend(tree, tal);
+    n++;
     if (!all) break;
   }
   if (n) update();
@@ -1267,6 +1301,9 @@ const TREE_TINT = ["#e0603a", "#4aa3d8", "#7ac943"];   // one per tree, left to 
  * accept is reachable this way, because that is the same rule clicking enforces.
  */
 function levelPath() {
+  const recorded = pathFromOrder();
+  if (recorded) return recorded;
+
   const spent = {};
   for (const tree of trees()) {
     spent[tree.id] = {};
@@ -1287,6 +1324,38 @@ function levelPath() {
     if (!pick) break;   // only reachable if the build is illegal, which update() prevents
     const rank = ++spent[pick.tree.id][pick.tal.id];
     steps.push({ tree: pick.tree, tal: pick.tal, rank: rank, level: FIRST_POINT_LEVEL + n });
+  }
+  return steps;
+}
+
+/**
+ * The path as it was actually clicked. Returns null when the record does not
+ * account for exactly the build on screen - after loading a link, say - and the
+ * derived order is used instead.
+ */
+function pathFromOrder() {
+  if (spendOrder.length !== totalPoints()) return null;
+
+  const counts = {};
+  const steps = [];
+  const byKey = {};
+  for (const tree of trees()) {
+    for (const tal of tree.talents) byKey[tree.id + "::" + tal.id] = { tree: tree, tal: tal };
+  }
+
+  for (let i = 0; i < spendOrder.length; i++) {
+    const hit = byKey[spendOrder[i]];
+    if (!hit) return null;                       // talents changed under it
+    const rank = (counts[spendOrder[i]] = (counts[spendOrder[i]] || 0) + 1);
+    if (rank > hit.tal.maxRank) return null;
+    steps.push({ tree: hit.tree, tal: hit.tal, rank: rank, level: FIRST_POINT_LEVEL + i });
+  }
+
+  // every rank on screen has to be accounted for, or the record is stale
+  for (const tree of trees()) {
+    for (const tal of tree.talents) {
+      if ((counts[tree.id + "::" + tal.id] || 0) !== state[tree.id][tal.id]) return null;
+    }
   }
   return steps;
 }
@@ -1354,11 +1423,13 @@ function renderLevels() {
 function clearTree(tree) {
   if (locked) return;
   for (const tal of tree.talents) state[tree.id][tal.id] = 0;
+  forgetTree(tree);
   update();
 }
 function resetAll() {
   if (locked) return;
   state = newState();
+  spendOrder = [];
   update();
 }
 
@@ -1372,7 +1443,9 @@ function selectClass(k) {
   stateKey = draftKey(edition.id, k);
   const kept = drafts[stateKey];
   // a kept build is only good while the talents behind it are the same ones
-  state = kept && fitsCurrentTalents(kept) ? kept : newState();
+  const usable = kept && kept.st && fitsCurrentTalents(kept.st);
+  state = usable ? kept.st : newState();
+  spendOrder = usable && kept.order ? kept.order : [];
 
   buildTrees();
   update();
@@ -1521,6 +1594,7 @@ function decode(code) {
   }
 
   const digits = i < 0 ? "" : code.slice(i + 1);
+  spendOrder = [];          // a link carries ranks, not the order they went in
   let n = 0;
   for (const tree of trees()) for (const tal of sortedTalents(tree)) {
     const v = parseInt(digits[n++], 10);
