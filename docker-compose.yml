@@ -52,10 +52,9 @@ services:
       SIM_DB: /data/sim.db
       BASE_PATH: /sim
       SIM_CALC_BASE: "/"
-      # sim minutes per real second; at 1 a race lasts about 10 hours, at 30 about 20 minutes
-      SIM_SPEED: "${SIM_SPEED:-1}"
-      SIM_BOTS: "${SIM_BOTS:-30}"
-      SIM_HARDCORE: "${SIM_HARDCORE:-0}"
+      # Left unset on purpose: bots, classes, speed and hardcore come from
+      # sim/config/race.json. Set them in .env only to override the file for
+      # this deployment - see sim/README.md.
     restart: unless-stopped
 
 volumes:

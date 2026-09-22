@@ -12,8 +12,56 @@ node sim/server.js                         watch it at localhost:5503/sim/
 node sim/run.js                            or run one headless and print the table
 node sim/run.js --bots 40 --hardcore       death is permanent
 node sim/run.js --seed 7                   the same seed is the same race
-node sim/test.js                           89 assertions
+node sim/test.js                           97 assertions
 ```
+
+## Changing it
+
+Two files, no code:
+
+| | |
+|---|---|
+| [`config/race.json`](config/race.json) | how many bots, which classes, speed, hardcore |
+| [`config/roster.json`](config/roster.json) | which races and factions exist, and which classes each race may take |
+
+Edit and restart. An environment variable of the same name overrides the file
+(`SIM_BOTS`, `SIM_CLASS`, `SIM_SPEED`, `SIM_HARDCORE`, `SIM_INTERMISSION`,
+`SIM_EDITION`), so a deployment can differ without the file being edited - but
+if you are just running it, the file is the place.
+
+The sim prints what it settled on at startup, so a puzzling race is one log line
+away from explained:
+
+```
+  30 bots · 9 classes · 1 sim-min/sec · normal · forever
+```
+
+### More bots
+
+```json
+"bots": 60
+```
+
+### Only some classes
+
+```json
+"classes": ["Paladin", "Shaman"]
+```
+
+Worth knowing: in vanilla's table that one is Alliance against Horde, because
+Paladin is Alliance-only and Shaman Horde-only. `"*"` means every class, which
+is the only way to get a properly mixed field.
+
+### A new race, or a class a race should not have
+
+`roster.json`. Adding `"Shaman"` to Dwarf's `classes` is all it takes to see
+Dwarf Shamans in the next race; the sim derives everything else from that.
+A new race needs a faction, an icon name (Wowhead's, without the `_male` /
+`_female` suffix), its class list, and head/tail syllables for names.
+
+The keys beginning `/` are comments. JSON has no comment syntax and the reader
+ignores them - but note they must stay *unique*, because a duplicate key is
+silently dropped by any tool that rewrites the file.
 
 ## Watching it
 
@@ -113,6 +161,8 @@ hand.
 | `SIM_BOTS` | how many race (default 30) |
 | `SIM_HARDCORE` | `1` for permanent death |
 | `SIM_CLASS` | `*` for every class (default), or a comma-separated list |
+
+All of those default from `config/race.json` rather than from the code.
 | `SIM_CALC_BASE` | where the calculator lives (default `/`) |
 | `BASE_PATH` | where the sim is mounted (default `/sim`) |
 
@@ -205,6 +255,7 @@ the events already written are what happened.
 | `engine.js` | the tick, and every tuning dial |
 | `db.js` | schema |
 | `race.js` | creating, loading and advancing a race |
+| `config/race.json` | how a race is set up |
 | `roster.js` + `config/roster.json` | faction, race, gender and names |
 | `../tools/draft-weights.js` | first-pass weights for a class, from the tooltips |
 | `share.js` | build → a share code the calculator accepts |

@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "How a race is set up. Edit this and restart the sim - nothing else needs",
+    "touching.",
+    "",
+    "Every value here can be overridden by an environment variable, and the",
+    "variable wins. That is so a deployment can differ from the file without",
+    "editing it (deploy/docker-compose.yml sets a few), but if you are just",
+    "running the thing, this file is the place to change it.",
+    "",
+    "Who the bots can BE - which races, which factions, which classes each race",
+    "may take, and the syllables their names are built from - lives next door in",
+    "roster.json."
+  ],
+
+  "//1": "--- the field ------------------------------------------------",
+
+  "//bots": "How many race at once. SIM_BOTS overrides.",
+  "bots": 30,
+
+  "//classes": [
+    "Which classes are in the field. \"*\" means every class the edition has,",
+    "which is also the only way both factions appear - no single class is open",
+    "to all eight races.",
+    "Or name them: [\"Warrior\", \"Shaman\", \"Mage\"]. SIM_CLASS overrides, as a",
+    "comma-separated list."
+  ],
+  "classes": "*",
+
+  "//hardcore": [
+    "Death is permanent. Not the same race with a harsher penalty - it uses its",
+    "own death rate, because people play it differently. About a quarter of the",
+    "field reaches 60. SIM_HARDCORE=1 overrides."
+  ],
+  "hardcore": false,
+
+  "//2": "--- pacing ---------------------------------------------------",
+
+  "//speed": [
+    "Sim minutes per real second. At 1 a race lasts about ten hours, which is",
+    "meant to be ambient - something to come back to. At 30 one resolves in",
+    "about twenty minutes, which is better for watching or for a demo.",
+    "SIM_SPEED overrides."
+  ],
+  "speed": 1,
+
+  "//intermission": "Seconds between one race finishing and the next starting. SIM_INTERMISSION overrides.",
+  "intermission": 20,
+
+  "//edition": "Which talent data to race on. SIM_EDITION overrides.",
+  "edition": "forever"
+}

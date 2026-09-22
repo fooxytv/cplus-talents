@@ -31,22 +31,44 @@ const roster = require("./roster");
 const engine = require("./engine");
 const xp = require("./xp");
 
+/*
+ * Settings come from config/race.json, and an environment variable overrides
+ * whatever the file says. The file is the friendly place to change things; the
+ * variables are there so a deployment can differ without editing it.
+ */
+const FILE = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, "config", "race.json"), "utf8"));
+  } catch (e) {
+    console.warn("config/race.json unreadable (" + e.message + "), using defaults");
+    return {};
+  }
+})();
+
+const pick = (env, key, dflt) => (process.env[env] !== undefined ? process.env[env]
+  : (FILE[key] !== undefined ? FILE[key] : dflt));
+
 const PORT = Number(process.env.PORT || 5503);
 const DB_PATH = process.env.SIM_DB || path.join(__dirname, "..", "data", "sim.db");
 // Sim minutes per real second. The default is ambient rather than a demo: a
 // race takes most of a working day, so there is something to come back to
 // rather than a whole 1-60 flashing past while you watch. Push it to 30+ if you
 // want one to resolve in a sitting.
-const SPEED = Number(process.env.SIM_SPEED || 1);
-const BOTS = Number(process.env.SIM_BOTS || 30);
-const HARDCORE = process.env.SIM_HARDCORE === "1";
-const EDITION = process.env.SIM_EDITION || "forever";
+const SPEED = Number(pick("SIM_SPEED", "speed", 1));
+const BOTS = Number(pick("SIM_BOTS", "bots", 30));
+const HARDCORE = process.env.SIM_HARDCORE !== undefined
+  ? process.env.SIM_HARDCORE === "1"
+  : !!FILE.hardcore;
+const EDITION = String(pick("SIM_EDITION", "edition", "forever"));
 // "*" for every class the edition has, or a comma-separated list. A mixed
 // field is the only way both factions appear: no single class is open to all
 // eight races.
-const CLASS_SPEC = process.env.SIM_CLASS || "*";
+const CLASS_SPEC = (() => {
+  const v = pick("SIM_CLASS", "classes", "*");
+  return Array.isArray(v) ? v.join(",") : String(v);
+})();
 const BASE = (process.env.BASE_PATH || "/sim").replace(/\/$/, "");
-const INTERMISSION_SECONDS = Number(process.env.SIM_INTERMISSION || 20);
+const INTERMISSION_SECONDS = Number(pick("SIM_INTERMISSION", "intermission", 20));
 // where the talent calculator lives, so "open this build" goes somewhere real
 const CALC_BASE = process.env.SIM_CALC_BASE || "/";
 
@@ -474,5 +496,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`sim on http://localhost:${PORT}${BASE}/  (${SPEED} sim-minutes per second)`);
+  console.log(`sim on http://localhost:${PORT}${BASE}/`);
+  console.log(`  ${BOTS} bots \u00b7 ${CLASSES.length} class${CLASSES.length === 1 ? "" : "es"}` +
+    ` \u00b7 ${SPEED} sim-min/sec \u00b7 ${HARDCORE ? "hardcore" : "normal"} \u00b7 ${EDITION}`);
 });

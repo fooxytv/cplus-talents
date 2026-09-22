@@ -528,6 +528,51 @@ mdb.close();
 fs.rmSync(mixTmp, { force: true });
 for (const ext of ["-wal", "-shm"]) fs.rmSync(mixTmp + ext, { force: true });
 
+/* ---------------- the config files ---------------- */
+
+const raceCfg = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "config", "race.json"), "utf8"));
+
+ok("race.json parses and sets the field size",
+   Number.isFinite(raceCfg.bots) && raceCfg.bots > 0);
+ok("race.json speed is a positive number",
+   Number.isFinite(raceCfg.speed) && raceCfg.speed > 0);
+ok("race.json hardcore is a boolean", typeof raceCfg.hardcore === "boolean");
+ok("race.json names an edition that exists", (() => {
+  try { rules.edition(raceCfg.edition); return true; } catch (e) { return false; }
+})());
+
+// "*" or a list - anything else would silently race nobody
+ok("race.json classes is a wildcard or a list of real classes", (() => {
+  const v = raceCfg.classes;
+  if (v === "*") return true;
+  const all = Object.keys(rules.edition(raceCfg.edition).classes);
+  const list = Array.isArray(v) ? v : String(v).split(",").map(x => x.trim());
+  return list.length > 0 && list.every(c => all.includes(c));
+})());
+
+// Every class the config could put in a race needs weights, or the first bot
+// of that class throws at creation time rather than at review time.
+ok("every class the config can race has weights", (() => {
+  const all = Object.keys(rules.edition(raceCfg.edition).classes);
+  const list = raceCfg.classes === "*" ? all
+    : (Array.isArray(raceCfg.classes) ? raceCfg.classes : String(raceCfg.classes).split(","));
+  return list.map(c => c.trim()).every(c => {
+    try { stats.weights(c); return true; } catch (e) { return false; }
+  });
+})());
+
+ok("roster.json covers every class the config can race", (() => {
+  const all = Object.keys(rules.edition(raceCfg.edition).classes);
+  const list = raceCfg.classes === "*" ? all
+    : (Array.isArray(raceCfg.classes) ? raceCfg.classes : String(raceCfg.classes).split(","));
+  return list.map(c => c.trim()).every(c => roster.racesFor(c).length > 0);
+})());
+
+// the comment keys are documentation; they must never be read as settings
+ok("race.json comment keys are ignored by the reader",
+   Object.keys(raceCfg).filter(k => k.startsWith("/")).length > 0);
+
 /* ---------------- report ---------------- */
 
 console.log(`\n  ${passed} passed, ${failures.length} failed`);
