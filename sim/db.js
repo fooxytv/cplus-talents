@@ -40,6 +40,9 @@ function open(dbPath) {
       name    TEXT NOT NULL,
       klass   TEXT NOT NULL,
       spec    TEXT NOT NULL,
+      race    TEXT NOT NULL DEFAULT '',
+      faction TEXT NOT NULL DEFAULT '',
+      gender  TEXT NOT NULL DEFAULT '',
       seed    INTEGER NOT NULL,
       route   TEXT NOT NULL,
       bias    TEXT NOT NULL,
@@ -87,8 +90,8 @@ function statements(db) {
     getRace: db.prepare("SELECT * FROM races WHERE id = ?"),
     listRaces: db.prepare("SELECT * FROM races ORDER BY created_at DESC LIMIT ?"),
 
-    addBot: db.prepare(`INSERT INTO bots (race_id, id, name, klass, spec, seed, route, bias)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`),
+    addBot: db.prepare(`INSERT INTO bots (race_id, id, name, klass, spec, race, faction, gender, seed, route, bias)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     listBots: db.prepare("SELECT * FROM bots WHERE race_id = ?"),
 
     addEvent: db.prepare(`INSERT INTO events (race_id, bot_id, at_minutes, type, level, detail)
@@ -106,7 +109,7 @@ function statements(db) {
         deaths = excluded.deaths, alive = excluded.alive,
         played_minutes = excluded.played_minutes, finished_at = excluded.finished_at`),
 
-    board: db.prepare(`SELECT s.*, b.name, b.klass, b.spec FROM bot_state s
+    board: db.prepare(`SELECT s.*, b.name, b.klass, b.spec, b.race, b.faction, b.gender FROM bot_state s
                        JOIN bots b ON b.race_id = s.race_id AND b.id = s.bot_id
                        WHERE s.race_id = ?
                        ORDER BY (s.finished_at IS NULL), s.finished_at,

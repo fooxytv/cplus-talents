@@ -20,6 +20,7 @@ const xp = require("./xp");
 const db_ = require("./db");
 const race_ = require("./race");
 const share = require("./share");
+const roster = require("./roster");
 const { rng, seedFrom } = require("./rng");
 
 let passed = 0;
@@ -157,6 +158,63 @@ ok("different builds encode differently", (() => {
 
 ok("class names with spaces slug correctly", share.slug("Death Knight") === "deathknight");
 
+// The calculator reads location.hash.slice(1) raw and finds the edition by
+// looking for a literal ":". Percent-encoding a code turns that into %3A and
+// the link silently lands on a blank Warrior instead - so a code must be safe
+// to drop into a fragment untouched.
+const someCodes = [
+  share.encode(EDITION, KLASS, trees, rules.emptyState(trees)),
+  share.encode(EDITION, KLASS, trees, rules.replay(trees, sample[0].route)),
+  share.encode(EDITION, KLASS, trees, rules.replay(trees, sample[1].route, 17)),
+];
+
+// Only characters that may sit in a fragment untouched.
+ok("a share code is safe to drop straight into a url fragment",
+   someCodes.every(c => /^[a-z0-9:.-]+$/.test(c)));
+
+// And the trap itself: encodeURIComponent DOES escape the colon, which is what
+// broke the link - so this asserts why the encoder must not be used, rather
+// than pretending the two are interchangeable.
+ok("encodeURIComponent would wreck a code by escaping its colon",
+   someCodes.every(c => encodeURIComponent(c) !== c && encodeURIComponent(c).includes("%3A")));
+
+ok("a code still carries its edition separator", (() => {
+  const c = share.encode(EDITION, KLASS, trees, rules.replay(trees, sample[0].route));
+  return c.indexOf(":") > 0;
+})());
+
+/* ---------------- who the bots are ---------------- */
+
+ok("every race belongs to a faction that exists", Object.values(roster.CONFIG.races)
+   .every(r => roster.CONFIG.factions[r.faction]));
+
+ok("Shaman is offered to at least one race", roster.racesFor("Shaman").length > 0);
+
+// vanilla's table, which is what the config ships with - if Forever differs,
+// this is the assertion that should change along with roster.json
+ok("Shamans are Horde only in the shipped table",
+   roster.racesFor("Shaman").every(r => r.faction === "Horde"));
+
+ok("an impossible class is refused clearly", (() => {
+  try { roster.roll("Demon Hunter", rng(1), new Set()); return false; }
+  catch (e) { return /roster\.json/.test(e.message); }
+})());
+
+ok("rolling gives a whole character", (() => {
+  const w = roster.roll("Shaman", rng(7), new Set());
+  return w.name && w.race && w.faction && ["male", "female"].includes(w.gender)
+      && w.raceIcon.endsWith(w.gender) && w.factionIcon;
+})());
+
+ok("names are unique across a field", (() => {
+  const taken = new Set(), r = rng(3);
+  for (let i = 0; i < 30; i++) roster.roll("Shaman", r, taken);
+  return taken.size === 30;
+})());
+
+ok("the class icon is a wowhead class icon name",
+   roster.classIcon("Death Knight") === "classicon_deathknight");
+
 /* ---------------- the engine ---------------- */
 
 const mkBot = (over = {}) => {
@@ -248,6 +306,14 @@ const { race, bots } = race_.createRace(db, q, {
 
 ok("the race is stored", !!q.getRace.get("t1"));
 ok("every bot is stored", q.listBots.all("t1").length === 8);
+ok("stored bots carry who they are",
+   q.listBots.all("t1").every(b => b.race && b.faction && b.gender));
+ok("the board carries identity",
+   q.board.all("t1").every(b => b.race && b.faction));
+ok("a reloaded race keeps identity", (() => {
+  const l = race_.loadRace(db, q, "t1");
+  return l.bots.every(b => b.race && b.factionIcon && b.raceIcon);
+})());
 ok("bots have distinct names", new Set(bots.map(b => b.name)).size === 8);
 ok("stored routes are legal", q.listBots.all("t1").every(r => {
   try { rules.replay(trees, JSON.parse(r.route)); return true; } catch (e) { return false; }

@@ -11,22 +11,8 @@ const rules = require("./rules");
 const routes = require("./routes");
 const stats = require("./stats");
 const engine = require("./engine");
+const roster = require("./roster");
 const { rng, seedFrom } = require("./rng");
-
-/* ---------------- names ---------------- */
-
-const HEAD = ["Gor", "Thra", "Mal", "Dur", "Kel", "Zan", "Bry", "Vor", "Sha", "Rok",
-              "Ith", "Fen", "Gar", "Naz", "Ul", "Bram", "Cor", "Dra", "Eld", "Hak"];
-const TAIL = ["thak", "mir", "dan", "gash", "vane", "rok", "well", "dris", "kar", "nor",
-              "beard", "tusk", "fang", "wind", "grim", "shar", "vok", "lin", "mund", "ash"];
-
-function makeName(r, taken) {
-  for (let i = 0; i < 200; i++) {
-    const n = r.pick(HEAD) + r.pick(TAIL);
-    if (!taken.has(n)) { taken.add(n); return n; }
-  }
-  return "Bot" + taken.size;
-}
 
 /* ---------------- creation ---------------- */
 
@@ -44,7 +30,8 @@ function createRace(db, q, opts) {
 
   const bots = [];
   for (let i = 0; i < count; i++) {
-    const botName = makeName(r, taken);
+    const who = roster.roll(klass, r, taken);
+    const botName = who.name;
     const botSeed = seedFrom(seed + "::" + botName);   // the seed, not the id, so --seed reproduces the race
     const br = rng(botSeed);
 
@@ -59,12 +46,17 @@ function createRace(db, q, opts) {
     const route = routes.generate(klass, trees, edition.maxPoints, bias, br);
     const spec = routes.describe(trees, rules.replay(trees, route));
 
-    q.addBot.run(id, botName, botName, klass, spec, botSeed,
+    q.addBot.run(id, botName, botName, klass, spec,
+      who.race, who.faction, who.gender, botSeed,
       JSON.stringify(route), JSON.stringify(bias));
 
     const bot = engine.newBot({
       id: botName, name: botName, klass, editionId, route, bias,
       rng: rng(botSeed ^ 0x9e3779b9),
+    });
+    Object.assign(bot, {
+      race: who.race, faction: who.faction, gender: who.gender,
+      raceIcon: who.raceIcon, factionIcon: who.factionIcon, factionColour: who.factionColour,
     });
     bots.push(bot);
     q.putState.run(id, bot.id, bot.level, bot.xp, bot.step, bot.deaths, 1, 0, null);
@@ -85,6 +77,13 @@ function loadRace(db, q, id) {
       id: rowBot.id, name: rowBot.name, klass: rowBot.klass,
       editionId: race.edition, route, bias,
       rng: rng(rowBot.seed ^ 0x9e3779b9),
+    });
+    Object.assign(bot, {
+      race: rowBot.race, faction: rowBot.faction, gender: rowBot.gender,
+      raceIcon: rowBot.race
+        ? (roster.CONFIG.races[rowBot.race] || {}).icon + "_" + rowBot.gender : null,
+      factionIcon: (roster.CONFIG.factions[rowBot.faction] || {}).icon || null,
+      factionColour: (roster.CONFIG.factions[rowBot.faction] || {}).colour || "#8b8579",
     });
     const st = db.prepare("SELECT * FROM bot_state WHERE race_id = ? AND bot_id = ?")
       .get(id, rowBot.id);
@@ -145,4 +144,4 @@ function advance(db, q, race, bots, simMinutes) {
   return { at, done };
 }
 
-module.exports = { createRace, loadRace, advance, makeName };
+module.exports = { createRace, loadRace, advance };

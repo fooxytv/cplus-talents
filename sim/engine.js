@@ -142,7 +142,7 @@ function tick(bot, minutesElapsed, opts = {}) {
     if (bot.xp < need) break;
     bot.xp -= need;
     bot.level++;
-    events.push({ type: "ding", level: bot.level });
+    events.push({ type: "ding", level: bot.level, played: bot.playedMinutes });
 
     if (bot.level >= rules.FIRST_POINT_LEVEL && bot.step < bot.route.length) {
       const step = bot.route[bot.step++];

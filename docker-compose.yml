@@ -1,10 +1,33 @@
+# Local development. Everything on one origin, the way it is in public:
+#
+#   docker compose up -d --build
+#   http://localhost:8080/       the calculator
+#   http://localhost:8080/sim/   the levelling race
+#
+# The proxy is what makes those two the same origin. In production Cloudflare
+# does that job from its public-hostname rules, so there is no proxy container
+# in deploy/docker-compose.yml - see deploy/README.md.
+
 services:
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - ./dev/proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - talents
+      - sim
+    restart: unless-stopped
+
   talents:
     build: .
     image: cplus-talents
     container_name: cplus-talents
+    # Reachable on its own port too, for when you want the app without the
+    # proxy in the way.
     ports:
-      - "${PORT:-8080}:8080"
+      - "${TALENTS_PORT:-8081}:8080"
     volumes:
       # Saved builds live here. Use a named volume so it survives `down` and
       # `up --build`; `docker compose down -v` is what actually wipes it.
@@ -15,5 +38,26 @@ services:
       EDIT_MODE: "1"
     restart: unless-stopped
 
+  sim:
+    build:
+      context: .
+      dockerfile: sim/Dockerfile
+    image: cplus-talents-sim
+    container_name: cplus-talents-sim
+    ports:
+      - "${SIM_PORT:-8082}:8080"
+    volumes:
+      - sim-data:/data
+    environment:
+      SIM_DB: /data/sim.db
+      BASE_PATH: /sim
+      SIM_CALC_BASE: "/"
+      # sim minutes per real second; at 1 a race lasts about 10 hours, at 30 about 20 minutes
+      SIM_SPEED: "${SIM_SPEED:-1}"
+      SIM_BOTS: "${SIM_BOTS:-30}"
+      SIM_HARDCORE: "${SIM_HARDCORE:-0}"
+    restart: unless-stopped
+
 volumes:
   talent-data:
+  sim-data:

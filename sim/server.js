@@ -27,12 +27,17 @@ const rules = require("./rules");
 const stats = require("./stats");
 const share = require("./share");
 const routes = require("./routes");
+const roster = require("./roster");
 const engine = require("./engine");
 const xp = require("./xp");
 
 const PORT = Number(process.env.PORT || 5503);
 const DB_PATH = process.env.SIM_DB || path.join(__dirname, "..", "data", "sim.db");
-const SPEED = Number(process.env.SIM_SPEED || 30);
+// Sim minutes per real second. The default is ambient rather than a demo: a
+// race takes most of a working day, so there is something to come back to
+// rather than a whole 1-60 flashing past while you watch. Push it to 30+ if you
+// want one to resolve in a sitting.
+const SPEED = Number(process.env.SIM_SPEED || 1);
 const BOTS = Number(process.env.SIM_BOTS || 30);
 const HARDCORE = process.env.SIM_HARDCORE === "1";
 const EDITION = process.env.SIM_EDITION || "forever";
@@ -74,12 +79,26 @@ function resumeOrStart() {
 
 resumeOrStart();
 
+/*
+ * The race advances in whole ten-minute ticks, so a speed below ten cannot be
+ * honoured one second at a time - asking advance() for one minute would still
+ * step a full tick and quietly run ten times too fast. Bank the fractions here
+ * and only spend whole ticks.
+ */
+let owed = 0;
+
 setInterval(() => {
   if (intermissionUntil) {
-    if (Date.now() >= intermissionUntil) { intermissionUntil = 0; startRace(); }
+    if (Date.now() >= intermissionUntil) { intermissionUntil = 0; owed = 0; startRace(); }
     return;
   }
-  const { done } = race_.advance(db, q, current.race, current.bots, SPEED);
+  owed += SPEED;
+  if (owed < engine.TICK_MINUTES) return;
+
+  const spend = Math.floor(owed / engine.TICK_MINUTES) * engine.TICK_MINUTES;
+  owed -= spend;
+
+  const { done } = race_.advance(db, q, current.race, current.bots, spend);
   if (done) {
     console.log(`${current.race.id} finished at minute ${current.race.minutes}`);
     intermissionUntil = Date.now() + INTERMISSION_SECONDS * 1000;
@@ -96,6 +115,19 @@ function buildRate(s) {
        * (1 - T.baseDowntime / (1 + s.sustain * T.sustainK));
 }
 
+function topTalents(st, n = 5) {
+  const all = [];
+  for (const tree of trees) {
+    for (const tal of tree.talents) {
+      const rank = st[tree.id][tal.id];
+      if (rank) all.push({ tree: tree.id, id: tal.id, rank, maxRank: tal.maxRank, icon: tal.icon });
+    }
+  }
+  // deepest investment first, then the ones closest to being maxed
+  all.sort((a, b) => b.rank - a.rank || (b.rank / b.maxRank) - (a.rank / a.maxRank));
+  return all.slice(0, n);
+}
+
 function boardView() {
   return q.board.all(current.race.id).map(b => {
     const bot = botOf(b.bot_id);
@@ -103,16 +135,76 @@ function boardView() {
     // where they are NOW, not where the route ends up - the stored spec is the
     // finished build, and showing it would give away the plan
     const spec = bot ? routes.describe(trees, rules.replay(trees, bot.route, b.step)) : "";
+    // points per tree, so the page can draw the split rather than parse a string
+    const st = bot ? rules.replay(trees, bot.route, b.step) : null;
+    const split = {};
+    for (const t of trees) split[t.id] = st ? rules.treePoints(t, st) : 0;
+    const lead = Object.keys(split).reduce((a, k) => (split[k] > split[a] ? k : a), trees[0].id);
     return {
       id: b.bot_id, name: b.name, spec,
+      race: b.race || null, faction: b.faction || null, gender: b.gender || null,
+      raceIcon: bot && bot.raceIcon ? bot.raceIcon : null,
+      factionIcon: bot && bot.factionIcon ? bot.factionIcon : null,
+      factionColour: bot ? bot.factionColour : null,
+      classIcon: roster.classIcon(KLASS),
+
+      split, lead: split[lead] > 0 ? lead : null,
+
       level: b.level, points: b.step,
       progress: b.level >= xp.MAX_LEVEL ? 1 : b.xp / xp.toNext(b.level),
       deaths: b.deaths, alive: !!b.alive,
       played: b.played_minutes, finishedAt: b.finished_at,
       online: bot ? engine.online(bot, current.race.minutes) : false,
       stats: s, rate: buildRate(s),
+      advantage: bot ? engine.xpPerHour(bot, s) / Math.max(1, engine.xpPerHour(bot, stats.zero())) : 1,
+      code: st ? share.encode(EDITION, KLASS, trees, st) : null,
+      top: st ? topTalents(st) : [],
     };
   });
+}
+
+/*
+ * The four stats are abstractions, and an abstraction on a bar chart tells you
+ * nothing. Translate them into what they actually buy: kill speed, time sat
+ * drinking, deaths per hour, and how much faster this build is than the same
+ * character with no talents at all.
+ */
+function effectsOf(bot) {
+  const T = engine.TUNING;
+  const s = stats.statsAtStep(KLASS, trees, bot.route, bot.step);
+  const none = stats.zero();
+  const hc = { hardcore: !!current.race.hardcore };
+  return {
+    killSpeed: 1 + s.power * T.powerK,
+    downtime: T.baseDowntime / (1 + s.sustain * T.sustainK),
+    baseDowntime: T.baseDowntime,
+    deathsPerHour: engine.deathChance(bot, s, hc) * (60 / engine.TICK_MINUTES),
+    bareDeathsPerHour: engine.deathChance(bot, none, hc) * (60 / engine.TICK_MINUTES),
+    aoeBonus: s.aoe * T.aoeK,
+    // the headline: xp per hour against the same character with nothing spent
+    advantage: engine.xpPerHour(bot, s) / Math.max(1, engine.xpPerHour(bot, none)),
+  };
+}
+
+function progressOf(bot) {
+  if (bot.level >= xp.MAX_LEVEL) {
+    return { progress: 1, xp: 0, xpNeeded: 0, xpPerHour: 0, etaPlayed: null, etaRace: null, nextTalent: null };
+  }
+  const need = xp.toNext(bot.level);
+  const s = stats.statsAtStep(KLASS, trees, bot.route, bot.step);
+  const rate = engine.xpPerHour(bot, s);
+  const toGo = Math.max(0, need - bot.xp);
+  const etaPlayed = rate > 0 ? (toGo / rate) * 60 : null;          // minutes at the keyboard
+  // they are only online part of the day, so wall-clock is longer
+  const etaRace = etaPlayed == null ? null : etaPlayed * (24 / Math.max(0.1, bot.hoursPerDay));
+  const step = bot.step < bot.route.length ? bot.route[bot.step] : null;
+  return {
+    progress: bot.xp / need,
+    xp: Math.round(bot.xp), xpNeeded: need,
+    xpPerHour: Math.round(rate),
+    etaPlayed, etaRace,
+    nextTalent: step ? { tree: step.tree, talent: step.talent } : null,
+  };
 }
 
 function botView(id) {
@@ -121,17 +213,33 @@ function botView(id) {
   const row = db.prepare("SELECT * FROM bots WHERE race_id = ? AND id = ?")
     .get(current.race.id, id);
   const st = rules.replay(trees, bot.route, bot.step);
-  const plan = bot.route.map((step, i) => ({
-    level: rules.levelForStep(i),
-    tree: step.tree, talent: step.talent,
-    taken: i < bot.step,
-  }));
+  const seen = {};
+  const plan = bot.route.map((step, i) => {
+    const key = step.tree + "::" + step.talent;
+    const rank = (seen[key] = (seen[key] || 0) + 1);
+    const tree = trees.find(t => t.id === step.tree);
+    const tal = tree && tree.talents.find(t => t.id === step.talent);
+    return {
+      level: rules.levelForStep(i),
+      tree: step.tree, talent: step.talent,
+      rank, maxRank: tal ? tal.maxRank : rank,
+      icon: tal ? tal.icon : null,
+      taken: i < bot.step,
+    };
+  });
   return {
     id: bot.id, name: bot.name, klass: bot.klass,
+    race: bot.race || null, faction: bot.faction || null, gender: bot.gender || null,
+    raceIcon: bot.raceIcon || null, factionIcon: bot.factionIcon || null,
+    factionColour: bot.factionColour || null, classIcon: roster.classIcon(bot.klass),
     spec: routes.describe(trees, st),
     level: bot.level, points: bot.step, deaths: bot.deaths,
     alive: bot.alive, played: bot.playedMinutes, finishedAt: bot.finishedAt,
     stats: stats.statsAtStep(KLASS, trees, bot.route, bot.step),
+    // how close they are to the next level, and - from their own build and
+    // play style - roughly how long it will take them to get there
+    ...progressOf(bot),
+    effects: effectsOf(bot),
     // personality, which is half the story of why they are winning or losing
     recklessness: bot.recklessness, hoursPerDay: bot.hoursPerDay,
     // the build as it stands right now, in the calculator's own language
@@ -139,6 +247,23 @@ function botView(id) {
     plan,
   };
 }
+
+// Built once at boot: tree -> talent -> everything a tooltip needs.
+const TALENT_DICT = (() => {
+  const out = { klass: KLASS, edition: EDITION, trees: [] };
+  for (const tree of trees) {
+    const t = { id: tree.id, name: tree.name, icon: tree.icon, talents: {} };
+    for (const tal of tree.talents) {
+      t.talents[tal.id] = {
+        name: tal.name, icon: tal.icon, pos: tal.pos,
+        maxRank: tal.maxRank, reqPoints: tal.reqPoints,
+        prereq: tal.prereq || null, ranks: tal.ranks,
+      };
+    }
+    out.trees.push(t);
+  }
+  return out;
+})();
 
 /* ---------------- http ---------------- */
 
@@ -203,6 +328,82 @@ const server = http.createServer((req, res) => {
   if (bot) {
     const view = botView(decodeURIComponent(bot[1]));
     return view ? send(res, 200, view) : send(res, 404, { error: "no such bot" });
+  }
+
+  // Level over time, which is what makes a race legible - the standings alone
+  // never show you the overtake. Incremental: pass the last id you saw.
+  if (p === "/api/history") {
+    const after = Number(url.searchParams.get("after") || 0);
+    const rows = db.prepare(
+      `SELECT id, bot_id, at_minutes, level, type, detail FROM events
+       WHERE race_id = ? AND id > ? AND type IN ('ding','death','finish')
+       ORDER BY id LIMIT 6000`).all(current.race.id, after);
+    const tracks = {}, deaths = {}, finishes = {};
+    for (const r of rows) {
+      if (r.type === "ding") {
+        // [race minute, level, minutes played] - the third is the split time
+        const d = JSON.parse(r.detail || "{}");
+        (tracks[r.bot_id] ||= []).push([r.at_minutes, r.level, d.played == null ? null : d.played]);
+      }
+      else if (r.type === "death") (deaths[r.bot_id] ||= []).push([r.at_minutes, r.level]);
+      else finishes[r.bot_id] = [r.at_minutes, r.level];
+    }
+    return send(res, 200, {
+      maxId: rows.length ? rows[rows.length - 1].id : after,
+      minutes: current.race.minutes,
+      tracks, deaths, finishes,
+    });
+  }
+
+  // Past races, with who won and how long it took them
+  if (p === "/api/history/races" || p === "/api/past") {
+    const races = q.listRaces.all(12);
+    return send(res, 200, races.map(r => {
+      const win = db.prepare(
+        `SELECT b.name, s.played_minutes, s.finished_at, b.spec
+         FROM bot_state s JOIN bots b ON b.race_id = s.race_id AND b.id = s.bot_id
+         WHERE s.race_id = ? AND s.finished_at IS NOT NULL
+         ORDER BY s.finished_at LIMIT 1`).get(r.id);
+      const n = db.prepare("SELECT COUNT(*) n FROM bots WHERE race_id = ?").get(r.id).n;
+      const done = db.prepare(
+        "SELECT COUNT(*) n FROM bot_state WHERE race_id = ? AND finished_at IS NOT NULL").get(r.id).n;
+      return {
+        id: r.id, name: r.name, status: r.status, minutes: r.minutes,
+        hardcore: !!r.hardcore, bots: n, finished: done,
+        winner: win ? { name: win.name, played: win.played_minutes, spec: win.spec } : null,
+      };
+    }));
+  }
+
+  // What the field as a whole is actually picking. More interesting than any
+  // single build: it is the closest thing to a verdict the race produces.
+  if (p === "/api/popularity") {
+    const rows = q.board.all(current.race.id);
+    const tally = {};
+    for (const b of rows) {
+      const bot = botOf(b.bot_id);
+      if (!bot) continue;
+      const st = rules.replay(trees, bot.route, b.step);
+      for (const tree of trees) {
+        for (const tal of tree.talents) {
+          const rank = st[tree.id][tal.id];
+          if (!rank) continue;
+          const k = tree.id + "::" + tal.id;
+          const e = (tally[k] ||= { tree: tree.id, id: tal.id, icon: tal.icon,
+                                    maxRank: tal.maxRank, bots: 0, ranks: 0, maxed: 0 });
+          e.bots++; e.ranks += rank;
+          if (rank >= tal.maxRank) e.maxed++;
+        }
+      }
+    }
+    const list = Object.values(tally).map(e => ({
+      ...e, avgRank: e.ranks / e.bots, share: e.bots / Math.max(1, rows.length),
+    })).sort((a, b) => b.bots - a.bots || b.avgRank - a.avgRank);
+    return send(res, 200, { field: rows.length, talents: list });
+  }
+
+  if (p === "/api/talents") {
+    return send(res, 200, TALENT_DICT);
   }
 
   if (p === "/api/health") {

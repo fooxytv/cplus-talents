@@ -11,90 +11,165 @@
 :root{
   --font:"Open Sans",Arial,"Helvetica Neue",Helvetica,sans-serif;
   --gold:#ffd100; --head:#f2cd6b; --green:#3ddc00; --red:#ff2020;
-  --panel:#0d0e11; --line:#26262b; --dim:#8b8579;
+  --panel:#0d0e11; --line:#26262b; --dim:#8b8579; --text:#cdc8bb;
+  --class:#0070DE;                 /* replaced once we know the class */
 }
 *{box-sizing:border-box}
+/* an explicit display: wins over the hidden attribute, and .wrap sets one - so
+   a hidden view would otherwise render anyway, stacked under the live one */
+[hidden]{display:none!important}
 body{
   margin:0; min-height:100vh;
   background:#08090b;
   background-image:radial-gradient(1200px 600px at 50% -10%,#16181d 0%,#08090b 70%);
-  color:#cdc8bb; font:14px/1.5 var(--font);
+  color:var(--text); font:14px/1.5 var(--font);
   -webkit-font-smoothing:antialiased;
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 a{color:var(--head)}
-button{font:inherit; color:inherit}
+button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 
 /* ---------- header ---------- */
 .top{
-  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-  padding:14px 22px; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:12px 22px 0; border-bottom:1px solid var(--line);
   background:linear-gradient(#111318,#0b0c0f);
 }
-.top h1{margin:0; font-size:16px; color:var(--head); font-weight:600; letter-spacing:.3px}
-.pill{
-  padding:3px 9px; border:1px solid #3a3b42; border-radius:999px;
-  font-size:11px; color:var(--dim); white-space:nowrap;
-}
+.top h1{margin:0; font-size:16px; color:var(--head); font-weight:600}
+.pill{padding:3px 9px; border:1px solid #3a3b42; border-radius:999px; font-size:11px; color:var(--dim); white-space:nowrap}
 .pill.hc{border-color:#5a2222; color:#ff7b6b; background:#1a0f0f}
 .pill.live{border-color:#2a4a20; color:var(--green)}
 .spacer{flex:1}
-.back{
+.btn{
   padding:6px 12px; background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
-  border-radius:3px; cursor:pointer; font-size:12px; text-decoration:none; color:#cfcabd;
+  border-radius:3px; font-size:12px; text-decoration:none; color:#cfcabd; white-space:nowrap;
 }
-.back:hover{background:linear-gradient(#32333b,#1d1e23); border-color:#54555e; color:var(--head)}
+.btn:hover{background:linear-gradient(#32333b,#1d1e23); border-color:#54555e; color:var(--head)}
+
+.tabs{display:flex; gap:2px; width:100%; margin-top:10px}
+.tabs button{
+  padding:7px 15px 8px; font-size:12px; font-weight:600; letter-spacing:.3px;
+  color:#8b8579; border:1px solid transparent; border-bottom:0;
+  border-radius:4px 4px 0 0; position:relative; top:1px;
+}
+.tabs button:hover{color:var(--head)}
+.tabs button.on{
+  color:var(--gold); background:var(--panel);
+  border-color:var(--line); border-bottom:1px solid var(--panel);
+}
 
 /* ---------- layout ---------- */
-.wrap{
-  display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:18px;
-  padding:18px 22px; align-items:start; max-width:1400px; margin:0 auto;
-}
-@media (max-width:900px){ .wrap{grid-template-columns:minmax(0,1fr)} }
-
-.card{background:var(--panel); border:1px solid var(--line); border-radius:4px}
+.wrap{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px;
+      padding:16px 22px; align-items:start; max-width:1620px; margin:0 auto}
+@media (max-width:1040px){ .wrap{grid-template-columns:minmax(0,1fr)} }
+.wrap.one{grid-template-columns:minmax(0,1fr)}
+.col{display:grid; gap:16px; min-width:0}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:4px; min-width:0}
 .card h2{
-  margin:0; padding:10px 14px; font-size:12px; font-weight:600; letter-spacing:.6px;
+  margin:0; padding:9px 14px; font-size:11px; font-weight:700; letter-spacing:.7px;
   text-transform:uppercase; color:var(--dim); border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:8px;
 }
+.card h2 .note{font-weight:400; letter-spacing:0; text-transform:none; color:#5d5952; margin-left:auto}
+.chk{
+  display:flex; align-items:center; gap:5px; font-weight:400; letter-spacing:0;
+  text-transform:none; color:var(--dim); cursor:pointer; font-size:11px;
+}
+.chk input{accent-color:var(--gold); margin:0; cursor:pointer}
+.chk:hover{color:var(--head)}
+
+/* ---------- talent icons, the way the calculator draws them ---------- */
+.ti{position:relative; display:inline-block; width:30px; height:30px; flex:none}
+.ti img{
+  width:100%; height:100%; display:block; border-radius:3px;
+  border:1px solid #000; box-shadow:0 0 0 1px #3a3b42; background:#15161b;
+}
+.ti.max img{box-shadow:0 0 0 1px var(--gold), 0 0 8px -2px var(--gold)}
+.ti.none img{filter:grayscale(1) brightness(.4)}
+.ti i{
+  position:absolute; right:-3px; bottom:-4px; font-style:normal; font-size:10px;
+  font-weight:700; color:#fff; background:#111; border:1px solid #3a3b42;
+  border-radius:3px; padding:0 3px; line-height:13px;
+}
+.ti.max i{color:var(--gold); border-color:#6b5a1a}
+.ti.sm{width:24px; height:24px}
+.ti.sm i{font-size:9px; line-height:11px}
+
+/* ---------- chart ---------- */
+.chart{padding:10px 12px 4px}
+.chart svg{display:block; width:100%; height:280px}
+.chart .grid{stroke:#1d1e23; stroke-width:1}
+.chart .axis{fill:#5d5952; font-size:9px}
+.chart path{fill:none; stroke-width:1.5; opacity:.5; stroke-linejoin:round; stroke-linecap:round}
+.chart path.on{opacity:1; stroke-width:3}
+.chart path.off{opacity:.13}
+.chart .dead{fill:#c23b3b}
+.chart .fin{fill:var(--gold)}
+.legend{display:flex; gap:14px; flex-wrap:wrap; padding:2px 14px 10px; font-size:11px; color:var(--dim)}
+.legend i{display:inline-block; width:9px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle}
 
 /* ---------- leaderboard ---------- */
-.rows{padding:6px 0}
-.row{
-  display:grid; grid-template-columns:28px minmax(78px,1.1fr) 34px minmax(0,2.3fr) minmax(0,1.4fr) auto;
-  gap:10px; align-items:center;
-  padding:7px 14px; cursor:pointer; border-left:2px solid transparent;
+.rows{padding:4px 0}
+.hrow,.row{
+  display:grid;
+  grid-template-columns:26px 46px minmax(74px,1.05fr) 28px minmax(52px,1.7fr) 88px 132px 54px 28px 24px;
+  gap:9px; align-items:center; padding:5px 14px;
 }
+.hrow{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:#5d5952;
+      border-bottom:1px solid var(--line); padding-bottom:7px}
+.hrow span:nth-child(n+5){text-align:right}
+.hrow span:nth-child(6){text-align:left}
+.row{cursor:pointer; border-left:2px solid transparent}
 .row:hover{background:#15161b; border-left-color:#3a3b42}
 .row.on{background:#181a20; border-left-color:var(--gold)}
-.row.dead{opacity:.45}
+.row.gone{opacity:.42}
 .rank{color:var(--dim); font-size:12px; text-align:right; font-variant-numeric:tabular-nums}
 .who{display:flex; align-items:center; gap:6px; min-width:0}
-.who b{font-weight:600; color:#e6e0d2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.dot{width:6px; height:6px; border-radius:50%; background:#3a3b42; flex:none}
+.who b{font-weight:600; color:var(--class); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dot{width:6px; height:6px; border-radius:50%; background:#33343a; flex:none}
 .dot.on{background:var(--green); box-shadow:0 0 5px #3ddc0070}
-.lvl{
-  font-weight:700; color:var(--head); text-align:right;
-  font-variant-numeric:tabular-nums; font-size:13px;
-}
-.track{position:relative; height:9px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
+.lvl{font-weight:700; color:var(--head); text-align:right; font-variant-numeric:tabular-nums; font-size:13px}
+.track{position:relative; height:8px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
 .fill{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#5a4a1a,#c79c2e)}
 .fill.done{background:linear-gradient(90deg,#3a5a1a,#5fc72e)}
-.fill.dead{background:linear-gradient(90deg,#4a1a1a,#8a2a2a)}
-.tip{position:absolute; top:0; bottom:0; width:2px; background:var(--gold); opacity:.85}
-.meta{font-size:11px; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums}
-.spec{font-size:11px; color:#8b8579; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.spec em{font-style:normal; color:#b3ab9b}
-@media (max-width:760px){
-  .row{grid-template-columns:24px minmax(70px,1fr) 30px minmax(0,2fr) auto}
-  .spec{display:none}
-}
-.meta .d{color:#c76b6b}
+.fill.gone{background:linear-gradient(90deg,#4a1a1a,#8a2a2a)}
+.split{display:flex; height:8px; border-radius:2px; overflow:hidden; background:#17181d; border:1px solid #232429}
+.split i{display:block; height:100%}
+.tops{display:flex; gap:3px}
+.num{font-size:11px; color:var(--dim); text-align:right; font-variant-numeric:tabular-nums}
+.num.warn{color:#c76b6b}
+.num b{color:var(--text); font-weight:600}
+.calc{display:block; text-align:center; text-decoration:none; font-size:13px;
+      color:#4f4c46; border:1px solid transparent; border-radius:3px; line-height:20px}
+.calc:hover{color:var(--gold); border-color:#3a3b42; background:#1b1c22}
+
+/* who they are */
+.idc{display:flex; align-items:center; gap:3px}
+.idc img{width:18px; height:18px; border-radius:3px; border:1px solid #000; box-shadow:0 0 0 1px #2c2d33}
+
+/* a real tree, laid out the way the calculator does it */
+.tgrid{display:grid; grid-template-columns:repeat(4,32px); gap:6px; padding:8px 9px; justify-content:center}
+.tcell{width:32px; height:32px}
+.tgrid .ti{width:32px; height:32px}
+.tsum{display:flex; align-items:baseline; gap:6px; padding:5px 9px; border-top:1px solid var(--line);
+      font-size:11px; color:#5d5952}
+.tsum b{font-size:12px}
+
+/* what the stats actually buy */
+.fx{background:#101116; border:1px solid #1e1f25; border-radius:4px; padding:10px 12px; display:grid; gap:8px}
+.fx .lead{font-size:13px; color:var(--text)}
+.fx .lead b{color:var(--gold); font-size:15px}
+.fx .grid4{display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:8px}
+.fx .cell{background:#0c0d11; border:1px solid #1e1f25; border-radius:3px; padding:6px 8px; cursor:help}
+.fx .cell b{display:block; color:var(--text); font-size:13px; font-variant-numeric:tabular-nums}
+.fx .cell span{color:#5d5952; font-size:10px}
+.fx .cell em{font-style:normal; color:#4f4c46; font-size:10px}
+.fx .raw{font-size:10px; color:#4f4c46}
 
 /* ---------- feed ---------- */
-.feed{max-height:520px; overflow:auto; padding:6px 0}
-.ev{padding:4px 14px; font-size:12px; display:flex; gap:7px; align-items:baseline}
-.ev .at{color:#5d5952; font-variant-numeric:tabular-nums; flex:none; font-size:11px}
+.feed{max-height:340px; overflow:auto; padding:4px 0}
+.ev{padding:3px 14px; font-size:12px; display:flex; gap:7px; align-items:baseline}
+.ev .at{color:#55524c; font-variant-numeric:tabular-nums; flex:none; font-size:10px; min-width:46px}
 .ev b{font-weight:600}
 .ev.ding b{color:#e6e0d2}
 .ev.death{color:#c76b6b}
@@ -102,32 +177,125 @@ button{font:inherit; color:inherit}
 .ev.new{animation:flash .9s ease-out}
 @keyframes flash{from{background:#2a2410}to{background:transparent}}
 
+/* ---------- tables ---------- */
+.tbl{padding:10px 14px; font-size:12px}
+.tbl table{width:100%; border-collapse:collapse}
+.tbl th{font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:#5d5952;
+        text-align:right; font-weight:600; padding:3px 0; white-space:nowrap}
+.tbl th:first-child{text-align:left}
+.tbl td{padding:4px 0; font-variant-numeric:tabular-nums; text-align:right; color:var(--text)}
+.tbl td:first-child{text-align:left; color:var(--dim)}
+.tbl .tree{display:flex; align-items:center; gap:6px}
+.tbl .tree i{width:8px; height:8px; border-radius:2px; flex:none}
+.tbl p{margin:10px 0 0; color:#5d5952; font-size:11px; line-height:1.55}
+
+/* ---------- profiles ---------- */
+.profiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px;
+          padding:16px 22px; max-width:1620px; margin:0 auto}
+.pc{background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:12px;
+    display:grid; gap:10px; cursor:pointer}
+.pc:hover{border-color:#3a3b42}
+.pc.gone{opacity:.5}
+.pc .ph{display:flex; align-items:center; gap:10px}
+.pc .lvlring{
+  width:42px; height:42px; border-radius:50%; flex:none; display:grid; place-items:center;
+  font-weight:700; font-size:15px; color:var(--head);
+  border:2px solid var(--class); box-shadow:0 0 0 1px #000, 0 0 10px -3px var(--class);
+  background:#101116;
+}
+.pc .pn{min-width:0}
+.pc .pn b{display:block; font-size:14px; color:var(--class); font-weight:700;
+          overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pc .pn span{font-size:11px; color:var(--dim)}
+.pc .pstat{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; font-size:11px; text-align:center}
+.pc .pstat div{background:#101116; border:1px solid #1e1f25; border-radius:3px; padding:4px 2px}
+.pc .pstat b{display:block; color:var(--text); font-variant-numeric:tabular-nums}
+.pc .pstat span{color:#5d5952; font-size:10px}
+.pc .prow{display:flex; align-items:center; gap:6px}
+.pc .prow .split{flex:1; min-width:0}
+.pc .badge{font-size:10px; padding:1px 6px; border-radius:999px; border:1px solid #3a3b42; color:var(--dim)}
+.pc .badge.dead{border-color:#5a2222; color:#ff7b6b}
+.pc .badge.done{border-color:#2a4a20; color:var(--green)}
+.pc .adv{font-size:11px; color:#5d5952; cursor:help}
+.pc .adv b{color:var(--gold); font-size:13px}
+
+/* how close they are to the next level - the thing you actually want to know
+   when you click someone who is two levels off the leader */
+.xpbox{background:#101116; border:1px solid #1e1f25; border-radius:4px; padding:10px 12px; display:grid; gap:7px}
+.xphead{display:flex; align-items:baseline; gap:8px; font-size:12px; flex-wrap:wrap}
+.xphead b{color:var(--head); font-size:13px}
+.xphead .to{color:var(--dim)}
+.xphead .eta{margin-left:auto; color:#5d5952; font-size:11px}
+.xpbar{position:relative; height:14px; background:#17181d; border:1px solid #232429; border-radius:3px; overflow:hidden}
+.xpbar i{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#3b2f6b,#8a5fd0)}
+.xpbar span{position:absolute; inset:0; display:grid; place-items:center; font-size:10px;
+            color:#e7e2d6; text-shadow:0 1px 2px #000; font-variant-numeric:tabular-nums}
+.xpfoot{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:#5d5952}
+.xpfoot b{color:var(--text); font-weight:600}
+
 /* ---------- bot panel ---------- */
-.detail{padding:14px}
-.detail .name{font-size:15px; font-weight:700; color:var(--head); margin:0 0 2px}
-.detail .sub{font-size:12px; color:var(--dim); margin:0 0 12px}
-.bars{display:grid; gap:7px; margin-bottom:14px}
-.bar{display:grid; grid-template-columns:62px 1fr 38px; gap:8px; align-items:center; font-size:11px}
+.detail{padding:14px; display:grid; gap:14px}
+.dhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.dhead .name{font-size:17px; font-weight:700; color:var(--class); margin:0}
+.dhead .sub{font-size:12px; color:var(--dim)}
+.dgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
+@media (max-width:700px){ .dgrid{grid-template-columns:minmax(0,1fr)} }
+.bars{display:grid; gap:6px; align-content:start}
+.bar{display:grid; grid-template-columns:58px 1fr 36px; gap:8px; align-items:center; font-size:11px; cursor:help}
 .bar .k{color:var(--dim)}
 .bar .t{height:7px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
 .bar .v{height:100%; background:linear-gradient(90deg,#3a4a6a,#6b8fc7)}
 .bar .n{text-align:right; color:#9a948a; font-variant-numeric:tabular-nums}
-.facts{font-size:12px; color:var(--dim); margin-bottom:12px; line-height:1.7}
-.facts span{color:#cdc8bb}
-.plan{max-height:230px; overflow:auto; border-top:1px solid var(--line); padding-top:8px}
-.pstep{display:flex; gap:8px; font-size:11px; padding:2px 0; color:#5d5952}
-.pstep.taken{color:#cdc8bb}
-.pstep .pl{width:24px; color:var(--dim); flex:none; font-variant-numeric:tabular-nums}
-.pstep .pt{color:#5d5952; font-size:10px; margin-left:auto; flex:none}
-.pstep.taken .pt{color:var(--dim)}
-.open{
-  display:block; text-align:center; margin-top:12px; padding:8px;
-  background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
-  border-radius:3px; font-size:12px; text-decoration:none; color:#cfcabd;
-}
+.facts dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12px}
+.facts dt{color:#5d5952}
+.facts dd{margin:0; color:var(--text); font-variant-numeric:tabular-nums}
+.plans{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+@media (max-width:760px){ .plans{grid-template-columns:minmax(0,1fr)} }
+.ptree{border:1px solid var(--line); border-radius:3px; overflow:hidden}
+.ptree h3{margin:0; padding:5px 9px; font-size:11px; font-weight:700; background:#131419;
+          border-bottom:1px solid var(--line)}
+
+.ptree li{display:flex; gap:7px; align-items:center; padding:2px 9px; font-size:11px; color:#4f4c46}
+.ptree li.taken{color:var(--text)}
+.ptree li .pl{width:20px; flex:none; color:#5d5952; font-variant-numeric:tabular-nums}
+.ptree li .pr{margin-left:auto; flex:none; color:#4f4c46; font-variant-numeric:tabular-nums}
+.ptree li.taken .pr{color:var(--dim)}
+.open{display:block; text-align:center; padding:8px; background:linear-gradient(#25262c,#16171b);
+      border:1px solid #3a3b42; border-radius:3px; font-size:12px; text-decoration:none; color:#cfcabd}
 .open:hover{background:linear-gradient(#32333b,#1d1e23); border-color:var(--gold); color:var(--gold)}
-.hint{padding:20px 14px; color:#5d5952; font-size:12px; text-align:center}
-.note{padding:10px 22px 24px; max-width:1400px; margin:0 auto; color:#5d5952; font-size:11px}
+
+/* ---------- popularity ---------- */
+.pop{padding:10px 14px; display:grid; gap:5px}
+.pl-row{display:grid; grid-template-columns:30px minmax(0,1fr) 54px 40px; gap:9px; align-items:center; font-size:12px}
+.pl-row .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pl-row .mtr{height:7px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
+.pl-row .mtr i{display:block; height:100%}
+.pl-row .pct{text-align:right; color:var(--dim); font-size:11px; font-variant-numeric:tabular-nums}
+
+.past{padding:6px 0; font-size:12px}
+.past .r{display:grid; grid-template-columns:auto 1fr auto; gap:9px; padding:5px 14px; align-items:baseline}
+.past .r:hover{background:#15161b}
+.past .w{color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.past .id{color:#5d5952; font-size:11px}
+.past .t{color:var(--dim); font-variant-numeric:tabular-nums; font-size:11px}
+.hint{padding:18px 14px; color:#55524c; font-size:12px; text-align:center; margin:0}
+.note-foot{padding:6px 22px 26px; max-width:1620px; margin:0 auto; color:#55524c; font-size:11px}
+
+/* ---------- tooltip, matching the calculator's ---------- */
+#tip{
+  position:fixed; z-index:80; width:320px; display:none; pointer-events:none;
+  background:rgba(10,12,18,.72); border:1px solid rgba(255,255,255,.14); border-radius:5px;
+  padding:10px 12px 11px; box-shadow:0 10px 30px rgba(0,0,0,.7);
+  backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
+  text-shadow:0 1px 2px rgba(0,0,0,.9); line-height:1.35; font-size:13px;
+}
+#tip .t-name{font-size:15px; font-weight:600; color:var(--gold); line-height:1.25}
+#tip .t-rank{color:#fff; margin-top:1px}
+#tip .t-req{color:#9a9baa; margin-top:3px}
+#tip .t-desc{color:var(--gold); margin-top:5px}
+#tip .t-nexth{color:#fff; margin-top:6px}
+#tip .t-next{color:#9a9a9a}
+#tip .t-hint{color:#1eff00; margin-top:6px}
 </style>
 </head>
 <body>
@@ -135,126 +303,480 @@ button{font:inherit; color:inherit}
 <div class="top">
   <h1 id="title">Levelling race</h1>
   <span class="pill live" id="clock">&mdash;</span>
+  <span class="pill" id="field"></span>
   <span class="pill" id="speed"></span>
   <span class="pill hc" id="hc" hidden>hardcore &mdash; death is final</span>
   <span class="spacer"></span>
-  <a class="back" href="__CALC__">&larr; Talent calculator</a>
+  <a class="btn" href="__CALC__">&larr; Talent calculator</a>
+  <div class="tabs" id="tabs">
+    <button data-view="race" class="on">The race</button>
+    <button data-view="profiles">Profiles</button>
+    <button data-view="analysis">Analysis</button>
+    <button data-view="history">Past races</button>
+  </div>
 </div>
 
-<div class="wrap">
-  <div>
+<!-- ======== race ======== -->
+<div class="wrap" id="v-race">
+  <div class="col">
     <div class="card">
-      <h2 id="boardHead">Leaderboard</h2>
+      <h2>Level over time <span class="note" id="chartNote"></span></h2>
+      <div class="chart"><svg id="chart" viewBox="0 0 1000 280"></svg></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="card">
+      <h2>Leaderboard
+        <label class="chk" data-tt="text" data-title="Only bots at the keyboard"
+          data-body="Hides anyone offline. Ranks stay as they are in the full field, so you can still see where they sit.">
+          <input type="checkbox" id="onlineOnly"> online only
+        </label>
+        <span class="note">hover a talent &middot; &#8599; opens the build in the calculator</span>
+      </h2>
+      <div class="hrow">
+        <span></span><span>Who</span><span>Bot</span><span>Lv</span><span>Progress</span>
+        <span>Spent</span><span>Top talents</span><span>Played</span><span>&dagger;</span><span></span>
+      </div>
       <div class="rows" id="rows"></div>
     </div>
-    <div class="card" style="margin-top:18px" id="detailCard" hidden>
-      <h2>Bot</h2>
+    <div class="card" id="detailCard" hidden>
+      <h2>Bot <span class="note">click the row again to close</span></h2>
       <div class="detail" id="detail"></div>
     </div>
   </div>
-
-  <div class="card">
-    <h2>What's happening</h2>
-    <div class="feed" id="feed"></div>
+  <div class="col">
+    <div class="card">
+      <h2>Which build is winning</h2>
+      <div class="tbl" id="analysisMini"></div>
+    </div>
+    <div class="card">
+      <h2>What's happening</h2>
+      <div class="feed" id="feed"></div>
+    </div>
   </div>
 </div>
 
-<p class="note">
+<!-- ======== profiles ======== -->
+<div class="profiles" id="v-profiles" hidden></div>
+
+<!-- ======== analysis ======== -->
+<div class="wrap one" id="v-analysis" hidden>
+  <div class="col">
+    <div class="card">
+      <h2>Split times by build <span class="note">hours played to reach a level everyone has passed</span></h2>
+      <div class="tbl" id="analysisFull"></div>
+    </div>
+    <div class="card">
+      <h2>What the field is picking <span class="note">share of bots with the talent, and average rank</span></h2>
+      <div class="pop" id="popularity"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== history ======== -->
+<div class="wrap one" id="v-history" hidden>
+  <div class="col">
+    <div class="card">
+      <h2>Past races</h2>
+      <div class="past" id="past"></div>
+    </div>
+  </div>
+</div>
+
+<p class="note-foot">
   Bots pick their own talents as they level, and what they pick is what decides the race.
   Nothing here touches the live game.
 </p>
 
+<div id="tip"></div>
+
 <script>
 const CALC = "__CALC__";
-const MAXLVL = 60;
+const ICON = n => "https://wow.zamimg.com/images/wow/icons/large/" + n + ".jpg";
+const CLASS_COLOR = {
+  Warrior:"#C79C6E", Paladin:"#F58CBA", Hunter:"#ABD473", Rogue:"#FFF569", Priest:"#FFFFFF",
+  Shaman:"#0070DE", Mage:"#69CCF0", Warlock:"#9482C9", Druid:"#FF7D0A", "Death Knight":"#C41F3B"
+};
+const PALETTE = ["#5b9bd5", "#e08a3c", "#4fbf87", "#b07fd0", "#d05f6a"];
 
-// #bot=Gorbeard opens straight onto one bot, so a run can be linked to
-let selected = (location.hash.match(/bot=([^&]+)/) || [])[1] || null;
-if (selected) selected = decodeURIComponent(selected);
-let lastEvent = 0;
-let maxLevel = 60;
+let TREES = [], COLOUR = {}, DICT = null;
+let view = "race";
+let selected = null;
+let raceId = null, lastEvent = 0, histAfter = 0, ticks = 0;
+let tracks = {}, marks = { deaths: {}, finishes: {} };
+let maxLevel = 60, lastState = null;
+// remembered per browser, so the filter survives a refresh
+let onlineOnly = false;
+try { onlineOnly = localStorage.getItem("sim.onlineOnly") === "1"; } catch (e) {}
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const hhmm = m => Math.floor(m / 60) + "h" + String(Math.round(m % 60)).padStart(2, "0");
-// "Enhancement 18 / Elemental 4" with the leading tree picked out
-function specHtml(spec) {
-  if (!spec || spec === "no points yet") return '<span style="color:#4d4943">—</span>';
-  const parts = spec.split(" / ");
-  return "<em>" + esc(parts[0]) + "</em>" + (parts.length > 1 ? " / " + esc(parts.slice(1).join(" / ")) : "");
-}
-
 const days = m => {
   const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
   return d ? d + "d " + h + "h" : h + "h";
 };
-// to the minute, so two things happening in the same hour do not read as one
-// line printed twice
+const mins = m => {
+  const t = Math.round(m);
+  return t < 60 ? t + " min" : Math.floor(t / 60) + "h " + String(t % 60).padStart(2, "0") + "m";
+};
 const stamp = m => {
   const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = Math.round(m % 60);
   return (d ? d + "d " : "") + h + ":" + String(mm).padStart(2, "0");
 };
 
+/* ---------------- hash: #view or #view/bot ---------------- */
+
+function readHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  const legacy = h.match(/^bot=(.+)$/);              // links made before views
+  if (legacy) return { view: "race", bot: legacy[1] };
+  const [v, b] = h.split("/");
+  return { view: ["race", "profiles", "analysis", "history"].includes(v) ? v : "race", bot: b || null };
+}
+function writeHash() {
+  location.hash = view + (selected ? "/" + encodeURIComponent(selected) : "");
+}
+
+/* ---------------- tooltip ---------------- */
+/*
+ * One floating box, same shape as the calculator's. Anything with data-tt gets
+ * one; talents look their text up in the dictionary so the tooltip says what
+ * the talent actually does, not just its name.
+ */
+const tip = $("tip");
+
+function talentTip(treeId, talId, rank) {
+  if (!DICT) return "";
+  const tree = DICT.trees.find(t => t.id === treeId);
+  const tal = tree && tree.talents[talId];
+  if (!tal) return `<div class="t-name">${esc(talId)}</div>`;
+  const r = Math.max(0, Math.min(rank | 0, tal.maxRank));
+  let h = `<div class="t-name">${esc(tal.name)}</div>`;
+  h += `<div class="t-rank">Rank ${r}/${tal.maxRank}</div>`;
+  if (tal.reqPoints) h += `<div class="t-req">Requires ${tal.reqPoints} points in ${esc(tree.name)}</div>`;
+  if (tal.prereq) h += `<div class="t-req">Requires ${esc(tal.prereq)}</div>`;
+  if (r > 0) h += `<div class="t-desc">${esc(tal.ranks[r - 1] || "")}</div>`;
+  if (r < tal.maxRank) {
+    h += `<div class="t-nexth">Next rank:</div><div class="t-next">${esc(tal.ranks[r] || "")}</div>`;
+  }
+  return h;
+}
+
+const STAT_TIP = {
+  power: ["Power", "How fast things die. Damage, crit and attack-speed talents feed this; it is the biggest single lever on levelling speed."],
+  sustain: ["Sustain", "How little time is spent sitting down. Mana cost, regen and self-healing talents feed this, and it competes with power rather than supporting it."],
+  defense: ["Defense", "How rarely a fight goes wrong. Barely matters when death costs a corpse run; decides everything when death is permanent."],
+  aoe: ["AoE", "Whether three mobs can be pulled instead of one."],
+};
+
+function showTip(el, ev) {
+  let html = "";
+  if (el.dataset.tt === "talent") {
+    html = talentTip(el.dataset.tree, el.dataset.tal, el.dataset.rank);
+  } else if (el.dataset.tt === "stat") {
+    const s = STAT_TIP[el.dataset.stat];
+    html = `<div class="t-name">${s[0]}</div><div class="t-desc">${s[1]}</div>`;
+  } else if (el.dataset.tt === "text") {
+    html = `<div class="t-name">${esc(el.dataset.title || "")}</div>` +
+           `<div class="t-desc">${esc(el.dataset.body || "")}</div>`;
+  } else return;
+
+  tip.innerHTML = html;
+  tip.style.display = "block";
+  moveTip(ev);
+}
+function moveTip(ev) {
+  const pad = 16, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = Math.max(8, ev.clientY - h - pad);
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+document.addEventListener("mouseover", e => {
+  const el = e.target.closest("[data-tt]");
+  if (el) showTip(el, e); else tip.style.display = "none";
+});
+document.addEventListener("mousemove", e => {
+  if (tip.style.display === "block") moveTip(e);
+});
+document.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+
+/* ---------------- small builders ---------------- */
+
+function talentIcon(t, small) {
+  const maxed = t.rank >= t.maxRank;
+  return `<span class="ti ${small ? "sm" : ""} ${maxed ? "max" : ""}"
+    data-tt="talent" data-tree="${esc(t.tree)}" data-tal="${esc(t.id)}" data-rank="${t.rank}">
+    <img src="${ICON(t.icon)}" alt="" loading="lazy"><i>${t.rank}</i></span>`;
+}
+
+// faction crest + race portrait, with the full character in the tooltip
+function identCell(b) {
+  if (!b.raceIcon && !b.factionIcon) return '<span></span>';
+  const who = `${b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) + " " : ""}${b.race || ""}`;
+  return `<div class="idc"
+      data-tt="text" data-title="${esc(b.name)}"
+      data-body="${esc(who)} ${esc(lastState ? lastState.race.klass : "")} of the ${esc(b.faction || "")}">
+    ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}" loading="lazy">` : ""}
+    ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}" loading="lazy">` : ""}
+  </div>`;
+}
+
+/*
+ * A tree drawn as a tree. The calculator lays talents out by a position like
+ * "c2" - row letter, column number - so the same positions give the same shape
+ * here, and an empty square stays empty.
+ */
+function treeGrid(treeId, ranks) {
+  if (!DICT) return "";
+  const tree = DICT.trees.find(t => t.id === treeId);
+  if (!tree) return "";
+  const cells = {};
+  let rows = 0;
+  for (const [id, tal] of Object.entries(tree.talents)) {
+    const row = tal.pos.charCodeAt(0) - 97, col = Number(tal.pos[1]) - 1;
+    cells[row + ":" + col] = { id, tal };
+    if (row + 1 > rows) rows = row + 1;
+  }
+  let html = '<div class="tgrid">';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < 4; c++) {
+      const cell = cells[r + ":" + c];
+      if (!cell) { html += '<span class="tcell"></span>'; continue; }
+      const rank = ranks[cell.id] || 0;
+      html += `<span class="ti ${rank >= cell.tal.maxRank ? "max" : ""} ${rank ? "" : "none"}"
+        data-tt="talent" data-tree="${esc(treeId)}" data-tal="${esc(cell.id)}" data-rank="${rank}">
+        <img src="${ICON(cell.tal.icon)}" alt="" loading="lazy"><i>${rank}/${cell.tal.maxRank}</i></span>`;
+    }
+  }
+  return html + "</div>";
+}
+
+function splitBar(split) {
+  const total = TREES.reduce((n, t) => n + (split[t] || 0), 0);
+  if (!total) return '<span class="split"></span>';
+  const body = TREES.map(t => {
+    const n = split[t] || 0;
+    return n ? `<i style="width:${((n / total) * 100).toFixed(1)}%;background:${COLOUR[t]}"></i>` : "";
+  }).join("");
+  const label = TREES.filter(t => split[t]).map(t => `${t} ${split[t]}`).join(", ");
+  return `<span class="split" data-tt="text" data-title="Points spent" data-body="${esc(label)}">${body}</span>`;
+}
+
+/* ---------------- chart ---------------- */
+
+function drawChart(board, raceMinutes) {
+  const W = 1000, H = 280, L = 26, R = 8, T = 8, B = 16;
+  const span = Math.max(raceMinutes, 120);
+  const x = m => L + (m / span) * (W - L - R);
+  const y = l => T + (1 - (l - 1) / (maxLevel - 1)) * (H - T - B);
+  const bits = [];
+
+  for (let lv = 10; lv <= maxLevel; lv += 10) {
+    bits.push(`<line class="grid" x1="${L}" y1="${y(lv).toFixed(1)}" x2="${W - R}" y2="${y(lv).toFixed(1)}"/>`);
+    bits.push(`<text class="axis" x="2" y="${(y(lv) + 3).toFixed(1)}">${lv}</text>`);
+  }
+  const step = span > 8 * 1440 ? 2880 : 1440;
+  for (let m = step; m <= span; m += step) {
+    bits.push(`<line class="grid" x1="${x(m).toFixed(1)}" y1="${T}" x2="${x(m).toFixed(1)}" y2="${H - B}"/>`);
+    bits.push(`<text class="axis" x="${x(m).toFixed(1)}" y="${H - 3}" text-anchor="middle">${Math.round(m / 1440)}d</text>`);
+  }
+
+  for (const b of board.slice().reverse()) {
+    const pts = tracks[b.id];
+    if (!pts || !pts.length) continue;
+    let d = `M ${x(0).toFixed(1)} ${y(1).toFixed(1)}`;
+    for (const p of pts) d += ` L ${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`;
+    // carry to now, so a stalled bot reads as a flat run rather than stopping
+    if (b.alive && b.finishedAt === null) d += ` L ${x(raceMinutes).toFixed(1)} ${y(b.level).toFixed(1)}`;
+    const cls = selected ? (selected === b.id ? "on" : "off") : "";
+    bits.push(`<path class="${cls}" stroke="${COLOUR[b.lead] || "#6c6960"}" d="${d}"/>`);
+  }
+  for (const b of board) {
+    if (selected && selected !== b.id) continue;
+    for (const p of (marks.deaths[b.id] || [])) {
+      bits.push(`<circle class="dead" cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="${b.alive ? 1.8 : 3.4}"/>`);
+    }
+    const f = marks.finishes[b.id];
+    if (f) bits.push(`<circle class="fin" cx="${x(f[0]).toFixed(1)}" cy="${y(f[1]).toFixed(1)}" r="3.4"/>`);
+  }
+
+  $("chart").innerHTML = bits.join("");
+  $("chartNote").textContent = selected ? selected + " highlighted" : "click a bot to pick one out";
+  $("legend").innerHTML = TREES.map(t =>
+    `<span><i style="background:${COLOUR[t]}"></i>${esc(t)}</span>`).join("")
+    + '<span><i style="background:#c23b3b;border-radius:50%;width:6px;height:6px"></i>death</span>'
+    + `<span><i style="background:#ffd100;border-radius:50%;width:6px;height:6px"></i>reached ${maxLevel}</span>`;
+}
+
 /* ---------------- leaderboard ---------------- */
 
-function drawBoard(state) {
+function drawHeader(state) {
   maxLevel = state.race.maxLevel;
   $("title").textContent = state.race.name;
   $("clock").textContent = state.intermission
     ? "next race in " + Math.ceil(state.intermission / 1000) + "s"
     : "race time " + days(state.race.minutes);
-  $("speed").textContent = state.speed + " sim-minutes per second";
+  $("speed").textContent = state.speed + " sim-min/sec";
   $("hc").hidden = !state.race.hardcore;
-
   const done = state.board.filter(b => b.finishedAt !== null).length;
   const dead = state.board.filter(b => !b.alive).length;
-  $("boardHead").textContent =
-    `Leaderboard — ${done} at ${maxLevel}` + (dead ? `, ${dead} dead` : "");
+  $("field").textContent = `${state.board.length} racing · ${done} at ${maxLevel}` +
+    (dead ? ` · ${dead} dead` : "");
+}
 
-  $("rows").innerHTML = state.board.map((b, i) => {
+function drawBoard(state) {
+  const ranked = state.board.map((b, i) => ({ b, place: i + 1 }));
+  const shown = onlineOnly
+    ? ranked.filter(r => r.b.online && r.b.alive && r.b.finishedAt === null)
+    : ranked;
+
+  $("rows").innerHTML = (shown.length ? shown : []).map(({ b, place: i }) => {
     const pct = ((b.level - 1 + b.progress) / (maxLevel - 1)) * 100;
-    const cls = b.finishedAt !== null ? "done" : (!b.alive ? "dead" : "");
-    return `<div class="row ${b.alive ? "" : "dead"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
-      <div class="rank">${i + 1}</div>
-      <div class="who"><span class="dot ${b.online && b.alive && b.finishedAt === null ? "on" : ""}"></span><b>${esc(b.name)}</b></div>
+    const fin = b.finishedAt !== null;
+    return `<div class="row ${b.alive ? "" : "gone"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
+      <div class="rank">${i}</div>
+      ${identCell(b)}
+      <div class="who"><span class="dot ${b.online && b.alive && !fin ? "on" : ""}"
+        data-tt="text" data-title="${esc(b.name)}"
+        data-body="${b.online && b.alive && !fin ? "At the keyboard right now" : "Offline"}"></span><b
+        data-tt="text" data-title="${esc(b.name)}"
+        data-body="${esc(b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : "")} ${esc(b.race || "")} ${esc(lastState ? lastState.race.klass : "")} — ${esc(b.faction || "")}. ${esc(b.spec || "no points yet")}."
+        >${esc(b.name)}</b></div>
       <div class="lvl">${b.level}</div>
-      <div class="track">
-        <div class="fill ${cls}" style="width:${pct.toFixed(1)}%"></div>
-        <div class="tip" style="left:calc(${pct.toFixed(1)}% - 1px)"></div>
-      </div>
-      <div class="spec">${specHtml(b.spec)}</div>
-      <div class="meta">${hhmm(b.played)}${b.deaths ? ` <span class="d">†${b.deaths}</span>` : ""}</div>
+      <div class="track"><div class="fill ${fin ? "done" : (b.alive ? "" : "gone")}" style="width:${pct.toFixed(1)}%"></div></div>
+      <div>${splitBar(b.split)}</div>
+      <div class="tops">${(b.top || []).map(t => talentIcon(t, true)).join("")}</div>
+      <div class="num"><b>${hhmm(b.played)}</b></div>
+      <div class="num ${b.deaths ? "warn" : ""}">${b.deaths || "–"}</div>
+      ${b.code ? `<a class="calc" href="${CALC}#${b.code}" target="_blank" rel="noopener"
+          data-tt="text" data-title="Open in the talent calculator"
+          data-body="${esc(b.name)}'s build exactly as it stands now"
+          onclick="event.stopPropagation()">&#8599;</a>` : "<span></span>"}
     </div>`;
-  }).join("");
+  }).join("") || '<p class="hint">Nobody is at the keyboard right now.</p>';
 
-  for (const el of document.querySelectorAll(".row")) {
-    el.onclick = () => {
-      selected = selected === el.dataset.id ? null : el.dataset.id;
-      location.hash = selected ? "bot=" + encodeURIComponent(selected) : "";
-      if (selected) loadBot(); else $("detailCard").hidden = true;
-    };
+  for (const el of $("rows").querySelectorAll(".row")) {
+    el.onclick = () => pick(el.dataset.id);
   }
 }
 
-/* ---------------- feed ---------------- */
+function pick(id) {
+  selected = selected === id ? null : id;
+  writeHash();
+  if (selected) loadBot(); else $("detailCard").hidden = true;
+  if (lastState) { drawBoard(lastState); drawChart(lastState.board, lastState.race.minutes); }
+}
 
-function drawFeed(events) {
-  if (!events.length) return;
-  const feed = $("feed");
-  const atTop = feed.scrollTop < 8;
-  const html = events.map(e => {
-    let text;
-    if (e.type === "ding") text = `<b>${esc(e.name)}</b> reached ${e.level}`;
-    else if (e.type === "finish") text = `<b>${esc(e.name)}</b> hit ${e.level}! — ${hhmm(e.detail.playedMinutes)} played`;
-    else text = e.detail.fatal
-      ? `<b>${esc(e.name)}</b> died at ${e.level} — eliminated`
-      : `<b>${esc(e.name)}</b> died at ${e.level}`;
-    return `<div class="ev ${e.type} new"><span class="at">${stamp(e.at)}</span><span>${text}</span></div>`;
+/* ---------------- split times ---------------- */
+
+function splitAt(id, lvl) {
+  const t = tracks[id];
+  if (!t) return null;
+  for (const p of t) if (p[1] === lvl && p[2] != null) return p[2];
+  return null;
+}
+
+function buildGroups(board) {
+  const live = board.filter(b => b.lead);
+  if (!live.length) return null;
+  let mark = 0;
+  for (const lvl of [50, 40, 30, 20, 10]) {
+    const got = live.filter(b => splitAt(b.id, lvl) != null);
+    if (got.length >= Math.max(3, live.length * 0.4)) { mark = lvl; break; }
+  }
+  const groups = TREES.map(t => {
+    const g = live.filter(b => b.lead === t);
+    if (!g.length) return null;
+    const sp = g.map(b => splitAt(b.id, mark)).filter(v => v != null);
+    return {
+      tree: t, n: g.length,
+      level: g.reduce((n, b) => n + b.level, 0) / g.length,
+      deaths: g.reduce((n, b) => n + b.deaths, 0) / g.length,
+      played: g.reduce((n, b) => n + b.played, 0) / g.length / 60,
+      split: sp.length ? sp.reduce((a, b) => a + b, 0) / sp.length / 60 : null,
+      splitN: sp.length,
+    };
+  }).filter(Boolean);
+  return { mark, groups, live };
+}
+
+function analysisTable(board, full) {
+  const d = buildGroups(board);
+  if (!d) return '<p class="hint">Nobody has spent a point yet.</p>';
+  const { mark, groups, live } = d;
+  const ranked = groups.filter(g => g.split != null).sort((a, b) => a.split - b.split);
+  const top = ranked[0];
+
+  return `<table>
+      <tr><th>Leaning</th><th>Bots</th><th>Avg lv</th>
+          <th>${mark ? "To " + mark : "Split"}</th>${full ? "<th>Played</th>" : ""}<th>&dagger;</th></tr>
+      ${groups.map(g => `<tr>
+        <td><span class="tree"><i style="background:${COLOUR[g.tree]}"></i>${esc(g.tree)}</span></td>
+        <td>${g.n}</td><td>${g.level.toFixed(1)}</td>
+        <td>${g.split == null ? "–" : g.split.toFixed(1) + "h"}</td>
+        ${full ? `<td>${g.played.toFixed(1)}h</td>` : ""}
+        <td>${g.deaths.toFixed(1)}</td>
+      </tr>`).join("")}
+    </table>` +
+    (top
+      ? `<p><b style="color:${COLOUR[top.tree]}">${esc(top.tree)}</b>-leaning bots reached level
+         ${mark} fastest, in <b>${top.split.toFixed(1)}h</b> played on average.
+         Split times compare bots at the same level, because levels get slower &mdash; averaging
+         a whole career would only flatter whoever is furthest behind.</p>`
+      : `<p>Not enough of the field has passed a common level yet. This fills in once
+         ${Math.max(3, Math.ceil(live.length * 0.4))} bots have reached level 10.</p>`);
+}
+
+/* ---------------- profiles ---------------- */
+
+function drawProfiles(board) {
+  $("v-profiles").innerHTML = board.map(b => {
+    const fin = b.finishedAt !== null;
+    const badge = fin ? '<span class="badge done">reached 60</span>'
+      : (!b.alive ? '<span class="badge dead">dead</span>' : "");
+    const s = b.stats || { power: 0, sustain: 0, defense: 0, aoe: 0 };
+    return `<div class="pc ${b.alive ? "" : "gone"}" data-id="${esc(b.id)}">
+      <div class="ph">
+        <div class="lvlring">${b.level}</div>
+        ${identCell(b)}
+        <div class="pn"><b>${esc(b.name)}</b><span>${esc(b.spec || "no points yet")}</span></div>
+      </div>
+      <div class="prow">${splitBar(b.split)}${badge}</div>
+      <div class="adv" data-tt="text" data-title="How much the talents are worth"
+        data-body="Experience per hour compared with the same character carrying no talents at all. It folds kill speed, downtime and pulling into one number.">
+        levels <b>${b.advantage >= 1 ? "+" : ""}${Math.round(((b.advantage || 1) - 1) * 100)}%</b> faster than an untalented ${esc(lastState ? lastState.race.klass : "character")}
+      </div>
+      <div class="prow">${(b.top || []).map(t => talentIcon(t)).join("") || '<span style="color:#4f4c46;font-size:11px">no talents yet</span>'}</div>
+      <div class="pstat">
+        <div><b>${hhmm(b.played)}</b><span>played</span></div>
+        <div><b>${b.deaths}</b><span>deaths</span></div>
+        <div><b>${b.points}</b><span>points</span></div>
+        <div><b>${b.online && b.alive && !fin ? "on" : "off"}</b><span>status</span></div>
+      </div>
+    </div>`;
   }).join("");
-  feed.insertAdjacentHTML("afterbegin", html);
-  while (feed.children.length > 120) feed.removeChild(feed.lastChild);
-  if (atTop) feed.scrollTop = 0;
-  lastEvent = Math.max(lastEvent, ...events.map(e => e.id));
+
+  for (const el of $("v-profiles").querySelectorAll(".pc")) {
+    el.onclick = () => { selected = el.dataset.id; setView("race"); pick(el.dataset.id); };
+  }
+}
+
+/* ---------------- popularity ---------------- */
+
+async function drawPopularity() {
+  try {
+    const d = await (await fetch("api/popularity")).json();
+    if (!d.talents.length) { $("popularity").innerHTML = '<p class="hint">No points spent yet.</p>'; return; }
+    $("popularity").innerHTML = d.talents.slice(0, 26).map(t => `
+      <div class="pl-row">
+        ${talentIcon({ tree: t.tree, id: t.id, icon: t.icon, rank: Math.round(t.avgRank), maxRank: t.maxRank }, true)}
+        <span class="nm" style="color:${COLOUR[t.tree]}">${esc(t.id)}</span>
+        <span class="mtr"><i style="width:${(t.share * 100).toFixed(0)}%;background:${COLOUR[t.tree]}"></i></span>
+        <span class="pct">${Math.round(t.share * 100)}%</span>
+      </div>`).join("");
+  } catch (e) { /* keep what is there */ }
 }
 
 /* ---------------- one bot ---------------- */
@@ -268,70 +790,206 @@ async function loadBot() {
     b = await res.json();
   } catch (e) { return; }
 
-  const bar = (k, v, max) => `<div class="bar">
-      <span class="k">${k}</span>
-      <span class="t"><span class="v" style="width:${Math.min(100, (v / max) * 100).toFixed(0)}%"></span></span>
-      <span class="n">${v.toFixed(2)}</span>
-    </div>`;
+  const where = b.finishedAt !== null ? `reached ${maxLevel} in ${hhmm(b.played)} played`
+    : (!b.alive ? `died at level ${b.level}` : `level ${b.level}`);
 
-  const state = b.finishedAt !== null ? `finished at ${b.level}`
-    : (!b.alive ? `died at ${b.level}` : `level ${b.level}`);
+  // ranks as they stand right now, from the points actually spent
+  const ranks = {};
+  for (const st of b.plan) if (st.taken) ranks[st.talent] = st.rank;
+
+  const byTree = {};
+  for (const st of b.plan) if (st.taken) byTree[st.tree] = (byTree[st.tree] || 0) + 1;
+
+  const fx = b.effects || {};
+  const pc = v => (v >= 0 ? "+" : "") + Math.round(v * 100) + "%";
+
+  const who = [
+    b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : null,
+    b.race, b.klass,
+  ].filter(Boolean).join(" ");
 
   $("detail").innerHTML =
-    `<p class="name">${esc(b.name)}</p>
-     <p class="sub">${esc(b.spec || "no points yet")} — ${state}</p>
-     <div class="bars">
-       ${bar("Power", b.stats.power, 1)}
-       ${bar("Sustain", b.stats.sustain, 1)}
-       ${bar("Defense", b.stats.defense, 0.6)}
-       ${bar("AoE", b.stats.aoe, 0.2)}
+    `<div class="dhead">
+       <div class="lvlring" style="width:38px;height:38px;font-size:14px">${b.level}</div>
+       ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}"
+         style="width:26px;height:26px;border-radius:3px;border:1px solid #000"
+         data-tt="text" data-title="${esc(b.faction)}" data-body="Faction">` : ""}
+       ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}"
+         style="width:26px;height:26px;border-radius:3px;border:1px solid #000"
+         data-tt="text" data-title="${esc(who)}" data-body="Race and class">` : ""}
+       <p class="name">${esc(b.name)}</p>
+       <span class="sub">${esc(who)} — ${esc(b.spec || "no points yet")} — ${where}</span>
      </div>
-     <div class="facts">
-       Played <span>${hhmm(b.played)}</span> &middot; ${b.points} talent points
-       &middot; <span>${b.deaths}</span> death${b.deaths === 1 ? "" : "s"}<br>
-       Plays <span>${b.hoursPerDay.toFixed(1)}h</span> a day,
-       ${b.recklessness > 0.66 ? "<span>recklessly</span>"
-         : b.recklessness > 0.33 ? "fairly boldly" : "<span>carefully</span>"}
+
+     ${b.level < maxLevel ? `<div class="xpbox">
+       <div class="xphead">
+         <b>${Math.round(b.progress * 100)}%</b>
+         <span class="to">of the way to level ${b.level + 1}</span>
+         <span class="eta">${b.etaPlayed == null ? ""
+           : `about ${mins(b.etaPlayed)} more at the keyboard · ${mins(b.etaRace)} of race time`}</span>
+       </div>
+       <div class="xpbar"><i style="width:${(b.progress * 100).toFixed(1)}%"></i>
+         <span>${b.xp.toLocaleString()} / ${b.xpNeeded.toLocaleString()} xp</span></div>
+       <div class="xpfoot">
+         <span>Earning <b>${b.xpPerHour.toLocaleString()}</b> xp an hour played</span>
+         <span><b>${(b.xpNeeded - b.xp).toLocaleString()}</b> to go</span>
+         ${b.nextTalent ? `<span>Next point goes into
+           <b data-tt="talent" data-tree="${esc(b.nextTalent.tree)}" data-tal="${esc(b.nextTalent.talent)}" data-rank="0"
+             style="cursor:help">${esc(b.nextTalent.talent)}</b></span>` : ""}
+       </div>
+     </div>` : `<div class="xpbox"><div class="xphead"><b>Finished</b>
+       <span class="to">reached level ${maxLevel} in ${hhmm(b.played)} played</span></div></div>`}
+
+     <div class="fx">
+       <div class="lead">This build levels <b>${pc((fx.advantage || 1) - 1)}</b> faster than the
+         same character with no talents spent at all.</div>
+       <div class="grid4">
+         <div class="cell" data-tt="stat" data-stat="power">
+           <b>${pc((fx.killSpeed || 1) - 1)}</b><span>kill speed</span>
+           <em>power ${(b.stats.power).toFixed(2)}</em></div>
+         <div class="cell" data-tt="stat" data-stat="sustain">
+           <b>${Math.round((fx.downtime || 0) * 100)}%</b><span>time sat drinking</span>
+           <em>was ${Math.round((fx.baseDowntime || 0) * 100)}% · sustain ${(b.stats.sustain).toFixed(2)}</em></div>
+         <div class="cell" data-tt="stat" data-stat="defense">
+           <b>${(fx.deathsPerHour || 0).toFixed(2)}</b><span>deaths an hour</span>
+           <em>bare ${(fx.bareDeathsPerHour || 0).toFixed(2)} · defense ${(b.stats.defense).toFixed(2)}</em></div>
+         <div class="cell" data-tt="stat" data-stat="aoe">
+           <b>${pc(fx.aoeBonus || 0)}</b><span>from pulling extra</span>
+           <em>aoe ${(b.stats.aoe).toFixed(2)}</em></div>
+       </div>
+       <div class="raw">Play style: ${b.recklessness > 0.66 ? "reckless" : b.recklessness > 0.33 ? "fairly bold" : "careful"}
+         · ${b.hoursPerDay.toFixed(1)}h a day · ${b.points} points spent · ${b.deaths} deaths so far</div>
      </div>
-     <a class="open" href="${CALC}#${encodeURIComponent(b.code)}" target="_blank" rel="noopener">
-       Open this build in the calculator &rarr;
-     </a>
-     <div class="plan">
-       ${b.plan.map(s => `<div class="pstep ${s.taken ? "taken" : ""}">
-           <span class="pl">${s.level}</span>
-           <span>${esc(s.talent)}</span>
-           <span class="pt">${esc(s.tree)}</span>
-         </div>`).join("")}
-     </div>`;
+
+     <div class="plans">
+       ${DICT ? DICT.trees.map(t => `<div class="ptree">
+         <h3 style="color:${COLOUR[t.id]}">${esc(t.name)}
+           <span style="color:#5d5952;font-weight:400">${byTree[t.id] || 0}</span></h3>
+         ${treeGrid(t.id, ranks)}
+         <div class="tsum"><b style="color:${COLOUR[t.id]}">${byTree[t.id] || 0}</b> points</div>
+       </div>`).join("") : ""}
+     </div>
+
+     <a class="open" href="${CALC}#${b.code}" target="_blank" rel="noopener">
+       Open this build in the calculator &rarr;</a>`;
   $("detailCard").hidden = false;
+}
+
+/* ---------------- past races ---------------- */
+
+async function loadPast() {
+  try {
+    const rows = (await (await fetch("api/past")).json()).filter(r => r.winner);
+    $("past").innerHTML = rows.length ? rows.map(r => `<div class="r">
+        <span class="id">${esc(r.name.replace(/^Race /, ""))}</span>
+        <span class="w">${esc(r.winner.name)}
+          <span style="color:#5d5952">${esc(r.winner.spec)}</span></span>
+        <span class="t">${hhmm(r.winner.played)} · ${r.finished}/${r.bots} finished</span>
+      </div>`).join("") : '<p class="hint">no race has finished yet</p>';
+  } catch (e) { /* keep what is there */ }
+}
+
+/* ---------------- views ---------------- */
+
+function setView(v) {
+  view = v;
+  for (const id of ["race", "profiles", "analysis", "history"]) $("v-" + id).hidden = id !== v;
+  for (const b of $("tabs").querySelectorAll("button")) b.classList.toggle("on", b.dataset.view === v);
+  writeHash();
+  if (v === "analysis") { $("analysisFull").innerHTML = analysisTable(lastState ? lastState.board : [], true); drawPopularity(); }
+  if (v === "history") loadPast();
+  if (v === "profiles" && lastState) drawProfiles(lastState.board);
+}
+for (const b of $("tabs").querySelectorAll("button")) b.onclick = () => setView(b.dataset.view);
+
+$("onlineOnly").checked = onlineOnly;
+$("onlineOnly").onchange = e => {
+  onlineOnly = e.target.checked;
+  try { localStorage.setItem("sim.onlineOnly", onlineOnly ? "1" : "0"); } catch (err) {}
+  if (lastState) drawBoard(lastState);
+};
+
+/* ---------------- feed ---------------- */
+
+function drawFeed(events) {
+  if (!events.length) return;
+  const feed = $("feed");
+  if (feed.querySelector(".hint")) feed.innerHTML = "";
+  const atTop = feed.scrollTop < 8;
+  feed.insertAdjacentHTML("afterbegin", events.map(e => {
+    let text;
+    if (e.type === "ding") text = `<b>${esc(e.name)}</b> reached ${e.level}`;
+    else if (e.type === "finish") text = `<b>${esc(e.name)}</b> hit ${e.level}! — ${hhmm(e.detail.playedMinutes)} played`;
+    else text = e.detail.fatal
+      ? `<b>${esc(e.name)}</b> died at ${e.level} — eliminated`
+      : `<b>${esc(e.name)}</b> died at ${e.level}`;
+    return `<div class="ev ${e.type} new"><span class="at">${stamp(e.at)}</span><span>${text}</span></div>`;
+  }).join(""));
+  while (feed.children.length > 120) feed.removeChild(feed.lastChild);
+  if (atTop) feed.scrollTop = 0;
+  lastEvent = Math.max(lastEvent, ...events.map(e => e.id));
 }
 
 /* ---------------- poll ---------------- */
 
-let raceId = null;
-
 async function poll() {
   try {
     const state = await (await fetch("api/state")).json();
-    if (state.race.id !== raceId) {      // a new race started: begin again
+    lastState = state;
+
+    if (!TREES.length && state.board.length) {
+      TREES = Object.keys(state.board[0].split);
+      TREES.forEach((t, i) => { COLOUR[t] = PALETTE[i % PALETTE.length]; });
+      document.documentElement.style.setProperty("--class", CLASS_COLOR[state.race.klass] || "#C79C6E");
+    }
+
+    if (state.race.id !== raceId) {
       const first = raceId === null;
       raceId = state.race.id;
-      lastEvent = 0;
-      if (!first) { selected = null; location.hash = ""; }
+      lastEvent = 0; histAfter = 0; tracks = {}; marks = { deaths: {}, finishes: {} };
       $("feed").innerHTML = "";
-      $("detailCard").hidden = true;
+      if (!first) { selected = null; writeHash(); $("detailCard").hidden = true; loadPast(); }
     }
-    drawBoard(state);
 
-    const events = await (await fetch("api/feed?after=" + lastEvent)).json();
-    drawFeed(events);
-    if (selected) loadBot();
-  } catch (e) { /* the server is restarting; the next tick will pick it up */ }
+    if (ticks % 3 === 0 || !Object.keys(tracks).length) {
+      const h = await (await fetch("api/history?after=" + histAfter)).json();
+      histAfter = h.maxId;
+      for (const k in h.tracks) (tracks[k] = tracks[k] || []).push(...h.tracks[k]);
+      for (const k in h.deaths) (marks.deaths[k] = marks.deaths[k] || []).push(...h.deaths[k]);
+      Object.assign(marks.finishes, h.finishes);
+    }
+    ticks++;
+
+    drawHeader(state);
+
+    if (view === "race") {
+      drawBoard(state);
+      drawChart(state.board, state.race.minutes);
+      $("analysisMini").innerHTML = analysisTable(state.board, false);
+      drawFeed(await (await fetch("api/feed?after=" + lastEvent)).json());
+      if (selected) loadBot();
+    } else if (view === "profiles") {
+      drawProfiles(state.board);
+    } else if (view === "analysis" && ticks % 5 === 0) {
+      $("analysisFull").innerHTML = analysisTable(state.board, true);
+      drawPopularity();
+    }
+  } catch (e) { /* the server is restarting; the next tick picks it up */ }
 }
 
-$("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
-poll();
-setInterval(poll, 1000);
+/* ---------------- go ---------------- */
+
+(async () => {
+  try { DICT = await (await fetch("api/talents")).json(); } catch (e) { /* tooltips degrade */ }
+  const h = readHash();
+  selected = h.bot;
+  $("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
+  setView(h.view);
+  loadPast();
+  await poll();
+  if (selected) loadBot();
+  setInterval(poll, 1000);
+})();
 </script>
 </body>
 </html>

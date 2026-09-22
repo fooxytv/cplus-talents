@@ -1,0 +1,72 @@
+{
+  "_comment": [
+    "Who the bots are: faction, race, and the names they get.",
+    "",
+    "The class/race table below is VANILLA's. Forever may well differ - Classic+",
+    "servers commonly open up combinations vanilla never had - and if it does,",
+    "this is the file to change. Nothing in the sim hard-codes any of it: a race",
+    "is offered to a class only if the class appears in that race's list, so",
+    "adding 'Shaman' to Dwarf here is all it takes to see Dwarf Shamans race.",
+    "",
+    "Names are built from per-race syllables rather than a fixed list, so a field",
+    "of thirty never repeats and an Orc still sounds like an Orc.",
+    "",
+    "Icons are Wowhead's, the same source the calculator uses."
+  ],
+
+  "factions": {
+    "Alliance": { "icon": "inv_bannerpvp_02", "colour": "#4a7fd0" },
+    "Horde":    { "icon": "inv_bannerpvp_01", "colour": "#c4322f" }
+  },
+
+  "races": {
+    "Human": {
+      "faction": "Alliance", "icon": "race_human",
+      "classes": ["Warrior", "Paladin", "Rogue", "Priest", "Mage", "Warlock"],
+      "head": ["Al", "Bran", "Ced", "Dun", "Ed", "Gar", "Hal", "Mar", "Ren", "Tho"],
+      "tail": ["ric", "wyn", "mont", "field", "ward", "bert", "den", "wick", "ston", "mund"]
+    },
+    "Dwarf": {
+      "faction": "Alliance", "icon": "race_dwarf",
+      "classes": ["Warrior", "Paladin", "Hunter", "Rogue", "Priest"],
+      "head": ["Brom", "Dur", "Grim", "Thor", "Bal", "Mor", "Kaz", "Rug", "Thane", "Bry"],
+      "tail": ["gar", "din", "beard", "forge", "helm", "hammer", "stone", "brew", "grim", "axe"]
+    },
+    "Night Elf": {
+      "faction": "Alliance", "icon": "race_nightelf",
+      "classes": ["Warrior", "Hunter", "Rogue", "Priest", "Druid"],
+      "head": ["Shan", "Elu", "Tyr", "Mal", "Illi", "Sha", "Ny", "Fae", "Lor", "Ael"],
+      "tail": ["dris", "ande", "thas", "riel", "wing", "leaf", "shade", "moon", "star", "wind"]
+    },
+    "Gnome": {
+      "faction": "Alliance", "icon": "race_gnome",
+      "classes": ["Warrior", "Rogue", "Mage", "Warlock"],
+      "head": ["Fizz", "Whir", "Tink", "Buzz", "Nix", "Cog", "Spar", "Wid", "Zap", "Gim"],
+      "tail": ["bolt", "spring", "wick", "gear", "spark", "whistle", "nut", "fuse", "wrench", "click"]
+    },
+    "Orc": {
+      "faction": "Horde", "icon": "race_orc",
+      "classes": ["Warrior", "Hunter", "Rogue", "Shaman", "Warlock"],
+      "head": ["Grom", "Thrag", "Kar", "Mog", "Dur", "Rok", "Gor", "Naz", "Urg", "Thok"],
+      "tail": ["gar", "mash", "thar", "dak", "nak", "rok", "grim", "tusk", "fang", "gol"]
+    },
+    "Undead": {
+      "faction": "Horde", "icon": "race_scourge",
+      "classes": ["Warrior", "Rogue", "Priest", "Mage", "Warlock"],
+      "head": ["Mor", "Vex", "Gral", "Sil", "Dread", "Ash", "Cor", "Wraith", "Grim", "Hol"],
+      "tail": ["bane", "shroud", "mort", "wick", "gaunt", "pyre", "rot", "veil", "hollow", "shade"]
+    },
+    "Tauren": {
+      "faction": "Horde", "icon": "race_tauren",
+      "classes": ["Warrior", "Hunter", "Shaman", "Druid"],
+      "head": ["Storm", "Stone", "Thunder", "Wind", "Sun", "Earth", "Grim", "Swift", "Iron", "Dawn"],
+      "tail": ["hoof", "horn", "mane", "hide", "runner", "walker", "totem", "gaze", "breeze", "song"]
+    },
+    "Troll": {
+      "faction": "Horde", "icon": "race_troll",
+      "classes": ["Warrior", "Hunter", "Rogue", "Priest", "Shaman", "Mage"],
+      "head": ["Zul", "Jin", "Vol", "Rak", "Sen", "Mak", "Tay", "Xar", "Bwon", "Hex"],
+      "tail": ["jin", "zin", "rak", "tha", "mar", "ji", "kar", "nak", "dor", "zi"]
+    }
+  }
+}

@@ -67,8 +67,8 @@ services:
       BASE_PATH: /sim
       # where "open this build in the calculator" should point
       SIM_CALC_BASE: "${SIM_CALC_BASE:-/}"
-      # sim minutes per real second; at 30 a race resolves in about 20 minutes
-      SIM_SPEED: "${SIM_SPEED:-30}"
+      # sim minutes per real second; at 1 a race lasts about 10 hours, at 30 about 20 minutes
+      SIM_SPEED: "${SIM_SPEED:-1}"
       SIM_BOTS: "${SIM_BOTS:-30}"
       SIM_HARDCORE: "${SIM_HARDCORE:-0}"
     restart: unless-stopped
