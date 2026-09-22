@@ -99,6 +99,17 @@ drinking, deaths an hour, and one headline — how much faster this build levels
 than the same character with nothing spent at all. Hover anything for the
 tooltip; talents show their real rank text from the edition data.
 
+### When somebody hits 60
+
+A bell in the top right lights, counts, and plays a short fanfare. Clicking it
+gives the roll of honour with times, and clicking a name jumps to that bot. The
+note button mutes it, remembered per browser.
+
+The fanfare is synthesised rather than shipped: no audio file to serve, nothing
+fetched, nothing a content policy can block. Browsers refuse to start audio
+before the page has been clicked, so the first one may be silent - that is the
+browser, not a fault.
+
 ### Hovers
 
 Tooltips carry the page's real data rather than a line of prose:

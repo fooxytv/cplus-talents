@@ -44,6 +44,37 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .pill.hc{border-color:#5a2222; color:#ff7b6b; background:#1a0f0f}
 .pill.live{border-color:#2a4a20; color:var(--green)}
 .spacer{flex:1}
+.bell{position:relative; display:flex; gap:4px}
+.bellbtn{
+  position:relative; width:32px; height:30px; font-size:15px; line-height:1;
+  background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
+  border-radius:3px; color:#8b8579;
+}
+.bellbtn:hover{border-color:#54555e; color:var(--head)}
+.bellbtn.lit{color:var(--gold); border-color:var(--gold); animation:ring 1.4s ease-out}
+.bellbtn.off{color:#4f4c46}
+@keyframes ring{
+  0%{box-shadow:0 0 0 0 rgba(255,209,0,.55)}
+  100%{box-shadow:0 0 0 14px rgba(255,209,0,0)}
+}
+.badge{
+  position:absolute; top:-6px; right:-6px; min-width:15px; padding:0 4px;
+  font-size:9px; font-weight:700; line-height:15px; border-radius:999px;
+  background:var(--gold); color:#151006;
+}
+.bellpop{
+  position:absolute; top:36px; right:0; width:280px; z-index:60;
+  background:var(--panel); border:1px solid var(--line); border-radius:4px;
+  box-shadow:0 12px 34px rgba(0,0,0,.65); max-height:330px; overflow:auto;
+}
+.bellpop h4{margin:0; padding:8px 12px; font-size:10px; letter-spacing:.6px;
+            text-transform:uppercase; color:#5d5952; border-bottom:1px solid var(--line)}
+.bellpop .bn{display:flex; align-items:center; gap:8px; padding:7px 12px; font-size:12px; cursor:pointer}
+.bellpop .bn:hover{background:#15161b}
+.bellpop .bn img{width:20px; height:20px; border-radius:3px; border:1px solid #000; flex:none}
+.bellpop .bn b{font-weight:600}
+.bellpop .bn .t{margin-left:auto; color:#5d5952; font-size:11px; font-variant-numeric:tabular-nums}
+.bellpop .none{padding:16px 12px; color:#55524c; font-size:12px; text-align:center}
 .btn{
   padding:6px 12px; background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
   border-radius:3px; font-size:12px; text-decoration:none; color:#cfcabd; white-space:nowrap;
@@ -397,6 +428,16 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   <span class="pill" id="speed"></span>
   <span class="pill hc" id="hc" hidden>hardcore &mdash; death is final</span>
   <span class="spacer"></span>
+  <div class="bell" id="bellWrap">
+    <button class="bellbtn" id="bell" aria-label="Level 60s"
+      data-tt="text" data-title="Someone reached 60"
+      data-body="Lights up when a bot hits the cap. Click for the roll of honour; the speaker mutes the fanfare.">
+      &#9873;<span class="badge" id="bellCount" hidden>0</span>
+    </button>
+    <button class="bellbtn mute" id="mute" aria-label="Mute"
+      data-tt="text" data-title="Fanfare" data-body="Plays when a bot reaches 60.">&#9834;</button>
+    <div class="bellpop" id="bellPop" hidden></div>
+  </div>
   <a class="btn" href="__CALC__">&larr; Talent calculator</a>
   <div class="tabs" id="tabs">
     <button data-view="race" class="on">The race</button>
@@ -549,6 +590,76 @@ let query = "";
 let sortBy = "finish";
 
 const $ = id => document.getElementById(id);
+
+/* ---------------- the level-60 bell ---------------- */
+/*
+ * A fanfare synthesised rather than shipped: no audio file to serve, nothing
+ * fetched, and nothing a content policy can block. Browsers refuse to start
+ * audio before the page has been interacted with, so the context is created
+ * lazily and resumed on the first click - a muted first fanfare is better than
+ * a console error.
+ */
+let audioCtx = null;
+let muted = false;
+try { muted = localStorage.getItem("sim.muted") === "1"; } catch (e) {}
+
+function fanfare() {
+  if (muted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime;
+    // a small rising arpeggio, then the octave - a "ding" with some ceremony
+    const notes = [[523.25, 0], [659.25, 0.10], [783.99, 0.20], [1046.5, 0.32]];
+    for (const [hz, at] of notes) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(hz, t0 + at);
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(0.16, t0 + at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + (at === 0.32 ? 0.75 : 0.28));
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + 0.85);
+    }
+  } catch (e) { /* no audio available; the badge still lights */ }
+}
+
+let dings = [];            // the roll of honour, newest first
+let bellSeen = 0;
+
+function announce(entries) {
+  if (!entries.length) return;
+  dings = entries.concat(dings).slice(0, 40);
+  bellSeen += entries.length;
+  const bell = $("bell");
+  $("bellCount").textContent = bellSeen;
+  $("bellCount").hidden = false;
+  bell.classList.remove("lit");
+  void bell.offsetWidth;                   // restart the animation
+  bell.classList.add("lit");
+  fanfare();
+  drawBell();
+}
+
+function drawBell() {
+  $("bellPop").innerHTML = dings.length
+    ? `<h4>Reached 60</h4>` + dings.map(d => `<div class="bn" data-id="${esc(d.name)}">
+        <img src="${ICON("classicon_" + String(d.klass || "").toLowerCase().replace(/[^a-z]/g, ""))}" alt="">
+        <b style="color:${CLASS_COLOUR(d.klass)}">${esc(d.name)}</b>
+        <span class="t">${hhmm(d.played)}</span>
+      </div>`).join("")
+    : '<p class="none">Nobody has reached 60 yet.</p>';
+  for (const el of $("bellPop").querySelectorAll(".bn")) {
+    el.onclick = () => {
+      $("bellPop").hidden = true;
+      setView("race");
+      pick(el.dataset.id);
+      document.querySelector(".rows").scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+  }
+}
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const hhmm = m => Math.floor(m / 60) + "h" + String(Math.round(m % 60)).padStart(2, "0");
 const days = m => {
@@ -1395,6 +1506,24 @@ $("closeBot").onclick = () => {
   document.querySelector(".rows").scrollIntoView({ block: "center", behavior: "smooth" });
 };
 
+$("bell").onclick = () => {
+  const pop = $("bellPop");
+  pop.hidden = !pop.hidden;
+  if (!pop.hidden) { bellSeen = 0; $("bellCount").hidden = true; $("bell").classList.remove("lit"); }
+};
+document.addEventListener("click", e => {
+  if (!$("bellWrap").contains(e.target)) $("bellPop").hidden = true;
+});
+
+$("mute").onclick = () => {
+  muted = !muted;
+  try { localStorage.setItem("sim.muted", muted ? "1" : "0"); } catch (e) {}
+  $("mute").classList.toggle("off", muted);
+  $("mute").innerHTML = muted ? "&#9834;" : "&#9834;";
+  $("mute").style.textDecoration = muted ? "line-through" : "none";
+  if (!muted) fanfare();
+};
+
 $("closePast").onclick = () => {
   pastState = null; pastSelected = null;
   $("pastDetail").hidden = true;
@@ -1433,6 +1562,10 @@ document.addEventListener("keydown", e => {
   }
 });
 
+$("mute").classList.toggle("off", muted);
+$("mute").style.textDecoration = muted ? "line-through" : "none";
+drawBell();
+
 $("onlineOnly").checked = onlineOnly;
 $("onlineOnly").onchange = e => {
   onlineOnly = e.target.checked;
@@ -1444,6 +1577,14 @@ $("onlineOnly").onchange = e => {
 
 function drawFeed(events) {
   if (!events.length) return;
+  // the feed already sees each finish once, so the bell rides on it rather
+  // than polling for level 60s and having to remember which it has announced
+  const klassLookup = {};
+  for (const b of (lastState ? lastState.board : [])) klassLookup[b.id] = b.klass;
+  announce(events.filter(e => e.type === "finish").map(e => ({
+    name: e.name, klass: klassLookup[e.bot],
+    played: (e.detail && e.detail.playedMinutes) || 0,
+  })));
   // colour names in the feed by class too, so a ding reads as "a Mage dinged"
   // without going back to the leaderboard
   const klassOf = {};
@@ -1478,6 +1619,7 @@ async function poll() {
       raceId = state.race.id;
       lastEvent = 0; histAfter = 0; tracks = {}; marks = { deaths: {}, finishes: {} };
       $("feed").innerHTML = "";
+      dings = []; bellSeen = 0; $("bellCount").hidden = true; drawBell();
       if (!first) { selected = null; writeHash(); $("detailCard").hidden = true; loadPast(); }
     }
 
