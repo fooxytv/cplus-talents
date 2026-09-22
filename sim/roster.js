@@ -27,12 +27,14 @@ function racesFor(klass) {
  * thirty Shamans lands roughly a third each of Orc, Tauren and Troll instead of
  * being all one thing.
  */
-function roll(klass, rng, taken) {
+function roll(klass, rng, taken, forceRace) {
   const races = racesFor(klass);
   if (!races.length) {
     throw new Error(`no race in config/roster.json can be a ${klass}`);
   }
-  const race = rng.pick(races);
+  const race = forceRace
+    ? { name: forceRace, ...CONFIG.races[forceRace] }
+    : rng.pick(races);
   const gender = rng.pick(GENDERS);
   const faction = CONFIG.factions[race.faction];
 
@@ -54,6 +56,32 @@ function roll(klass, rng, taken) {
   };
 }
 
+/**
+ * Every legal (race, class) pair for the classes on offer. Rolling from this
+ * flat list rather than picking a class and then a race keeps both factions in
+ * the field: Alliance simply has more races able to take most classes.
+ */
+function pairs(classes) {
+  const out = [];
+  for (const [name, r] of Object.entries(CONFIG.races)) {
+    for (const klass of r.classes) {
+      if (classes.includes(klass)) out.push({ race: name, klass, ...r });
+    }
+  }
+  return out;
+}
+
+/** Roll a whole character from a list of classes rather than one fixed class. */
+function rollAny(classes, rng, taken) {
+  const all = pairs(classes);
+  if (!all.length) {
+    throw new Error(`no race in config/roster.json can be any of: ${classes.join(", ")}`);
+  }
+  const pick = rng.pick(all);
+  const who = roll(pick.klass, rng, taken, pick.race);
+  return { ...who, klass: pick.klass };
+}
+
 const classIcon = klass => "classicon_" + klass.toLowerCase().replace(/[^a-z]/g, "");
 
-module.exports = { CONFIG, racesFor, roll, classIcon, GENDERS };
+module.exports = { CONFIG, racesFor, pairs, roll, rollAny, classIcon, GENDERS };

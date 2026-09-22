@@ -1,7 +1,8 @@
 # The levelling race
 
-A simulated levelling race. Bots roll a Shaman, pick their own talents as they
-go, and grind to 60 — and the talents they picked are what decides who wins.
+A simulated levelling race. Bots roll a character of any class and race, pick
+their own talents as they go, and grind to 60 — and the talents they picked are
+what decides who wins.
 
 Nothing here talks to the real game. It is a toy, and the only thing it is
 trying to be is *worth watching*.
@@ -11,7 +12,7 @@ node sim/server.js                         watch it at localhost:5503/sim/
 node sim/run.js                            or run one headless and print the table
 node sim/run.js --bots 40 --hardcore       death is permanent
 node sim/run.js --seed 7                   the same seed is the same race
-node sim/test.js                           71 assertions
+node sim/test.js                           89 assertions
 ```
 
 ## Watching it
@@ -50,6 +51,13 @@ drinking, deaths an hour, and one headline — how much faster this build levels
 than the same character with nothing spent at all. Hover anything for the
 tooltip; talents show their real rank text from the edition data.
 
+### Finding someone
+
+The leaderboard has a search box that matches name, class, race, faction and
+spec at once. Every word has to match, so `troll shaman` narrows rather than
+widening the way an OR would. `online only` hides anyone away from the keyboard,
+and both keep the bot's real standing in the full field rather than renumbering.
+
 ### Who the bots are
 
 Faction, race, gender and names come from
@@ -59,11 +67,52 @@ is the only thing to change. Nothing is hard-coded: adding `"Shaman"` to Dwarf
 is all it takes to see Dwarf Shamans race. Names are built from per-race
 syllables, so an Orc sounds like an Orc and a field of thirty never repeats.
 
+A race is mixed-class by default, which is the only way both factions appear:
+no single class is open to all eight races. With all nine classes on offer the
+two factions have twenty legal race/class pairs each, so the field comes out
+even without anything weighting it.
+
+## The weights, and an honest warning about them
+
+`weights/shaman.json` is **hand-written**: every talent read off its tooltip and
+given a judgement. The other eight are **drafted** by
+[`tools/draft-weights.js`](../tools/draft-weights.js), which matches the rank
+text against a keyword table and scales by whatever percentage the tooltip
+quotes. That gets the shape right and the detail wrong.
+
+```
+node tools/draft-weights.js               draft any class that has none
+node tools/draft-weights.js Mage --force  redraft one
+```
+
+`--force` will not touch a hand-written file; that needs
+`--clobber-handwritten`, because a hand-written file is work the tool cannot
+reproduce. Drop the `_derived` flag from a file once you have gone over it and
+the drafter leaves it alone from then on.
+
+### Why they are normalised
+
+The first draft made the generator decide the race. The drafted classes came
+out on a hotter scale than the hand-tuned Shaman - roughly twice the power pool
+- so they simply out-levelled it, and "which class is winning" was measuring my
+keyword table rather than the talents. Druid reached 50 in 41h against Shaman's
+86h, which was noise wearing a result's clothes.
+
+Every class is now scaled so its total pool of each stat matches the reference.
+What is left to differ is the *shape*: how that pool is spread across the three
+trees, and so what a bot picking greedily ends up holding. The spread across a
+36-bot field came back to 89h-120h, with Shaman mid-field.
+
+This is still the weakest part of the model. Treat a class result as a
+hypothesis, not a finding, until that class's weights have been gone over by
+hand.
+
 | | |
 |---|---|
 | `SIM_SPEED` | sim minutes per real second (default 1, so a race lasts about 10 hours) |
 | `SIM_BOTS` | how many race (default 30) |
 | `SIM_HARDCORE` | `1` for permanent death |
+| `SIM_CLASS` | `*` for every class (default), or a comma-separated list |
 | `SIM_CALC_BASE` | where the calculator lives (default `/`) |
 | `BASE_PATH` | where the sim is mounted (default `/sim`) |
 
@@ -157,6 +206,7 @@ the events already written are what happened.
 | `db.js` | schema |
 | `race.js` | creating, loading and advancing a race |
 | `roster.js` + `config/roster.json` | faction, race, gender and names |
+| `../tools/draft-weights.js` | first-pass weights for a class, from the tooltips |
 | `share.js` | build → a share code the calculator accepts |
 | `run.js` | run one headless and print the result |
 | `server.js` | the tick loop, and the JSON API |
@@ -170,8 +220,8 @@ the events already written are what happened.
   believable number of hours played, rather than by guessing at constants. Drop
   the exact per-level table into `xp.js` and set `SCALE` to 1 if it ever
   matters; nothing else reads those numbers.
-- **Shaman only.** Every other class needs a `weights/<class>.json`; `stats.js`
-  throws a clear error until one exists.
+- **Only Shaman's weights are hand-written.** The other eight are drafted and
+  normalised; see above.
 - **No gear, no quests, no zones.** Grinding only.
 - **Speed below ten needs the tick banker.** A race advances in whole
   ten-minute ticks, so `server.js` accumulates fractional minutes and only

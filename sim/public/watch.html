@@ -12,7 +12,9 @@
   --font:"Open Sans",Arial,"Helvetica Neue",Helvetica,sans-serif;
   --gold:#ffd100; --head:#f2cd6b; --green:#3ddc00; --red:#ff2020;
   --panel:#0d0e11; --line:#26262b; --dim:#8b8579; --text:#cdc8bb;
-  --class:#0070DE;                 /* replaced once we know the class */
+  /* neutral: every name sets its own from the bot it belongs to, so nothing
+     quietly inherits one class's colour */
+  --class:#cdc8bb;
 }
 *{box-sizing:border-box}
 /* an explicit display: wins over the hidden attribute, and .wrap sets one - so
@@ -36,6 +38,8 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   background:linear-gradient(#111318,#0b0c0f);
 }
 .top h1{margin:0; font-size:16px; color:var(--head); font-weight:600}
+.logo{height:34px; width:auto; display:block; margin-right:2px}
+@media (max-width:640px){ .logo{height:26px} }
 .pill{padding:3px 9px; border:1px solid #3a3b42; border-radius:999px; font-size:11px; color:var(--dim); white-space:nowrap}
 .pill.hc{border-color:#5a2222; color:#ff7b6b; background:#1a0f0f}
 .pill.live{border-color:#2a4a20; color:var(--green)}
@@ -70,6 +74,11 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   text-transform:uppercase; color:var(--dim); border-bottom:1px solid var(--line);
   display:flex; align-items:center; gap:8px;
 }
+.card h2 .back{
+  font-size:11px; font-weight:600; letter-spacing:.3px; color:var(--dim);
+  padding:2px 9px; border:1px solid #3a3b42; border-radius:3px; background:#15161b;
+}
+.card h2 .back:hover{color:var(--gold); border-color:var(--gold); background:#1b1c22}
 .card h2 .note{font-weight:400; letter-spacing:0; text-transform:none; color:#5d5952; margin-left:auto}
 .chk{
   display:flex; align-items:center; gap:5px; font-weight:400; letter-spacing:0;
@@ -77,6 +86,14 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 }
 .chk input{accent-color:var(--gold); margin:0; cursor:pointer}
 .chk:hover{color:var(--head)}
+.find{
+  width:170px; padding:3px 8px; font:inherit; font-size:11px; color:var(--text);
+  background:#0a0b0e; border:1px solid #2c2d33; border-radius:3px;
+}
+.find::placeholder{color:#4f4c46}
+.find:focus{outline:none; border-color:#54555e; background:#101116}
+.find:not(:placeholder-shown){border-color:var(--gold); color:var(--head)}
+@media (max-width:760px){ .find{width:120px} }
 
 /* ---------- talent icons, the way the calculator draws them ---------- */
 .ti{position:relative; display:inline-block; width:30px; height:30px; flex:none}
@@ -112,7 +129,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .rows{padding:4px 0}
 .hrow,.row{
   display:grid;
-  grid-template-columns:26px 46px minmax(74px,1.05fr) 28px minmax(52px,1.7fr) 88px 132px 54px 28px 24px;
+  grid-template-columns:24px 64px minmax(74px,1fr) 28px minmax(46px,1.6fr) 84px 128px 52px 26px 22px;
   gap:9px; align-items:center; padding:5px 14px;
 }
 .hrow{font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:#5d5952;
@@ -143,6 +160,13 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
       color:#4f4c46; border:1px solid transparent; border-radius:3px; line-height:20px}
 .calc:hover{color:var(--gold); border-color:#3a3b42; background:#1b1c22}
 
+/* a spec shown as its own icon rather than as the word */
+.spec-ic{width:18px; height:18px; border-radius:3px; border:1px solid #000;
+         vertical-align:middle; flex:none}
+.spec-ic.lg{width:22px; height:22px}
+.specname{display:inline-flex; align-items:center; gap:6px; min-width:0}
+.specname span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
 /* who they are */
 .idc{display:flex; align-items:center; gap:3px}
 .idc img{width:18px; height:18px; border-radius:3px; border:1px solid #000; box-shadow:0 0 0 1px #2c2d33}
@@ -171,7 +195,6 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .ev{padding:3px 14px; font-size:12px; display:flex; gap:7px; align-items:baseline}
 .ev .at{color:#55524c; font-variant-numeric:tabular-nums; flex:none; font-size:10px; min-width:46px}
 .ev b{font-weight:600}
-.ev.ding b{color:#e6e0d2}
 .ev.death{color:#c76b6b}
 .ev.finish{color:var(--gold)}
 .ev.new{animation:flash .9s ease-out}
@@ -207,6 +230,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .pc .pn b{display:block; font-size:14px; color:var(--class); font-weight:700;
           overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .pc .pn span{font-size:11px; color:var(--dim)}
+.pc .pn .specs{display:flex; align-items:center; gap:4px; flex-wrap:wrap}
 .pc .pstat{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; font-size:11px; text-align:center}
 .pc .pstat div{background:#101116; border:1px solid #1e1f25; border-radius:3px; padding:4px 2px}
 .pc .pstat b{display:block; color:var(--text); font-variant-numeric:tabular-nums}
@@ -238,6 +262,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .dhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
 .dhead .name{font-size:17px; font-weight:700; color:var(--class); margin:0}
 .dhead .sub{font-size:12px; color:var(--dim)}
+.dhead .specs{display:inline-flex; align-items:center; gap:4px}
 .dgrid{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px}
 @media (max-width:700px){ .dgrid{grid-template-columns:minmax(0,1fr)} }
 .bars{display:grid; gap:6px; align-content:start}
@@ -253,7 +278,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 @media (max-width:760px){ .plans{grid-template-columns:minmax(0,1fr)} }
 .ptree{border:1px solid var(--line); border-radius:3px; overflow:hidden}
 .ptree h3{margin:0; padding:5px 9px; font-size:11px; font-weight:700; background:#131419;
-          border-bottom:1px solid var(--line)}
+          border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px}
 
 .ptree li{display:flex; gap:7px; align-items:center; padding:2px 9px; font-size:11px; color:#4f4c46}
 .ptree li.taken{color:var(--text)}
@@ -267,7 +292,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 /* ---------- popularity ---------- */
 .pop{padding:10px 14px; display:grid; gap:5px}
 .pl-row{display:grid; grid-template-columns:30px minmax(0,1fr) 54px 40px; gap:9px; align-items:center; font-size:12px}
-.pl-row .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.pl-row .nm{overflow:hidden; white-space:nowrap; display:flex; align-items:center; gap:6px; min-width:0}
 .pl-row .mtr{height:7px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
 .pl-row .mtr i{display:block; height:100%}
 .pl-row .pct{text-align:right; color:var(--dim); font-size:11px; font-variant-numeric:tabular-nums}
@@ -301,6 +326,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 <body>
 
 <div class="top">
+  <img class="logo" src="__BASE__/logo.png" alt="" onerror="this.style.display='none'">
   <h1 id="title">Levelling race</h1>
   <span class="pill live" id="clock">&mdash;</span>
   <span class="pill" id="field"></span>
@@ -330,7 +356,11 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
           data-body="Hides anyone offline. Ranks stay as they are in the full field, so you can still see where they sit.">
           <input type="checkbox" id="onlineOnly"> online only
         </label>
-        <span class="note">hover a talent &middot; &#8599; opens the build in the calculator</span>
+        <input type="search" id="find" class="find" placeholder="tauren, horde, mage…"
+          data-tt="text" data-title="Filter the field"
+          data-body="Matches name, class, race, faction and spec. Several words all have to match, so 'troll shaman' finds Troll Shamans.">
+        <span class="note"><span id="findNote" style="color:var(--head)"></span>
+          hover a talent &middot; &#8599; opens the build in the calculator</span>
       </h2>
       <div class="hrow">
         <span></span><span>Who</span><span>Bot</span><span>Lv</span><span>Progress</span>
@@ -339,7 +369,8 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
       <div class="rows" id="rows"></div>
     </div>
     <div class="card" id="detailCard" hidden>
-      <h2>Bot <span class="note">click the row again to close</span></h2>
+      <h2><button class="back" id="closeBot">&larr; All bots</button>
+        <span class="note">or click the row again</span></h2>
       <div class="detail" id="detail"></div>
     </div>
   </div>
@@ -396,9 +427,16 @@ const CLASS_COLOR = {
   Warrior:"#C79C6E", Paladin:"#F58CBA", Hunter:"#ABD473", Rogue:"#FFF569", Priest:"#FFFFFF",
   Shaman:"#0070DE", Mage:"#69CCF0", Warlock:"#9482C9", Druid:"#FF7D0A", "Death Knight":"#C41F3B"
 };
-const PALETTE = ["#5b9bd5", "#e08a3c", "#4fbf87", "#b07fd0", "#d05f6a"];
 
-let TREES = [], COLOUR = {}, DICT = null;
+let DICT = null;
+// Colour by the tree's position in the class rather than by its name, so the
+// first tree is always blue whatever class it belongs to and a mixed field
+// stays readable.
+const TREE_COLOUR = ["#5b9bd5", "#e08a3c", "#4fbf87"];
+const CLASS_COLOUR = k => CLASS_COLOR[k] || "#8b8579";
+const colourFor = b => (lastState && lastState.race.mixed)
+  ? CLASS_COLOUR(b.klass)
+  : (TREE_COLOUR[b.leadIndex] || "#6c6960");
 let view = "race";
 let selected = null;
 let raceId = null, lastEvent = 0, histAfter = 0, ticks = 0;
@@ -407,6 +445,7 @@ let maxLevel = 60, lastState = null;
 // remembered per browser, so the filter survives a refresh
 let onlineOnly = false;
 try { onlineOnly = localStorage.getItem("sim.onlineOnly") === "1"; } catch (e) {}
+let query = "";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
@@ -445,9 +484,15 @@ function writeHash() {
  */
 const tip = $("tip");
 
-function talentTip(treeId, talId, rank) {
+function treesOf(klass) {
+  if (!DICT) return [];
+  const entry = DICT.classes[klass];
+  return entry ? entry.trees : [];
+}
+
+function talentTip(klass, treeId, talId, rank) {
   if (!DICT) return "";
-  const tree = DICT.trees.find(t => t.id === treeId);
+  const tree = treesOf(klass).find(t => t.id === treeId);
   const tal = tree && tree.talents[talId];
   if (!tal) return `<div class="t-name">${esc(talId)}</div>`;
   const r = Math.max(0, Math.min(rank | 0, tal.maxRank));
@@ -472,7 +517,7 @@ const STAT_TIP = {
 function showTip(el, ev) {
   let html = "";
   if (el.dataset.tt === "talent") {
-    html = talentTip(el.dataset.tree, el.dataset.tal, el.dataset.rank);
+    html = talentTip(el.dataset.klass, el.dataset.tree, el.dataset.tal, el.dataset.rank);
   } else if (el.dataset.tt === "stat") {
     const s = STAT_TIP[el.dataset.stat];
     html = `<div class="t-name">${s[0]}</div><div class="t-desc">${s[1]}</div>`;
@@ -504,10 +549,11 @@ document.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 
 /* ---------------- small builders ---------------- */
 
-function talentIcon(t, small) {
+function talentIcon(t, small, klass) {
   const maxed = t.rank >= t.maxRank;
   return `<span class="ti ${small ? "sm" : ""} ${maxed ? "max" : ""}"
-    data-tt="talent" data-tree="${esc(t.tree)}" data-tal="${esc(t.id)}" data-rank="${t.rank}">
+    data-tt="talent" data-klass="${esc(klass || t.klass || "")}"
+    data-tree="${esc(t.tree)}" data-tal="${esc(t.id)}" data-rank="${t.rank}">
     <img src="${ICON(t.icon)}" alt="" loading="lazy"><i>${t.rank}</i></span>`;
 }
 
@@ -517,9 +563,11 @@ function identCell(b) {
   const who = `${b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) + " " : ""}${b.race || ""}`;
   return `<div class="idc"
       data-tt="text" data-title="${esc(b.name)}"
-      data-body="${esc(who)} ${esc(lastState ? lastState.race.klass : "")} of the ${esc(b.faction || "")}">
+      data-body="${esc(who)} ${esc(b.klass || "")} of the ${esc(b.faction || "")}">
     ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}" loading="lazy">` : ""}
     ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}" loading="lazy">` : ""}
+    ${b.classIcon ? `<img src="${ICON(b.classIcon)}" alt="${esc(b.klass)}"
+       style="box-shadow:0 0 0 1px ${CLASS_COLOUR(b.klass)}" loading="lazy">` : ""}
   </div>`;
 }
 
@@ -528,9 +576,9 @@ function identCell(b) {
  * "c2" - row letter, column number - so the same positions give the same shape
  * here, and an empty square stays empty.
  */
-function treeGrid(treeId, ranks) {
+function treeGrid(klass, treeId, ranks) {
   if (!DICT) return "";
-  const tree = DICT.trees.find(t => t.id === treeId);
+  const tree = treesOf(klass).find(t => t.id === treeId);
   if (!tree) return "";
   const cells = {};
   let rows = 0;
@@ -546,21 +594,51 @@ function treeGrid(treeId, ranks) {
       if (!cell) { html += '<span class="tcell"></span>'; continue; }
       const rank = ranks[cell.id] || 0;
       html += `<span class="ti ${rank >= cell.tal.maxRank ? "max" : ""} ${rank ? "" : "none"}"
-        data-tt="talent" data-tree="${esc(treeId)}" data-tal="${esc(cell.id)}" data-rank="${rank}">
+        data-tt="talent" data-klass="${esc(klass)}" data-tree="${esc(treeId)}" data-tal="${esc(cell.id)}" data-rank="${rank}">
         <img src="${ICON(cell.tal.icon)}" alt="" loading="lazy"><i>${rank}/${cell.tal.maxRank}</i></span>`;
     }
   }
   return html + "</div>";
 }
 
+// a spec as its icon, with the name beside it
+function specBadge(icon, name, colour, big) {
+  return `<span class="specname">` +
+    (icon ? `<img class="spec-ic ${big ? "lg" : ""}" src="${ICON(icon)}" alt="" loading="lazy"
+       style="box-shadow:0 0 0 1px ${colour}">` : "") +
+    `<span style="color:${colour}">${esc(name)}</span></span>`;
+}
+
+// "Elemental 4 / Enhancement 4" as icons and numbers rather than words
+// the same thing from a board row, which carries points per spec already
+function splitIcons(split) {
+  const arr = Array.isArray(split) ? split : [];
+  const out = arr.map((x, i) => x.points
+    ? `<span class="specname" data-tt="text" data-title="${esc(x.name || x.tree)}" data-body="${x.points} points">
+         <img class="spec-ic" src="${ICON(x.icon)}" alt="" loading="lazy"
+           style="box-shadow:0 0 0 1px ${TREE_COLOUR[i]}">
+         <b style="color:${TREE_COLOUR[i]}">${x.points}</b></span>` : "").filter(Boolean);
+  return out.length ? out.join('<span style="color:#3f3d38"> / </span>') : "no points yet";
+}
+
+function specLine(klass, plan) {
+  const byTree = {};
+  for (const st of plan || []) if (st.taken) byTree[st.tree] = (byTree[st.tree] || 0) + 1;
+  const out = treesOf(klass).map((t, i) => byTree[t.id]
+    ? `<span class="specname" data-tt="text" data-title="${esc(t.name)}" data-body="${byTree[t.id]} points">
+         <img class="spec-ic" src="${ICON(t.icon)}" alt="" loading="lazy"
+           style="box-shadow:0 0 0 1px ${TREE_COLOUR[i]}">
+         <b style="color:${TREE_COLOUR[i]}">${byTree[t.id]}</b></span>` : "").filter(Boolean);
+  return out.length ? out.join('<span style="color:#3f3d38"> / </span>') : "no points yet";
+}
+
 function splitBar(split) {
-  const total = TREES.reduce((n, t) => n + (split[t] || 0), 0);
+  const arr = Array.isArray(split) ? split : [];
+  const total = arr.reduce((n, x) => n + x.points, 0);
   if (!total) return '<span class="split"></span>';
-  const body = TREES.map(t => {
-    const n = split[t] || 0;
-    return n ? `<i style="width:${((n / total) * 100).toFixed(1)}%;background:${COLOUR[t]}"></i>` : "";
-  }).join("");
-  const label = TREES.filter(t => split[t]).map(t => `${t} ${split[t]}`).join(", ");
+  const body = arr.map((x, i) => x.points
+    ? `<i style="width:${((x.points / total) * 100).toFixed(1)}%;background:${TREE_COLOUR[i]}"></i>` : "").join("");
+  const label = arr.filter(x => x.points).map(x => `${x.tree} ${x.points}`).join(", ");
   return `<span class="split" data-tt="text" data-title="Points spent" data-body="${esc(label)}">${body}</span>`;
 }
 
@@ -591,7 +669,7 @@ function drawChart(board, raceMinutes) {
     // carry to now, so a stalled bot reads as a flat run rather than stopping
     if (b.alive && b.finishedAt === null) d += ` L ${x(raceMinutes).toFixed(1)} ${y(b.level).toFixed(1)}`;
     const cls = selected ? (selected === b.id ? "on" : "off") : "";
-    bits.push(`<path class="${cls}" stroke="${COLOUR[b.lead] || "#6c6960"}" d="${d}"/>`);
+    bits.push(`<path class="${cls}" stroke="${colourFor(b)}" d="${d}"/>`);
   }
   for (const b of board) {
     if (selected && selected !== b.id) continue;
@@ -604,8 +682,15 @@ function drawChart(board, raceMinutes) {
 
   $("chart").innerHTML = bits.join("");
   $("chartNote").textContent = selected ? selected + " highlighted" : "click a bot to pick one out";
-  $("legend").innerHTML = TREES.map(t =>
-    `<span><i style="background:${COLOUR[t]}"></i>${esc(t)}</span>`).join("")
+  // in a mixed field the lines are coloured by class, so the legend names
+  // classes; with one class it names that class's three trees
+  const keyBits = lastState && lastState.race.mixed
+    ? [...new Set(board.map(b => b.klass))].sort().map(k =>
+        `<span><i style="background:${CLASS_COLOUR(k)}"></i>${esc(k)}</span>`)
+    : (board[0] && Array.isArray(board[0].split)
+        ? board[0].split.map((x, i) => `<span>${specBadge(x.icon, x.name || x.tree, TREE_COLOUR[i])}</span>`)
+        : []);
+  $("legend").innerHTML = keyBits.join("")
     + '<span><i style="background:#c23b3b;border-radius:50%;width:6px;height:6px"></i>death</span>'
     + `<span><i style="background:#ffd100;border-radius:50%;width:6px;height:6px"></i>reached ${maxLevel}</span>`;
 }
@@ -628,9 +713,21 @@ function drawHeader(state) {
 
 function drawBoard(state) {
   const ranked = state.board.map((b, i) => ({ b, place: i + 1 }));
-  const shown = onlineOnly
-    ? ranked.filter(r => r.b.online && r.b.alive && r.b.finishedAt === null)
-    : ranked;
+
+  // every word has to match somewhere, so "troll shaman" narrows rather than
+  // widening the way a plain OR would
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const haystack = b => [
+    b.name, b.klass, b.race, b.faction, b.gender, b.spec,
+    ...(Array.isArray(b.split) ? b.split.filter(x => x.points).map(x => x.tree) : []),
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  let shown = ranked;
+  if (onlineOnly) shown = shown.filter(r => r.b.online && r.b.alive && r.b.finishedAt === null);
+  if (terms.length) shown = shown.filter(r => {
+    const h = haystack(r.b);
+    return terms.every(t => h.includes(t));
+  });
 
   $("rows").innerHTML = (shown.length ? shown : []).map(({ b, place: i }) => {
     const pct = ((b.level - 1 + b.progress) / (maxLevel - 1)) * 100;
@@ -638,16 +735,16 @@ function drawBoard(state) {
     return `<div class="row ${b.alive ? "" : "gone"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
       <div class="rank">${i}</div>
       ${identCell(b)}
-      <div class="who"><span class="dot ${b.online && b.alive && !fin ? "on" : ""}"
+      <div class="who" style="--class:${CLASS_COLOUR(b.klass)}"><span class="dot ${b.online && b.alive && !fin ? "on" : ""}"
         data-tt="text" data-title="${esc(b.name)}"
         data-body="${b.online && b.alive && !fin ? "At the keyboard right now" : "Offline"}"></span><b
         data-tt="text" data-title="${esc(b.name)}"
-        data-body="${esc(b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : "")} ${esc(b.race || "")} ${esc(lastState ? lastState.race.klass : "")} — ${esc(b.faction || "")}. ${esc(b.spec || "no points yet")}."
+        data-body="${esc(b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : "")} ${esc(b.race || "")} ${esc(b.klass || "")} — ${esc(b.faction || "")}. ${esc(b.spec || "no points yet")}."
         >${esc(b.name)}</b></div>
       <div class="lvl">${b.level}</div>
       <div class="track"><div class="fill ${fin ? "done" : (b.alive ? "" : "gone")}" style="width:${pct.toFixed(1)}%"></div></div>
       <div>${splitBar(b.split)}</div>
-      <div class="tops">${(b.top || []).map(t => talentIcon(t, true)).join("")}</div>
+      <div class="tops">${(b.top || []).map(t => talentIcon(t, true, b.klass)).join("")}</div>
       <div class="num"><b>${hhmm(b.played)}</b></div>
       <div class="num ${b.deaths ? "warn" : ""}">${b.deaths || "–"}</div>
       ${b.code ? `<a class="calc" href="${CALC}#${b.code}" target="_blank" rel="noopener"
@@ -655,7 +752,12 @@ function drawBoard(state) {
           data-body="${esc(b.name)}'s build exactly as it stands now"
           onclick="event.stopPropagation()">&#8599;</a>` : "<span></span>"}
     </div>`;
-  }).join("") || '<p class="hint">Nobody is at the keyboard right now.</p>';
+  }).join("") || `<p class="hint">${
+    terms.length ? "Nothing matches \u201c" + esc(query) + "\u201d."
+                 : "Nobody is at the keyboard right now."}</p>`;
+
+  $("findNote").textContent = (terms.length || onlineOnly)
+    ? `showing ${shown.length} of ${ranked.length}` : "";
 
   for (const el of $("rows").querySelectorAll(".row")) {
     el.onclick = () => pick(el.dataset.id);
@@ -681,52 +783,70 @@ function splitAt(id, lvl) {
 function buildGroups(board) {
   const live = board.filter(b => b.lead);
   if (!live.length) return null;
+
   let mark = 0;
   for (const lvl of [50, 40, 30, 20, 10]) {
     const got = live.filter(b => splitAt(b.id, lvl) != null);
     if (got.length >= Math.max(3, live.length * 0.4)) { mark = lvl; break; }
   }
-  const groups = TREES.map(t => {
-    const g = live.filter(b => b.lead === t);
-    if (!g.length) return null;
+
+  // With several classes racing, "which build is winning" is really "which
+  // class is winning" - their trees share no names, so grouping by tree would
+  // put an Arms Warrior and an Arcane Mage in the same row and call it a
+  // category.
+  const mixed = !!(lastState && lastState.race.mixed);
+  const keyOf = b => (mixed ? b.klass : b.lead);
+  const keys = [...new Set(live.map(keyOf))];
+
+  const groups = keys.map(key => {
+    const g = live.filter(b => keyOf(b) === key);
     const sp = g.map(b => splitAt(b.id, mark)).filter(v => v != null);
+    const sample = g[0];
+    const idx = mixed ? -1 : sample.split.findIndex(x => x.tree === key);
+    const leaf = mixed ? null : sample.split[idx];
     return {
-      tree: t, n: g.length,
+      key,
+      label: mixed ? key : (leaf ? (leaf.name || leaf.tree) : key),
+      icon: mixed ? sample.classIcon : (leaf ? leaf.icon : null),
+      colour: mixed ? CLASS_COLOUR(key) : (TREE_COLOUR[idx] || "#8b8579"),
+      n: g.length,
       level: g.reduce((n, b) => n + b.level, 0) / g.length,
       deaths: g.reduce((n, b) => n + b.deaths, 0) / g.length,
       played: g.reduce((n, b) => n + b.played, 0) / g.length / 60,
       split: sp.length ? sp.reduce((a, b) => a + b, 0) / sp.length / 60 : null,
-      splitN: sp.length,
     };
-  }).filter(Boolean);
-  return { mark, groups, live };
+  }).sort((a, b) => b.n - a.n);
+
+  return { mark, groups, live, mixed };
 }
 
 function analysisTable(board, full) {
   const d = buildGroups(board);
   if (!d) return '<p class="hint">Nobody has spent a point yet.</p>';
-  const { mark, groups, live } = d;
+  const { mark, groups, live, mixed } = d;
   const ranked = groups.filter(g => g.split != null).sort((a, b) => a.split - b.split);
   const top = ranked[0];
 
-  return `<table>
-      <tr><th>Leaning</th><th>Bots</th><th>Avg lv</th>
-          <th>${mark ? "To " + mark : "Split"}</th>${full ? "<th>Played</th>" : ""}<th>&dagger;</th></tr>
-      ${groups.map(g => `<tr>
-        <td><span class="tree"><i style="background:${COLOUR[g.tree]}"></i>${esc(g.tree)}</span></td>
-        <td>${g.n}</td><td>${g.level.toFixed(1)}</td>
-        <td>${g.split == null ? "–" : g.split.toFixed(1) + "h"}</td>
-        ${full ? `<td>${g.played.toFixed(1)}h</td>` : ""}
-        <td>${g.deaths.toFixed(1)}</td>
-      </tr>`).join("")}
-    </table>` +
-    (top
-      ? `<p><b style="color:${COLOUR[top.tree]}">${esc(top.tree)}</b>-leaning bots reached level
-         ${mark} fastest, in <b>${top.split.toFixed(1)}h</b> played on average.
-         Split times compare bots at the same level, because levels get slower &mdash; averaging
-         a whole career would only flatter whoever is furthest behind.</p>`
-      : `<p>Not enough of the field has passed a common level yet. This fills in once
-         ${Math.max(3, Math.ceil(live.length * 0.4))} bots have reached level 10.</p>`);
+  const head = `<tr><th>${mixed ? "Class" : "Spec"}</th><th>Bots</th><th>Avg lv</th>` +
+    `<th>${mark ? "To " + mark : "Split"}</th>${full ? "<th>Played</th>" : ""}<th>&dagger;</th></tr>`;
+
+  const body = groups.map(g => `<tr>
+      <td>${specBadge(g.icon, g.label, g.colour)}</td>
+      <td>${g.n}</td><td>${g.level.toFixed(1)}</td>
+      <td>${g.split == null ? "\u2013" : g.split.toFixed(1) + "h"}</td>
+      ${full ? `<td>${g.played.toFixed(1)}h</td>` : ""}
+      <td>${g.deaths.toFixed(1)}</td>
+    </tr>`).join("");
+
+  const note = top
+    ? `<p><b style="color:${top.colour}">${esc(top.label)}</b> reached level ${mark} fastest,
+       in <b>${top.split.toFixed(1)}h</b> played on average. Split times compare bots at the
+       same level, because levels get slower &mdash; averaging a whole career would only
+       flatter whoever is furthest behind.</p>`
+    : `<p>Not enough of the field has passed a common level yet. This fills in once
+       ${Math.max(3, Math.ceil(live.length * 0.4))} bots have reached level 10.</p>`;
+
+  return `<table>${head}${body}</table>` + note;
 }
 
 /* ---------------- profiles ---------------- */
@@ -737,18 +857,19 @@ function drawProfiles(board) {
     const badge = fin ? '<span class="badge done">reached 60</span>'
       : (!b.alive ? '<span class="badge dead">dead</span>' : "");
     const s = b.stats || { power: 0, sustain: 0, defense: 0, aoe: 0 };
-    return `<div class="pc ${b.alive ? "" : "gone"}" data-id="${esc(b.id)}">
+    return `<div class="pc ${b.alive ? "" : "gone"}" data-id="${esc(b.id)}" style="--class:${CLASS_COLOUR(b.klass)}">
       <div class="ph">
         <div class="lvlring">${b.level}</div>
         ${identCell(b)}
-        <div class="pn"><b>${esc(b.name)}</b><span>${esc(b.spec || "no points yet")}</span></div>
+        <div class="pn" style="--class:${CLASS_COLOUR(b.klass)}"><b>${esc(b.name)}</b>
+          <span class="specs">${esc(b.klass || "")} ${splitIcons(b.split)}</span></div>
       </div>
       <div class="prow">${splitBar(b.split)}${badge}</div>
       <div class="adv" data-tt="text" data-title="How much the talents are worth"
         data-body="Experience per hour compared with the same character carrying no talents at all. It folds kill speed, downtime and pulling into one number.">
-        levels <b>${b.advantage >= 1 ? "+" : ""}${Math.round(((b.advantage || 1) - 1) * 100)}%</b> faster than an untalented ${esc(lastState ? lastState.race.klass : "character")}
+        levels <b>${b.advantage >= 1 ? "+" : ""}${Math.round(((b.advantage || 1) - 1) * 100)}%</b> faster than an untalented ${esc(b.klass || "character")}
       </div>
-      <div class="prow">${(b.top || []).map(t => talentIcon(t)).join("") || '<span style="color:#4f4c46;font-size:11px">no talents yet</span>'}</div>
+      <div class="prow">${(b.top || []).map(t => talentIcon(t, false, b.klass)).join("") || '<span style="color:#4f4c46;font-size:11px">no talents yet</span>'}</div>
       <div class="pstat">
         <div><b>${hhmm(b.played)}</b><span>played</span></div>
         <div><b>${b.deaths}</b><span>deaths</span></div>
@@ -771,9 +892,12 @@ async function drawPopularity() {
     if (!d.talents.length) { $("popularity").innerHTML = '<p class="hint">No points spent yet.</p>'; return; }
     $("popularity").innerHTML = d.talents.slice(0, 26).map(t => `
       <div class="pl-row">
-        ${talentIcon({ tree: t.tree, id: t.id, icon: t.icon, rank: Math.round(t.avgRank), maxRank: t.maxRank }, true)}
-        <span class="nm" style="color:${COLOUR[t.tree]}">${esc(t.id)}</span>
-        <span class="mtr"><i style="width:${(t.share * 100).toFixed(0)}%;background:${COLOUR[t.tree]}"></i></span>
+        ${talentIcon({ tree: t.tree, id: t.id, icon: t.icon, rank: Math.round(t.avgRank), maxRank: t.maxRank }, true, t.klass)}
+        <span class="nm">
+          <img class="spec-ic" src="${ICON(t.treeIcon)}" alt="" loading="lazy"
+            data-tt="text" data-title="${esc(t.tree)}" data-body="${esc(t.klass)} spec">
+          <span style="color:${TREE_COLOUR[t.treeIndex] || "#8b8579"}">${esc(t.id)}</span></span>
+        <span class="mtr"><i style="width:${(t.share * 100).toFixed(0)}%;background:${TREE_COLOUR[t.treeIndex] || "#8b8579"}"></i></span>
         <span class="pct">${Math.round(t.share * 100)}%</span>
       </div>`).join("");
   } catch (e) { /* keep what is there */ }
@@ -818,7 +942,8 @@ async function loadBot() {
          style="width:26px;height:26px;border-radius:3px;border:1px solid #000"
          data-tt="text" data-title="${esc(who)}" data-body="Race and class">` : ""}
        <p class="name">${esc(b.name)}</p>
-       <span class="sub">${esc(who)} — ${esc(b.spec || "no points yet")} — ${where}</span>
+       <span class="sub">${esc(who)} — ${where}</span>
+       <span class="sub specs">${specLine(b.klass, b.plan)}</span>
      </div>
 
      ${b.level < maxLevel ? `<div class="xpbox">
@@ -834,7 +959,7 @@ async function loadBot() {
          <span>Earning <b>${b.xpPerHour.toLocaleString()}</b> xp an hour played</span>
          <span><b>${(b.xpNeeded - b.xp).toLocaleString()}</b> to go</span>
          ${b.nextTalent ? `<span>Next point goes into
-           <b data-tt="talent" data-tree="${esc(b.nextTalent.tree)}" data-tal="${esc(b.nextTalent.talent)}" data-rank="0"
+           <b data-tt="talent" data-klass="${esc(b.klass)}" data-tree="${esc(b.nextTalent.tree)}" data-tal="${esc(b.nextTalent.talent)}" data-rank="0"
              style="cursor:help">${esc(b.nextTalent.talent)}</b></span>` : ""}
        </div>
      </div>` : `<div class="xpbox"><div class="xphead"><b>Finished</b>
@@ -862,12 +987,12 @@ async function loadBot() {
      </div>
 
      <div class="plans">
-       ${DICT ? DICT.trees.map(t => `<div class="ptree">
-         <h3 style="color:${COLOUR[t.id]}">${esc(t.name)}
-           <span style="color:#5d5952;font-weight:400">${byTree[t.id] || 0}</span></h3>
-         ${treeGrid(t.id, ranks)}
-         <div class="tsum"><b style="color:${COLOUR[t.id]}">${byTree[t.id] || 0}</b> points</div>
-       </div>`).join("") : ""}
+       ${treesOf(b.klass).map((t, i) => `<div class="ptree">
+         <h3>${specBadge(t.icon, t.name, TREE_COLOUR[i], true)}
+           <span style="color:#5d5952;font-weight:400;margin-left:auto">${byTree[t.id] || 0}</span></h3>
+         ${treeGrid(b.klass, t.id, ranks)}
+         <div class="tsum"><b style="color:${TREE_COLOUR[i]}">${byTree[t.id] || 0}</b> points</div>
+       </div>`).join("")}
      </div>
 
      <a class="open" href="${CALC}#${b.code}" target="_blank" rel="noopener">
@@ -882,8 +1007,8 @@ async function loadPast() {
     const rows = (await (await fetch("api/past")).json()).filter(r => r.winner);
     $("past").innerHTML = rows.length ? rows.map(r => `<div class="r">
         <span class="id">${esc(r.name.replace(/^Race /, ""))}</span>
-        <span class="w">${esc(r.winner.name)}
-          <span style="color:#5d5952">${esc(r.winner.spec)}</span></span>
+        <span class="w"><b style="color:${CLASS_COLOUR(r.winner.klass)};font-weight:600">${esc(r.winner.name)}</b>
+          <span style="color:#5d5952">${esc(r.winner.klass || "")} ${esc(r.winner.spec)}</span></span>
         <span class="t">${hhmm(r.winner.played)} · ${r.finished}/${r.bots} finished</span>
       </div>`).join("") : '<p class="hint">no race has finished yet</p>';
   } catch (e) { /* keep what is there */ }
@@ -902,6 +1027,31 @@ function setView(v) {
 }
 for (const b of $("tabs").querySelectorAll("button")) b.onclick = () => setView(b.dataset.view);
 
+$("closeBot").onclick = () => {
+  selected = null;
+  writeHash();
+  $("detailCard").hidden = true;
+  if (lastState) { drawBoard(lastState); drawChart(lastState.board, lastState.race.minutes); }
+  // put the leaderboard back under the eye rather than leaving the reader
+  // wherever the panel happened to push them
+  document.querySelector(".rows").scrollIntoView({ block: "center", behavior: "smooth" });
+};
+
+$("find").oninput = e => {
+  query = e.target.value.trim();
+  if (lastState) drawBoard(lastState);
+};
+// escape clears it, which is what a search box is expected to do
+$("find").onkeydown = e => {
+  if (e.key === "Escape") { e.target.value = ""; query = ""; if (lastState) drawBoard(lastState); }
+};
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && selected && document.activeElement !== $("find")) {
+    $("closeBot").click();
+  }
+});
+
 $("onlineOnly").checked = onlineOnly;
 $("onlineOnly").onchange = e => {
   onlineOnly = e.target.checked;
@@ -913,16 +1063,21 @@ $("onlineOnly").onchange = e => {
 
 function drawFeed(events) {
   if (!events.length) return;
+  // colour names in the feed by class too, so a ding reads as "a Mage dinged"
+  // without going back to the leaderboard
+  const klassOf = {};
+  for (const b of (lastState ? lastState.board : [])) klassOf[b.id] = b.klass;
   const feed = $("feed");
   if (feed.querySelector(".hint")) feed.innerHTML = "";
   const atTop = feed.scrollTop < 8;
   feed.insertAdjacentHTML("afterbegin", events.map(e => {
     let text;
-    if (e.type === "ding") text = `<b>${esc(e.name)}</b> reached ${e.level}`;
-    else if (e.type === "finish") text = `<b>${esc(e.name)}</b> hit ${e.level}! — ${hhmm(e.detail.playedMinutes)} played`;
+    const who = `<b style="color:${CLASS_COLOUR(klassOf[e.bot])}">${esc(e.name)}</b>`;
+    if (e.type === "ding") text = `${who} reached ${e.level}`;
+    else if (e.type === "finish") text = `${who} hit ${e.level}! — ${hhmm(e.detail.playedMinutes)} played`;
     else text = e.detail.fatal
-      ? `<b>${esc(e.name)}</b> died at ${e.level} — eliminated`
-      : `<b>${esc(e.name)}</b> died at ${e.level}`;
+      ? `${who} died at ${e.level} — eliminated`
+      : `${who} died at ${e.level}`;
     return `<div class="ev ${e.type} new"><span class="at">${stamp(e.at)}</span><span>${text}</span></div>`;
   }).join(""));
   while (feed.children.length > 120) feed.removeChild(feed.lastChild);
@@ -936,12 +1091,6 @@ async function poll() {
   try {
     const state = await (await fetch("api/state")).json();
     lastState = state;
-
-    if (!TREES.length && state.board.length) {
-      TREES = Object.keys(state.board[0].split);
-      TREES.forEach((t, i) => { COLOUR[t] = PALETTE[i % PALETTE.length]; });
-      document.documentElement.style.setProperty("--class", CLASS_COLOR[state.race.klass] || "#C79C6E");
-    }
 
     if (state.race.id !== raceId) {
       const first = raceId === null;

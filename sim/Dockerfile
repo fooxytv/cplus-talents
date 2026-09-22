@@ -7,6 +7,8 @@ WORKDIR /app
 # carries the same data the calculator was built from.
 COPY sim ./sim
 COPY src/editions ./src/editions
+# the edition logo shown in the corner of the page
+COPY src/logos ./src/logos
 
 RUN mkdir -p /data && chown -R node:node /data /app
 USER node

@@ -18,11 +18,16 @@ const { rng, seedFrom } = require("./rng");
 
 function createRace(db, q, opts) {
   const {
-    id, name = "Levelling race", editionId = "forever", klass = "Shaman",
+    id, name = "Levelling race", editionId = "forever",
     count = 30, seed = Date.now() >>> 0, hardcore = false,
   } = opts;
+  // one class, or a field of several - a mixed field is the only way to see
+  // both factions, since no single class is open to all eight races
+  const classes = opts.classes && opts.classes.length
+    ? opts.classes
+    : [opts.klass || "Shaman"];
 
-  const { edition, trees } = rules.classData(editionId, klass);
+  const edition = rules.edition(editionId);
   const r = rng(seed);
   const taken = new Set();
 
@@ -30,7 +35,9 @@ function createRace(db, q, opts) {
 
   const bots = [];
   for (let i = 0; i < count; i++) {
-    const who = roster.roll(klass, r, taken);
+    const who = roster.rollAny(classes, r, taken);
+    const klass = who.klass;
+    const { trees } = rules.classData(editionId, klass);
     const botName = who.name;
     const botSeed = seedFrom(seed + "::" + botName);   // the seed, not the id, so --seed reproduces the race
     const br = rng(botSeed);
@@ -55,6 +62,7 @@ function createRace(db, q, opts) {
       rng: rng(botSeed ^ 0x9e3779b9),
     });
     Object.assign(bot, {
+      klass,
       race: who.race, faction: who.faction, gender: who.gender,
       raceIcon: who.raceIcon, factionIcon: who.factionIcon, factionColour: who.factionColour,
     });

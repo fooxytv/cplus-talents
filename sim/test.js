@@ -414,6 +414,120 @@ db.close();
 fs.rmSync(tmp, { force: true });
 for (const ext of ["-wal", "-shm"]) fs.rmSync(tmp + ext, { force: true });
 
+/* ---------------- every class, not just the one ---------------- */
+
+const ALL_CLASSES = Object.keys(edition.classes);
+
+ok("the edition has nine classes", ALL_CLASSES.length === 9);
+
+ok("every class has levelling weights", ALL_CLASSES.every(k => {
+  try { stats.weights(k); return true; } catch (e) { return false; }
+}));
+
+// A weight keyed to a talent that no longer exists is silently ignored by
+// stats.js, so it would never show up as a failure - catch it here instead.
+ok("no weights file names a talent the edition does not have",
+   ALL_CLASSES.every(k => {
+     const ids = new Set();
+     for (const tree of edition.classes[k].trees) for (const t of tree.talents) ids.add(t.id);
+     return Object.keys(stats.weights(k).talents).every(id => ids.has(id));
+   }));
+
+ok("most talents in every class are worth something", ALL_CLASSES.every(k => {
+  const trees = edition.classes[k].trees;
+  const total = trees.reduce((n, t) => n + t.talents.length, 0);
+  return stats.untagged(k, trees).length < total * 0.45;
+}));
+
+ok("shaman is still the hand-written one",
+   stats.weights("Shaman")._derived !== true);
+
+ok("every class can build a legal full route", ALL_CLASSES.every(k => {
+  const trees = edition.classes[k].trees;
+  const r = rng(11);
+  const bias = routes.randomBias(trees, r);
+  const route = routes.generate(k, trees, edition.maxPoints, bias, r);
+  if (route.length !== edition.maxPoints) return false;
+  try { rules.replay(trees, route); return true; } catch (e) { return false; }
+}));
+
+ok("every class produces different builds from different seeds",
+   ALL_CLASSES.every(k => {
+     const trees = edition.classes[k].trees;
+     const specs = new Set();
+     for (let seed = 1; seed <= 8; seed++) {
+       const r = rng(seed * 17);
+       const bias = routes.randomBias(trees, r);
+       specs.add(routes.describe(trees, rules.replay(trees,
+         routes.generate(k, trees, edition.maxPoints, bias, r))));
+     }
+     return specs.size >= 4;
+   }));
+
+/* ---------------- a mixed field ---------------- */
+
+ok("both factions can field a character across all classes", (() => {
+  const seen = new Set(), taken = new Set(), r = rng(21);
+  for (let i = 0; i < 60; i++) seen.add(roster.rollAny(ALL_CLASSES, r, taken).faction);
+  return seen.has("Alliance") && seen.has("Horde");
+})());
+
+ok("a rolled pair is always legal", (() => {
+  const taken = new Set(), r = rng(31);
+  for (let i = 0; i < 60; i++) {
+    const w = roster.rollAny(ALL_CLASSES, r, taken);
+    if (!roster.CONFIG.races[w.race].classes.includes(w.klass)) return false;
+  }
+  return true;
+})());
+
+ok("asking for one class still gives only that class", (() => {
+  const taken = new Set(), r = rng(5);
+  for (let i = 0; i < 20; i++) {
+    if (roster.rollAny(["Mage"], r, taken).klass !== "Mage") return false;
+  }
+  return true;
+})());
+
+ok("a class no race can take is refused", (() => {
+  try { roster.rollAny(["Demon Hunter"], rng(1), new Set()); return false; }
+  catch (e) { return /roster\.json/.test(e.message); }
+})());
+
+/* a whole mixed race, run to the end */
+const mixTmp = path.join(os.tmpdir(), "sim-mixed-" + Date.now() + ".db");
+const mdb = db_.open(mixTmp);
+const mq = db_.statements(mdb);
+const { race: mRace, bots: mBots } = race_.createRace(mdb, mq, {
+  id: "m1", editionId: EDITION, classes: ALL_CLASSES, count: 18, seed: 99,
+});
+
+ok("a mixed race fields several classes",
+   new Set(mBots.map(b => b.klass)).size >= 4);
+ok("a mixed race fields both factions",
+   new Set(mBots.map(b => b.faction)).size === 2);
+ok("every bot in a mixed race has its own legal route",
+   mBots.every(b => {
+     const trees = rules.classData(EDITION, b.klass).trees;
+     try { rules.replay(trees, b.route); return true; } catch (e) { return false; }
+   }));
+ok("a mixed race stores each bot's class",
+   mq.listBots.all("m1").every(b => ALL_CLASSES.includes(b.klass)));
+
+let mGuard = 0, mDone = false;
+while (!mDone && mGuard++ < 500) ({ done: mDone } = race_.advance(mdb, mq, mRace, mBots, 24 * 60));
+ok("a mixed race finishes", mDone);
+ok("everyone in a mixed race reaches the cap",
+   mq.board.all("m1").every(b => b.level === xp.MAX_LEVEL));
+ok("a reloaded mixed race keeps each bot's class", (() => {
+  const l = race_.loadRace(mdb, mq, "m1");
+  return l.bots.every(b => ALL_CLASSES.includes(b.klass) && b.race && b.factionIcon);
+})());
+
+mdb.close();
+fs.rmSync(mixTmp, { force: true });
+for (const ext of ["-wal", "-shm"]) fs.rmSync(mixTmp + ext, { force: true });
+
 /* ---------------- report ---------------- */
 
 console.log(`\n  ${passed} passed, ${failures.length} failed`);
