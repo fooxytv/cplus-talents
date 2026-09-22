@@ -228,7 +228,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .pc:hover{border-color:#3a3b42}
 .pc.gone{opacity:.5}
 .pc .ph{display:flex; align-items:center; gap:10px}
-.pc .lvlring{
+.lvlring{
   width:42px; height:42px; border-radius:50%; flex:none; display:grid; place-items:center;
   font-weight:700; font-size:15px; color:var(--head);
   border:2px solid var(--class); box-shadow:0 0 0 1px #000, 0 0 10px -3px var(--class);
@@ -266,7 +266,22 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .xpfoot b{color:var(--text); font-weight:600}
 
 /* ---------- bot panel ---------- */
-.detail{padding:14px; display:grid; gap:14px}
+  .detail{padding:14px; display:grid; gap:14px}
+.dhead .lvlring{width:52px; height:52px; font-size:19px; border-width:3px}
+.dhead .lvl-lab{
+  display:block; font-size:8px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; color:#5d5952; line-height:1; margin-top:-2px;
+}
+.dhead .whoami{display:grid; gap:1px; min-width:0}
+.dhead .crests{display:flex; gap:4px; flex:none}
+.dhead .crests img{width:26px; height:26px; border-radius:3px; border:1px solid #000;
+                   box-shadow:0 0 0 1px #2c2d33}
+.dstate{
+  margin-left:auto; font-size:11px; padding:3px 10px; border-radius:999px;
+  border:1px solid #3a3b42; color:var(--dim); white-space:nowrap;
+}
+.dstate.done{border-color:#2a4a20; color:var(--green)}
+.dstate.dead{border-color:#5a2222; color:#ff7b6b}
 .dhead{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
 .dhead .name{font-size:17px; font-weight:700; color:var(--class); margin:0}
 .dhead .sub{font-size:12px; color:var(--dim)}
@@ -1054,9 +1069,6 @@ async function loadBot() {
     b = await res.json();
   } catch (e) { return; }
 
-  const where = b.finishedAt !== null ? `reached ${maxLevel} in ${hhmm(b.played)} played`
-    : (!b.alive ? `died at level ${b.level}` : `level ${b.level}`);
-
   // ranks as they stand right now, from the points actually spent
   const ranks = {};
   for (const st of b.plan) if (st.taken) ranks[st.talent] = st.rank;
@@ -1073,17 +1085,28 @@ async function loadBot() {
   ].filter(Boolean).join(" ");
 
   $("detail").innerHTML =
-    `<div class="dhead">
-       <div class="lvlring" style="width:38px;height:38px;font-size:14px">${b.level}</div>
-       ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}"
-         style="width:26px;height:26px;border-radius:3px;border:1px solid #000"
-         data-tt="text" data-title="${esc(b.faction)}" data-body="Faction">` : ""}
-       ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}"
-         style="width:26px;height:26px;border-radius:3px;border:1px solid #000"
-         data-tt="text" data-title="${esc(who)}" data-body="Race and class">` : ""}
-       <p class="name">${esc(b.name)}</p>
-       <span class="sub">${esc(who)} — ${where}</span>
-       <span class="sub specs">${specLine(b.klass, b.plan)}</span>
+    `<div class="dhead" style="--class:${CLASS_COLOUR(b.klass)}">
+       <div class="lvlring" data-tt="text" data-title="Level ${b.level}"
+         data-body="${b.level >= maxLevel ? "At the cap." : `${Math.round(b.progress * 100)}% of the way to ${b.level + 1}.`}">
+         ${b.level}<span class="lvl-lab">lvl</span>
+       </div>
+       <div class="crests">
+         ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}"
+           data-tt="text" data-title="${esc(b.faction)}" data-body="Faction">` : ""}
+         ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}"
+           data-tt="text" data-title="${esc(b.race)}" data-body="Race">` : ""}
+         ${b.classIcon ? `<img src="${ICON(b.classIcon)}" alt="${esc(b.klass)}"
+           style="box-shadow:0 0 0 1px ${CLASS_COLOUR(b.klass)}"
+           data-tt="text" data-title="${esc(b.klass)}" data-body="Class">` : ""}
+       </div>
+       <div class="whoami">
+         <p class="name">${esc(b.name)}</p>
+         <span class="sub">${esc(who)}</span>
+         <span class="sub specs">${specLine(b.klass, b.plan)}</span>
+       </div>
+       ${b.finishedAt !== null
+         ? `<span class="dstate done">reached ${maxLevel} in ${hhmm(b.played)}</span>`
+         : (!b.alive ? `<span class="dstate dead">died at ${b.level}</span>` : "")}
      </div>
 
      ${b.level < maxLevel ? `<div class="xpbox">
