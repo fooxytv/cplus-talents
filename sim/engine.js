@@ -39,9 +39,13 @@ const TUNING = {
 
   // Hardcore is not the same event with a harsher penalty - it is played
   // differently. This counts only the mistakes that actually end a character,
-  // and is set so roughly one in six of a careful field reaches 60. Raise it
+  // and is set so roughly a quarter of a careful field reaches 60. Raise it
   // and hardcore becomes a massacre; lower it and it stops being hardcore.
-  hardcoreDeathScale: 0.13,
+  //
+  // It is tied to how long a run lasts, so it had to come down when the xp
+  // curve was corrected: the real climb is about 2.4x the one this was first
+  // calibrated against, and at the old rate nobody survived it.
+  hardcoreDeathScale: 0.055,
   // the first twenty levels are forgiving; the danger is later
   safeUntilLevel: 20,
 

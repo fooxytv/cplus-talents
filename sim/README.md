@@ -307,12 +307,12 @@ the events already written are what happened.
 
 ## Known approximations
 
-- **The XP curve** uses the vanilla shape `(8 × L) × (45 + 5 × L)`, which gives
-  the correct 400 xp for level 1→2, but omits the level-28+ adjustments. The
-  total is calibrated by a `SCALE` constant so an average bot finishes in a
-  believable number of hours played, rather than by guessing at constants. Drop
-  the exact per-level table into `xp.js` and set `SCALE` to 1 if it ever
-  matters; nothing else reads those numbers.
+- ~~The XP curve is approximate~~ — **fixed**. It is now the real vanilla
+  curve, `round100((8L + Diff(L)) × (45 + 5L))`, which reproduces all twelve
+  published values and totals the published 4,084,700. Note the published rest
+  factor does *not* apply to the level table: applying it puts level 20 at
+  20,900 against the real 23,200. A full climb takes a bot 230–310 hours
+  played, which is where vanilla actually sat.
 - **Only Shaman's weights are hand-written.** The other eight are drafted and
   normalised; see above.
 - **No gear, no quests, no zones.** Grinding only.

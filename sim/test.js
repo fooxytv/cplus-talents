@@ -89,13 +89,38 @@ ok("not every bot goes deep", capstone.length < sample.length);
 
 /* ---------------- xp curve ---------------- */
 
-ok("level 1 costs the vanilla 400 xp before scaling", near(xp.toNext(1) / xp.SCALE, 400));
+// Every published vanilla value. If the curve is ever "improved" again, this
+// is what should stop it.
+const PUBLISHED = {
+  1: 400, 2: 900, 10: 7600, 20: 23200, 28: 41400, 29: 44300,
+  30: 47400, 31: 50800, 32: 54500, 40: 90700, 50: 147500, 59: 209800,
+};
+for (const [lvl, want] of Object.entries(PUBLISHED)) {
+  ok(`level ${lvl} costs the published ${want.toLocaleString()} xp`,
+     xp.toNext(Number(lvl)) === want);
+}
+
+ok("the whole climb is the published 4,084,700", xp.totalTo(60) === 4084700);
+
+ok("every level costs a round hundred", (() => {
+  for (let l = 1; l < xp.MAX_LEVEL; l++) if (xp.toNext(l) % 100 !== 0) return false;
+  return true;
+})());
+
 ok("xp per level always rises", (() => {
   for (let l = 1; l < xp.MAX_LEVEL - 1; l++) if (xp.toNext(l + 1) <= xp.toNext(l)) return false;
   return true;
 })());
+
+// the difficulty term is flat, then three fixed steps, then linear - not the
+// triangular series it looks like
+ok("the difficulty term matches the published shape",
+   xp.diff(28) === 0 && xp.diff(29) === 1 && xp.diff(30) === 3 &&
+   xp.diff(31) === 6 && xp.diff(32) === 10 && xp.diff(40) === 50 && xp.diff(59) === 145);
+
 ok("there is no level past the cap", xp.toNext(xp.MAX_LEVEL) === Infinity);
 ok("mob xp rises with level", xp.mobXp(50) > xp.mobXp(10));
+ok("mob xp matches 45 + 5L", xp.mobXp(1) === 50 && xp.mobXp(60) === 345);
 
 /* ---------------- talents drive the stats ---------------- */
 
