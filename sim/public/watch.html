@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Levelling race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font:"Open Sans",Arial,"Helvetica Neue",Helvetica,sans-serif;
+  --gold:#ffd100; --head:#f2cd6b; --green:#3ddc00; --red:#ff2020;
+  --panel:#0d0e11; --line:#26262b; --dim:#8b8579;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh;
+  background:#08090b;
+  background-image:radial-gradient(1200px 600px at 50% -10%,#16181d 0%,#08090b 70%);
+  color:#cdc8bb; font:14px/1.5 var(--font);
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+a{color:var(--head)}
+button{font:inherit; color:inherit}
+
+/* ---------- header ---------- */
+.top{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:14px 22px; border-bottom:1px solid var(--line);
+  background:linear-gradient(#111318,#0b0c0f);
+}
+.top h1{margin:0; font-size:16px; color:var(--head); font-weight:600; letter-spacing:.3px}
+.pill{
+  padding:3px 9px; border:1px solid #3a3b42; border-radius:999px;
+  font-size:11px; color:var(--dim); white-space:nowrap;
+}
+.pill.hc{border-color:#5a2222; color:#ff7b6b; background:#1a0f0f}
+.pill.live{border-color:#2a4a20; color:var(--green)}
+.spacer{flex:1}
+.back{
+  padding:6px 12px; background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
+  border-radius:3px; cursor:pointer; font-size:12px; text-decoration:none; color:#cfcabd;
+}
+.back:hover{background:linear-gradient(#32333b,#1d1e23); border-color:#54555e; color:var(--head)}
+
+/* ---------- layout ---------- */
+.wrap{
+  display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:18px;
+  padding:18px 22px; align-items:start; max-width:1400px; margin:0 auto;
+}
+@media (max-width:900px){ .wrap{grid-template-columns:minmax(0,1fr)} }
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:4px}
+.card h2{
+  margin:0; padding:10px 14px; font-size:12px; font-weight:600; letter-spacing:.6px;
+  text-transform:uppercase; color:var(--dim); border-bottom:1px solid var(--line);
+}
+
+/* ---------- leaderboard ---------- */
+.rows{padding:6px 0}
+.row{
+  display:grid; grid-template-columns:28px minmax(78px,1.1fr) 34px minmax(0,2.3fr) minmax(0,1.4fr) auto;
+  gap:10px; align-items:center;
+  padding:7px 14px; cursor:pointer; border-left:2px solid transparent;
+}
+.row:hover{background:#15161b; border-left-color:#3a3b42}
+.row.on{background:#181a20; border-left-color:var(--gold)}
+.row.dead{opacity:.45}
+.rank{color:var(--dim); font-size:12px; text-align:right; font-variant-numeric:tabular-nums}
+.who{display:flex; align-items:center; gap:6px; min-width:0}
+.who b{font-weight:600; color:#e6e0d2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.dot{width:6px; height:6px; border-radius:50%; background:#3a3b42; flex:none}
+.dot.on{background:var(--green); box-shadow:0 0 5px #3ddc0070}
+.lvl{
+  font-weight:700; color:var(--head); text-align:right;
+  font-variant-numeric:tabular-nums; font-size:13px;
+}
+.track{position:relative; height:9px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
+.fill{position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#5a4a1a,#c79c2e)}
+.fill.done{background:linear-gradient(90deg,#3a5a1a,#5fc72e)}
+.fill.dead{background:linear-gradient(90deg,#4a1a1a,#8a2a2a)}
+.tip{position:absolute; top:0; bottom:0; width:2px; background:var(--gold); opacity:.85}
+.meta{font-size:11px; color:var(--dim); white-space:nowrap; font-variant-numeric:tabular-nums}
+.spec{font-size:11px; color:#8b8579; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.spec em{font-style:normal; color:#b3ab9b}
+@media (max-width:760px){
+  .row{grid-template-columns:24px minmax(70px,1fr) 30px minmax(0,2fr) auto}
+  .spec{display:none}
+}
+.meta .d{color:#c76b6b}
+
+/* ---------- feed ---------- */
+.feed{max-height:520px; overflow:auto; padding:6px 0}
+.ev{padding:4px 14px; font-size:12px; display:flex; gap:7px; align-items:baseline}
+.ev .at{color:#5d5952; font-variant-numeric:tabular-nums; flex:none; font-size:11px}
+.ev b{font-weight:600}
+.ev.ding b{color:#e6e0d2}
+.ev.death{color:#c76b6b}
+.ev.finish{color:var(--gold)}
+.ev.new{animation:flash .9s ease-out}
+@keyframes flash{from{background:#2a2410}to{background:transparent}}
+
+/* ---------- bot panel ---------- */
+.detail{padding:14px}
+.detail .name{font-size:15px; font-weight:700; color:var(--head); margin:0 0 2px}
+.detail .sub{font-size:12px; color:var(--dim); margin:0 0 12px}
+.bars{display:grid; gap:7px; margin-bottom:14px}
+.bar{display:grid; grid-template-columns:62px 1fr 38px; gap:8px; align-items:center; font-size:11px}
+.bar .k{color:var(--dim)}
+.bar .t{height:7px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
+.bar .v{height:100%; background:linear-gradient(90deg,#3a4a6a,#6b8fc7)}
+.bar .n{text-align:right; color:#9a948a; font-variant-numeric:tabular-nums}
+.facts{font-size:12px; color:var(--dim); margin-bottom:12px; line-height:1.7}
+.facts span{color:#cdc8bb}
+.plan{max-height:230px; overflow:auto; border-top:1px solid var(--line); padding-top:8px}
+.pstep{display:flex; gap:8px; font-size:11px; padding:2px 0; color:#5d5952}
+.pstep.taken{color:#cdc8bb}
+.pstep .pl{width:24px; color:var(--dim); flex:none; font-variant-numeric:tabular-nums}
+.pstep .pt{color:#5d5952; font-size:10px; margin-left:auto; flex:none}
+.pstep.taken .pt{color:var(--dim)}
+.open{
+  display:block; text-align:center; margin-top:12px; padding:8px;
+  background:linear-gradient(#25262c,#16171b); border:1px solid #3a3b42;
+  border-radius:3px; font-size:12px; text-decoration:none; color:#cfcabd;
+}
+.open:hover{background:linear-gradient(#32333b,#1d1e23); border-color:var(--gold); color:var(--gold)}
+.hint{padding:20px 14px; color:#5d5952; font-size:12px; text-align:center}
+.note{padding:10px 22px 24px; max-width:1400px; margin:0 auto; color:#5d5952; font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1 id="title">Levelling race</h1>
+  <span class="pill live" id="clock">&mdash;</span>
+  <span class="pill" id="speed"></span>
+  <span class="pill hc" id="hc" hidden>hardcore &mdash; death is final</span>
+  <span class="spacer"></span>
+  <a class="back" href="__CALC__">&larr; Talent calculator</a>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2 id="boardHead">Leaderboard</h2>
+      <div class="rows" id="rows"></div>
+    </div>
+    <div class="card" style="margin-top:18px" id="detailCard" hidden>
+      <h2>Bot</h2>
+      <div class="detail" id="detail"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>What's happening</h2>
+    <div class="feed" id="feed"></div>
+  </div>
+</div>
+
+<p class="note">
+  Bots pick their own talents as they level, and what they pick is what decides the race.
+  Nothing here touches the live game.
+</p>
+
+<script>
+const CALC = "__CALC__";
+const MAXLVL = 60;
+
+// #bot=Gorbeard opens straight onto one bot, so a run can be linked to
+let selected = (location.hash.match(/bot=([^&]+)/) || [])[1] || null;
+if (selected) selected = decodeURIComponent(selected);
+let lastEvent = 0;
+let maxLevel = 60;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const hhmm = m => Math.floor(m / 60) + "h" + String(Math.round(m % 60)).padStart(2, "0");
+// "Enhancement 18 / Elemental 4" with the leading tree picked out
+function specHtml(spec) {
+  if (!spec || spec === "no points yet") return '<span style="color:#4d4943">—</span>';
+  const parts = spec.split(" / ");
+  return "<em>" + esc(parts[0]) + "</em>" + (parts.length > 1 ? " / " + esc(parts.slice(1).join(" / ")) : "");
+}
+
+const days = m => {
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+  return d ? d + "d " + h + "h" : h + "h";
+};
+// to the minute, so two things happening in the same hour do not read as one
+// line printed twice
+const stamp = m => {
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = Math.round(m % 60);
+  return (d ? d + "d " : "") + h + ":" + String(mm).padStart(2, "0");
+};
+
+/* ---------------- leaderboard ---------------- */
+
+function drawBoard(state) {
+  maxLevel = state.race.maxLevel;
+  $("title").textContent = state.race.name;
+  $("clock").textContent = state.intermission
+    ? "next race in " + Math.ceil(state.intermission / 1000) + "s"
+    : "race time " + days(state.race.minutes);
+  $("speed").textContent = state.speed + " sim-minutes per second";
+  $("hc").hidden = !state.race.hardcore;
+
+  const done = state.board.filter(b => b.finishedAt !== null).length;
+  const dead = state.board.filter(b => !b.alive).length;
+  $("boardHead").textContent =
+    `Leaderboard — ${done} at ${maxLevel}` + (dead ? `, ${dead} dead` : "");
+
+  $("rows").innerHTML = state.board.map((b, i) => {
+    const pct = ((b.level - 1 + b.progress) / (maxLevel - 1)) * 100;
+    const cls = b.finishedAt !== null ? "done" : (!b.alive ? "dead" : "");
+    return `<div class="row ${b.alive ? "" : "dead"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
+      <div class="rank">${i + 1}</div>
+      <div class="who"><span class="dot ${b.online && b.alive && b.finishedAt === null ? "on" : ""}"></span><b>${esc(b.name)}</b></div>
+      <div class="lvl">${b.level}</div>
+      <div class="track">
+        <div class="fill ${cls}" style="width:${pct.toFixed(1)}%"></div>
+        <div class="tip" style="left:calc(${pct.toFixed(1)}% - 1px)"></div>
+      </div>
+      <div class="spec">${specHtml(b.spec)}</div>
+      <div class="meta">${hhmm(b.played)}${b.deaths ? ` <span class="d">†${b.deaths}</span>` : ""}</div>
+    </div>`;
+  }).join("");
+
+  for (const el of document.querySelectorAll(".row")) {
+    el.onclick = () => {
+      selected = selected === el.dataset.id ? null : el.dataset.id;
+      location.hash = selected ? "bot=" + encodeURIComponent(selected) : "";
+      if (selected) loadBot(); else $("detailCard").hidden = true;
+    };
+  }
+}
+
+/* ---------------- feed ---------------- */
+
+function drawFeed(events) {
+  if (!events.length) return;
+  const feed = $("feed");
+  const atTop = feed.scrollTop < 8;
+  const html = events.map(e => {
+    let text;
+    if (e.type === "ding") text = `<b>${esc(e.name)}</b> reached ${e.level}`;
+    else if (e.type === "finish") text = `<b>${esc(e.name)}</b> hit ${e.level}! — ${hhmm(e.detail.playedMinutes)} played`;
+    else text = e.detail.fatal
+      ? `<b>${esc(e.name)}</b> died at ${e.level} — eliminated`
+      : `<b>${esc(e.name)}</b> died at ${e.level}`;
+    return `<div class="ev ${e.type} new"><span class="at">${stamp(e.at)}</span><span>${text}</span></div>`;
+  }).join("");
+  feed.insertAdjacentHTML("afterbegin", html);
+  while (feed.children.length > 120) feed.removeChild(feed.lastChild);
+  if (atTop) feed.scrollTop = 0;
+  lastEvent = Math.max(lastEvent, ...events.map(e => e.id));
+}
+
+/* ---------------- one bot ---------------- */
+
+async function loadBot() {
+  if (!selected) return;
+  let b;
+  try {
+    const res = await fetch("api/bot/" + encodeURIComponent(selected));
+    if (!res.ok) { $("detailCard").hidden = true; selected = null; return; }
+    b = await res.json();
+  } catch (e) { return; }
+
+  const bar = (k, v, max) => `<div class="bar">
+      <span class="k">${k}</span>
+      <span class="t"><span class="v" style="width:${Math.min(100, (v / max) * 100).toFixed(0)}%"></span></span>
+      <span class="n">${v.toFixed(2)}</span>
+    </div>`;
+
+  const state = b.finishedAt !== null ? `finished at ${b.level}`
+    : (!b.alive ? `died at ${b.level}` : `level ${b.level}`);
+
+  $("detail").innerHTML =
+    `<p class="name">${esc(b.name)}</p>
+     <p class="sub">${esc(b.spec || "no points yet")} — ${state}</p>
+     <div class="bars">
+       ${bar("Power", b.stats.power, 1)}
+       ${bar("Sustain", b.stats.sustain, 1)}
+       ${bar("Defense", b.stats.defense, 0.6)}
+       ${bar("AoE", b.stats.aoe, 0.2)}
+     </div>
+     <div class="facts">
+       Played <span>${hhmm(b.played)}</span> &middot; ${b.points} talent points
+       &middot; <span>${b.deaths}</span> death${b.deaths === 1 ? "" : "s"}<br>
+       Plays <span>${b.hoursPerDay.toFixed(1)}h</span> a day,
+       ${b.recklessness > 0.66 ? "<span>recklessly</span>"
+         : b.recklessness > 0.33 ? "fairly boldly" : "<span>carefully</span>"}
+     </div>
+     <a class="open" href="${CALC}#${encodeURIComponent(b.code)}" target="_blank" rel="noopener">
+       Open this build in the calculator &rarr;
+     </a>
+     <div class="plan">
+       ${b.plan.map(s => `<div class="pstep ${s.taken ? "taken" : ""}">
+           <span class="pl">${s.level}</span>
+           <span>${esc(s.talent)}</span>
+           <span class="pt">${esc(s.tree)}</span>
+         </div>`).join("")}
+     </div>`;
+  $("detailCard").hidden = false;
+}
+
+/* ---------------- poll ---------------- */
+
+let raceId = null;
+
+async function poll() {
+  try {
+    const state = await (await fetch("api/state")).json();
+    if (state.race.id !== raceId) {      // a new race started: begin again
+      const first = raceId === null;
+      raceId = state.race.id;
+      lastEvent = 0;
+      if (!first) { selected = null; location.hash = ""; }
+      $("feed").innerHTML = "";
+      $("detailCard").hidden = true;
+    }
+    drawBoard(state);
+
+    const events = await (await fetch("api/feed?after=" + lastEvent)).json();
+    drawFeed(events);
+    if (selected) loadBot();
+  } catch (e) { /* the server is restarting; the next tick will pick it up */ }
+}
+
+$("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
+poll();
+setInterval(poll, 1000);
+</script>
+</body>
+</html>

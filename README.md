@@ -344,6 +344,29 @@ Endpoints marked **admin** need the `ADMIN_KEY` — see *Running it in public* b
 With no `ADMIN_KEY` set there is no admin, and they are open to anyone who can reach
 the server, which is the right shape for a LAN and the wrong one for the internet.
 
+## Levelling race
+
+A separate little app in [`sim/`](sim/), served at `/sim/`: bots roll a Shaman,
+pick their own talents level by level, and grind to 60 — and what they picked is
+what decides who wins. Every talent carries a weight across power, sustain,
+defense and AoE, those feed an XP-per-hour model, and the finishing order tracks
+the builds rather than the dice.
+
+The routes it invents are real builds — the calculator accepts them click for
+click — so clicking a bot and choosing **open this build in the calculator**
+hands you their build at the level they have currently reached.
+
+It runs its own container so a runaway simulation cannot take the calculator
+down, and keeps a race going at all times. See [`sim/README.md`](sim/README.md)
+for the model and its dials, and [`deploy/README.md`](deploy/README.md) for the
+tunnel route.
+
+```bash
+node sim/server.js          # localhost:5503/sim/
+node sim/run.js             # or headless, straight to a results table
+node sim/test.js
+```
+
 ## Running it in public
 
 There are no accounts, so two environment variables stand in for them. `deploy/` has a

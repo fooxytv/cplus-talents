@@ -49,6 +49,32 @@ services:
     networks:
       - talents-net
 
+  # The levelling race, at talents.fooxy.tv/sim/. Its own container on purpose:
+  # it runs a tick loop, and a runaway simulation should not be able to take the
+  # calculator down with it. Same hostname, so the two share an origin and no
+  # second DNS record is needed - see deploy/README.md for the tunnel route.
+  sim:
+    build:
+      context: ..
+      dockerfile: sim/Dockerfile
+    image: cplus-talents-sim
+    ports:
+      - "${SIM_PORT:-5503}:8080"
+    volumes:
+      - sim-data:/data
+    environment:
+      SIM_DB: /data/sim.db
+      BASE_PATH: /sim
+      # where "open this build in the calculator" should point
+      SIM_CALC_BASE: "${SIM_CALC_BASE:-/}"
+      # sim minutes per real second; at 30 a race resolves in about 20 minutes
+      SIM_SPEED: "${SIM_SPEED:-30}"
+      SIM_BOTS: "${SIM_BOTS:-30}"
+      SIM_HARDCORE: "${SIM_HARDCORE:-0}"
+    restart: unless-stopped
+    networks:
+      - talents-net
+
   # Publishes the site at talents.fooxy.tv. Create the tunnel in the Cloudflare
   # Zero Trust dashboard, point its public hostname at http://talents:8080, and
   # put its token in .env.
@@ -62,6 +88,7 @@ services:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
     depends_on:
       - talents
+      - sim
     restart: unless-stopped
     networks:
       - talents-net
@@ -72,3 +99,4 @@ networks:
 
 volumes:
   talent-data:
+  sim-data:

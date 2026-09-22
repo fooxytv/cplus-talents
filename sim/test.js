@@ -19,6 +19,7 @@ const engine = require("./engine");
 const xp = require("./xp");
 const db_ = require("./db");
 const race_ = require("./race");
+const share = require("./share");
 const { rng, seedFrom } = require("./rng");
 
 let passed = 0;
@@ -120,6 +121,41 @@ ok("a damage build has more power than a healing build", (() => {
   return stats.statsFor(KLASS, trees, dmg).power > stats.statsFor(KLASS, trees, heal).power
       && stats.statsFor(KLASS, trees, heal).sustain > stats.statsFor(KLASS, trees, dmg).sustain;
 })());
+
+/* ---------------- share codes ---------------- */
+
+// The watch page links every bot to the calculator. A browser probe has
+// confirmed the page decodes these; these assertions guard the format.
+ok("an empty build encodes to just the class", (() => {
+  const code = share.encode(EDITION, KLASS, trees, rules.emptyState(trees));
+  return /^forever:shaman\.[0-9a-z]+$/.test(code);
+})());
+
+ok("a code carries one digit per rank spent", (() => {
+  const st = rules.replay(trees, sample[0].route);
+  const code = share.encode(EDITION, KLASS, trees, st);
+  const digits = code.split("-")[1].split(".")[0];
+  const spent = [...digits].reduce((n, c) => n + Number(c), 0);
+  return spent === edition.maxPoints;
+})());
+
+ok("a partial build encodes fewer points than a finished one", (() => {
+  const half = rules.replay(trees, sample[0].route, 10);
+  const code = share.encode(EDITION, KLASS, trees, half);
+  const digits = (code.split("-")[1] || "").split(".")[0];
+  return [...digits].reduce((n, c) => n + Number(c), 0) === 10;
+})());
+
+ok("the fingerprint is stable across calls",
+   share.fingerprint(trees) === share.fingerprint(trees));
+
+ok("different builds encode differently", (() => {
+  const a = share.encode(EDITION, KLASS, trees, rules.replay(trees, sample[0].route));
+  const b = share.encode(EDITION, KLASS, trees, rules.replay(trees, sample[1].route));
+  return a !== b;
+})());
+
+ok("class names with spaces slug correctly", share.slug("Death Knight") === "deathknight");
 
 /* ---------------- the engine ---------------- */
 

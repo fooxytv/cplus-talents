@@ -116,17 +116,55 @@ stopped reaching the container.
 The named volume `talent-data` survives rebuilds. `docker compose down` keeps it;
 `docker compose down -v` deletes the suggestions and the edited trees.
 
+## The levelling race
+
+The race at `/sim/` is a second container on the same hostname, so there is no
+extra DNS record to create — but the tunnel needs to know which of the two gets
+a request.
+
+In the Cloudflare Zero Trust dashboard, under the tunnel's public hostnames, add
+a route **above** the existing one:
+
+| | |
+|---|---|
+| Subdomain | `talents` |
+| Path | `sim/*` |
+| Service | `http://sim:8080` |
+
+Order matters. The existing route has no path and therefore matches everything,
+so a `sim/*` rule placed under it never fires. `sim` is the compose service
+name, the same way the first route points at `talents:8080`.
+
+Check it on the LAN first, before touching the tunnel:
+
+```bash
+curl -s localhost:5503/sim/api/health
+```
+
+Dials, all optional in `.env`:
+
+| | |
+|---|---|
+| `SIM_SPEED` | sim minutes per real second (30 → a race lasts ~20 min) |
+| `SIM_BOTS` | how many race (30) |
+| `SIM_HARDCORE` | `1` makes death permanent |
+
+It keeps one race running at all times and starts another when the last one
+ends, so it can simply be left alone.
+
 ## Backups
 
 ```bash
 docker compose cp talents:/data/talents.db ./talents-backup.db
+docker compose cp sim:/data/sim.db ./sim-backup.db
 ```
 
-That one file holds the edited trees, every version in their history, and the
-suggestions people have sent.
+The first holds the edited trees, every version in their history, and the
+suggestions people have sent. The second is every race that has ever run —
+losing it costs nothing but the history.
 
 ## Ports
 
-`8080` is Traefik's on this host and `5500` is paddington's, so this uses `5502`.
-The published port is for you on the LAN — Cloudflare reaches the container over
-the compose network and does not need it.
+`8080` is Traefik's on this host and `5500` is paddington's, so the calculator
+uses `5502` and the race `5503`. The published ports are for you on the LAN —
+Cloudflare reaches both containers over the compose network and needs neither.

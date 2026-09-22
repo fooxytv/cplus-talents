@@ -7,11 +7,36 @@ Nothing here talks to the real game. It is a toy, and the only thing it is
 trying to be is *worth watching*.
 
 ```
-node sim/run.js                            30 Shamans, normal rules
+node sim/server.js                         watch it at localhost:5503/sim/
+node sim/run.js                            or run one headless and print the table
 node sim/run.js --bots 40 --hardcore       death is permanent
 node sim/run.js --seed 7                   the same seed is the same race
-node sim/test.js                           52 assertions
+node sim/test.js                           58 assertions
 ```
+
+## Watching it
+
+`sim/server.js` keeps one race running and serves the page at `/sim/`. When
+everyone has finished or died it pauses briefly and starts another, so it can be
+left running and there is always something happening.
+
+The leaderboard shows where each bot is **now**, including the spec they have
+built up so far rather than the one they are heading for — watching someone
+commit to a tree is half the interest, and showing the finished build would give
+the plan away.
+
+Click a bot for their stats, their personality, and their whole route with the
+points they have actually spent picked out. **Open this build in the calculator**
+hands the build to the real page as a share code, at the level they are at now,
+not the finished article. `#bot=Gorbeard` links straight to one.
+
+| | |
+|---|---|
+| `SIM_SPEED` | sim minutes per real second (default 30) |
+| `SIM_BOTS` | how many race (default 30) |
+| `SIM_HARDCORE` | `1` for permanent death |
+| `SIM_CALC_BASE` | where the calculator lives (default `/`) |
+| `BASE_PATH` | where the sim is mounted (default `/sim`) |
 
 ## Why the talents are the point
 
@@ -102,7 +127,10 @@ the events already written are what happened.
 | `engine.js` | the tick, and every tuning dial |
 | `db.js` | schema |
 | `race.js` | creating, loading and advancing a race |
+| `share.js` | build → a share code the calculator accepts |
 | `run.js` | run one headless and print the result |
+| `server.js` | the tick loop, and the JSON API |
+| `public/watch.html` | the page |
 
 ## Known approximations
 
