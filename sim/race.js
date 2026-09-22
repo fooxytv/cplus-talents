@@ -31,7 +31,8 @@ function createRace(db, q, opts) {
   const r = rng(seed);
   const taken = new Set();
 
-  q.createRace.run(id, name, editionId, seed, hardcore ? 1 : 0, new Date().toISOString());
+  const now = new Date().toISOString();
+  q.createRace.run(id, name, editionId, seed, hardcore ? 1 : 0, now, "sim", now);
 
   const bots = [];
   for (let i = 0; i < count; i++) {
@@ -55,7 +56,8 @@ function createRace(db, q, opts) {
 
     q.addBot.run(id, botName, botName, klass, spec,
       who.race, who.faction, who.gender, botSeed,
-      JSON.stringify(route), JSON.stringify(bias));
+      JSON.stringify(route), JSON.stringify(bias),
+      "sim", "", "");
 
     const bot = engine.newBot({
       id: botName, name: botName, klass, editionId, route, bias,

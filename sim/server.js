@@ -18,6 +18,7 @@
  */
 
 const http = require("http");
+const crypto = require("node:crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -26,6 +27,7 @@ const race_ = require("./race");
 const rules = require("./rules");
 const stats = require("./stats");
 const share = require("./share");
+const ingest = require("./ingest");
 const routes = require("./routes");
 const roster = require("./roster");
 const engine = require("./engine");
@@ -69,6 +71,40 @@ const CLASS_SPEC = (() => {
 })();
 const BASE = (process.env.BASE_PATH || "/sim").replace(/\/$/, "");
 const INTERMISSION_SECONDS = Number(pick("SIM_INTERMISSION", "intermission", 20));
+/*
+ * Writing is off unless a key is set. This serves on a public hostname, and an
+ * open ingest endpoint would let anyone invent a race - so no key, no writes,
+ * and the read-only site carries on as before.
+ */
+const INGEST_KEY = process.env.SIM_INGEST_KEY || "";
+
+function authorised(req, url) {
+  if (!INGEST_KEY) return false;
+  const given = req.headers["x-ingest-key"] || url.searchParams.get("key") || "";
+  const a = Buffer.from(String(given));
+  const b = Buffer.from(INGEST_KEY);
+  // compare in constant time, and only when the lengths already match, since
+  // timingSafeEqual throws on a mismatch and that itself would leak the length
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function readBody(req, limit = 256 * 1024) {
+  return new Promise((resolve, reject) => {
+    let n = 0;
+    const chunks = [];
+    req.on("data", c => {
+      n += c.length;
+      if (n > limit) { reject(new Error("body too large")); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on("end", () => {
+      try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}); }
+      catch (e) { reject(new Error("body is not json")); }
+    });
+    req.on("error", reject);
+  });
+}
+
 // where the talent calculator lives, so "open this build" goes somewhere real
 const CALC_BASE = process.env.SIM_CALC_BASE || "/";
 
@@ -364,11 +400,72 @@ function send(res, code, body, type = "application/json") {
   res.end(buf);
 }
 
+/* ---------------- ingest ---------------- */
+
+async function handleIngest(req, res, p, url) {
+  if (!authorised(req, url)) {
+    return send(res, INGEST_KEY ? 403 : 404, {
+      error: INGEST_KEY ? "bad key" : "ingest is not enabled on this instance",
+    });
+  }
+
+  let body;
+  try { body = await readBody(req); }
+  catch (e) { return send(res, 400, { error: e.message }); }
+
+  try {
+    // start a race that tracks real characters
+    if (p === "/api/ingest/race") {
+      if (!body.id) return send(res, 400, { error: "an id is required" });
+      const race = ingest.createRealRace(db, q, {
+        id: String(body.id), name: body.name || "Race",
+        editionId: EDITION, startedAt: body.startedAt,
+        hardcore: !!body.hardcore,
+      });
+      return send(res, 200, { ok: true, race });
+    }
+
+    // add someone to it
+    if (p === "/api/ingest/character") {
+      const race = q.getRace.get(String(body.raceId || ""));
+      if (!race) return send(res, 404, { error: "no such race" });
+      if (race.kind !== "real") return send(res, 400, { error: "that race is simulated" });
+      const row = ingest.addCharacter(db, q, race, body);
+      return send(res, 200, { ok: true, character: row });
+    }
+
+    // one reading, or a batch of them
+    if (p === "/api/ingest" || p === "/api/ingest/observe") {
+      const race = q.getRace.get(String(body.raceId || ""));
+      if (!race) return send(res, 404, { error: "no such race" });
+      if (race.kind !== "real") return send(res, 400, { error: "that race is simulated" });
+
+      const list = Array.isArray(body.observations) ? body.observations : [body];
+      const results = list.map(o => {
+        try { return { botId: o.botId, ...ingest.record(db, q, race, o) }; }
+        catch (e) { return { botId: o.botId, error: e.message }; }
+      });
+      // a real race's clock is wall clock, so move it on as readings arrive
+      const now = ingest.minutesInto(race, new Date().toISOString());
+      if (now > race.minutes) q.setMinutes.run(now, race.status, race.id);
+      pastCache.delete(race.id);
+      return send(res, 200, { ok: true, results });
+    }
+
+    return send(res, 404, { error: "not an ingest endpoint" });
+  } catch (e) {
+    return send(res, 400, { error: e.message });
+  }
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
   let p = url.pathname;
   if (BASE && p.startsWith(BASE)) p = p.slice(BASE.length) || "/";
 
+  if (req.method === "POST" && p.startsWith("/api/ingest")) {
+    return handleIngest(req, res, p, url);
+  }
   if (req.method !== "GET") return send(res, 405, { error: "GET only" });
 
   // the edition's own logo, straight out of the calculator's assets
@@ -396,6 +493,7 @@ const server = http.createServer((req, res) => {
         id: current.race.id, name: current.race.name,
         minutes: current.race.minutes, status: current.race.status,
         hardcore: !!current.race.hardcore, edition: EDITION,
+        kind: current.race.kind || "sim",
         classes: CLASSES, mixed: CLASSES.length > 1,
         maxLevel: xp.MAX_LEVEL,
       },
@@ -445,6 +543,7 @@ const server = http.createServer((req, res) => {
       race: {
         id: ctx.race.id, name: ctx.race.name, minutes: ctx.race.minutes,
         status: ctx.race.status, hardcore: !!ctx.race.hardcore,
+        kind: ctx.race.kind || "sim",
         edition: EDITION, classes, mixed: classes.length > 1,
         maxLevel: xp.MAX_LEVEL, createdAt: ctx.race.created_at,
         live: ctx.race.id === current.race.id,
@@ -570,6 +669,26 @@ const server = http.createServer((req, res) => {
 
   if (p === "/api/talents") {
     return send(res, 200, TALENT_DICT);
+  }
+
+  // Where a race's numbers came from and how old they are. An armory only
+  // updates on logout, so this is the number that says whether a standing is
+  // worth believing.
+  const prov = p.match(/^\/api\/race\/([^/]+)\/provenance$/);
+  if (prov) {
+    const raceId = decodeURIComponent(prov[1]);
+    const row = q.getRace.get(raceId);
+    if (!row) return send(res, 404, { error: "no such race" });
+    return send(res, 200, {
+      kind: row.kind || "sim",
+      startedAt: row.started_at || row.created_at,
+      staleness: ingest.staleness(q, raceId),
+      recent: ingest.recent(q, raceId, 40).map(o => ({
+        bot: o.bot_id, name: o.name, source: o.source,
+        observedAt: o.observed_at, at: o.at_minutes,
+        level: o.level, played: o.played, note: o.note,
+      })),
+    });
   }
 
   if (p === "/api/health") {

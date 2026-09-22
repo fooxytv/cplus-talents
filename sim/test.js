@@ -637,6 +637,158 @@ ok("roster.json covers every class the config can race", (() => {
 ok("race.json comment keys are ignored by the reader",
    Object.keys(raceCfg).filter(k => k.startsWith("/")).length > 0);
 
+/* ---------------- ingest: real characters ---------------- */
+
+const ingest = require("./ingest");
+
+const ingTmp = path.join(os.tmpdir(), "sim-ingest-" + Date.now() + ".db");
+const idb = db_.open(ingTmp);
+const iq = db_.statements(idb);
+
+const realRace = ingest.createRealRace(idb, iq, {
+  id: "real1", name: "Launch day", editionId: EDITION,
+  startedAt: "2026-11-04T23:00:00.000Z",
+});
+
+ok("a real race is marked real, not simulated", realRace.kind === "real");
+ok("a real race keeps its wall-clock start", !!realRace.started_at);
+
+const bella = ingest.addCharacter(idb, iq, realRace, {
+  name: "Bella", klass: "Druid", race: "Night Elf", faction: "Alliance",
+  realm: "Wild Growth", region: "us", source: "armory",
+});
+ok("a character joins with no talents spent", bella && JSON.parse(bella.route).length === 0);
+ok("a character records where it came from", bella.source === "armory" && bella.realm === "Wild Growth");
+ok("a real character's played time starts unknown",
+   idb.prepare("SELECT played_known FROM bot_state WHERE race_id=? AND bot_id=?")
+     .get("real1", "Bella").played_known === 0);
+
+ok("a class the edition does not have is refused", (() => {
+  try {
+    ingest.addCharacter(idb, iq, realRace, { name: "Nope", klass: "Demon Hunter" });
+    return false;
+  } catch (e) { return true; }
+})());
+
+// the race clock is wall clock for a real race
+ok("minutes are measured from the real start",
+   ingest.minutesInto(realRace, "2026-11-05T01:30:00.000Z") === 150);
+
+/* --- a first reading --- */
+const obs1 = ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "armory", level: 12,
+  observedAt: "2026-11-05T01:00:00.000Z",
+});
+ok("a first reading raises the level", obs1.levels.length === 11 && obs1.levels[10] === 12);
+ok("every level crossed gets its own event",
+   idb.prepare("SELECT COUNT(*) n FROM events WHERE race_id=? AND bot_id=? AND type='ding'")
+     .get("real1", "Bella").n === 11);
+ok("the state follows the reading",
+   iq.board.all("real1").find(b => b.bot_id === "Bella").level === 12);
+
+/* --- an unchanged reading --- */
+const obs2 = ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "armory", level: 12,
+  observedAt: "2026-11-05T02:00:00.000Z",
+});
+ok("an unchanged reading adds no levels", obs2.levels.length === 0);
+ok("but the observation is still kept",
+   ingest.history(iq, "real1", "Bella").length === 2);
+
+/* --- a reading that goes backwards --- */
+const obs3 = ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "manual", level: 9,
+  observedAt: "2026-11-05T02:30:00.000Z",
+});
+ok("a level going backwards is refused", obs3.ignored !== null);
+ok("and the race does not move",
+   iq.board.all("real1").find(b => b.bot_id === "Bella").level === 12);
+ok("but the disagreement is recorded, not discarded",
+   ingest.history(iq, "real1", "Bella").length === 3);
+
+/* --- talents --- */
+const druidTrees = rules.classData(EDITION, "Druid").trees;
+const firstTree = druidTrees[0];
+const tier1 = firstTree.talents.filter(t => t.reqPoints === 0);
+const wanted = {};
+wanted[tier1[0].id] = tier1[0].maxRank;
+
+const obs4 = ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "armory", level: 14, talents: wanted,
+  observedAt: "2026-11-05T03:00:00.000Z",
+});
+ok("talents are accepted", obs4.talents === true);
+ok("talents become a legal route", (() => {
+  const row = iq.listBots.all("real1").find(b => b.id === "Bella");
+  const route = JSON.parse(row.route);
+  if (route.length !== tier1[0].maxRank) return false;
+  try { rules.replay(druidTrees, route); return true; } catch (e) { return false; }
+})());
+ok("the spec line is filled in from them",
+   iq.listBots.all("real1").find(b => b.id === "Bella").spec.includes(firstTree.name));
+
+// a build nobody could actually have is reported rather than stored
+const deep = {};
+for (const t of firstTree.talents) if (t.reqPoints >= 25) deep[t.id] = t.maxRank;
+if (Object.keys(deep).length) {
+  ingest.record(idb, iq, realRace, {
+    botId: "Bella", source: "manual", level: 15, talents: deep,
+    observedAt: "2026-11-05T04:00:00.000Z",
+  });
+  ok("an unreachable build is flagged, not stored as fact",
+     idb.prepare("SELECT COUNT(*) n FROM events WHERE race_id=? AND type='note'")
+       .get("real1").n > 0);
+}
+
+/* --- played time, when a source happens to know it --- */
+ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "manual", level: 15, played: 600,
+  observedAt: "2026-11-05T05:00:00.000Z",
+});
+ok("played time is taken when offered",
+   idb.prepare("SELECT played_known, played_minutes FROM bot_state WHERE race_id=? AND bot_id=?")
+     .get("real1", "Bella").played_known === 1);
+
+/* --- reaching the cap --- */
+const obs6 = ingest.record(idb, iq, realRace, {
+  botId: "Bella", source: "armory", level: 60,
+  observedAt: "2026-11-20T10:00:00.000Z",
+});
+ok("reaching the cap finishes the character", obs6.finished === true);
+ok("finishing is recorded once", (() => {
+  ingest.record(idb, iq, realRace, {
+    botId: "Bella", source: "armory", level: 60,
+    observedAt: "2026-11-20T11:00:00.000Z",
+  });
+  return idb.prepare("SELECT COUNT(*) n FROM events WHERE race_id=? AND type='finish'")
+    .get("real1").n === 1;
+})());
+
+/* --- provenance and staleness --- */
+ok("a bad source is refused outright", (() => {
+  try {
+    ingest.record(idb, iq, realRace, { botId: "Bella", source: "wishful", level: 61 });
+    return false;
+  } catch (e) { return /unknown source/.test(e.message); }
+})());
+
+ok("staleness reports how old the newest reading is", (() => {
+  const st = ingest.staleness(iq, "real1", "2026-11-20T12:00:00.000Z");
+  return st.seen === 1 && st.oldest === 60 && st.future === 0;
+})());
+
+// a clock skewed the wrong way should say so, not report a negative age
+ok("a reading from the future is flagged, not reported as negative", (() => {
+  const st = ingest.staleness(iq, "real1", "2026-11-01T00:00:00.000Z");
+  return st.oldest === 0 && st.future === 1;
+})());
+
+ok("readings are kept in full", ingest.recent(iq, "real1", 50).length >= 7);
+
+idb.close();
+fs.rmSync(ingTmp, { force: true });
+for (const ext of ["-wal", "-shm"]) fs.rmSync(ingTmp + ext, { force: true });
+
 /* ---------------- report ---------------- */
 
 console.log(`\n  ${passed} passed, ${failures.length} failed`);
