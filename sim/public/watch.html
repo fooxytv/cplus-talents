@@ -322,7 +322,25 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   backdrop-filter:blur(14px) saturate(1.2); -webkit-backdrop-filter:blur(14px) saturate(1.2);
   text-shadow:0 1px 2px rgba(0,0,0,.9); line-height:1.35; font-size:13px;
 }
+#tip .t-head{display:flex; gap:9px; align-items:flex-start}
+#tip .t-head .t-ic{width:38px; height:38px; border-radius:4px; border:1px solid #000;
+                   box-shadow:0 0 0 1px #3a3b42; flex:none}
+#tip .t-head .t-ic.sm{width:26px; height:26px}
+#tip .t-icons{display:flex; gap:3px; flex:none}
+#tip .t-head > div{min-width:0}
 #tip .t-name{font-size:15px; font-weight:600; color:var(--gold); line-height:1.25}
+#tip .t-sub{color:#9a9baa; font-size:12px; margin-top:1px}
+#tip .t-rows{display:grid; grid-template-columns:auto 1fr; gap:2px 12px; margin-top:7px; font-size:12px}
+#tip .t-rows .k{color:#9a9baa}
+#tip .t-rows .v{color:#fff; text-align:right; font-variant-numeric:tabular-nums}
+#tip .t-rows .v.dim{color:#9a9baa}
+#tip .t-specs{display:flex; gap:8px; margin-top:7px; flex-wrap:wrap}
+#tip .t-specs span{display:inline-flex; align-items:center; gap:4px; font-size:12px}
+#tip .t-specs img{width:16px; height:16px; border-radius:3px; border:1px solid #000}
+#tip .t-bar{height:7px; background:#1b1d24; border:1px solid #2c2d33; border-radius:2px;
+            overflow:hidden; margin-top:7px; display:flex}
+#tip .t-bar i{display:block; height:100%}
+#tip .t-sep{height:1px; background:rgba(255,255,255,.1); margin:8px 0 0}
 #tip .t-rank{color:#fff; margin-top:1px}
 #tip .t-req{color:#9a9baa; margin-top:3px}
 #tip .t-desc{color:var(--gold); margin-top:5px}
@@ -504,16 +522,106 @@ function talentTip(klass, treeId, talId, rank) {
   const tal = tree && tree.talents[talId];
   if (!tal) return `<div class="t-name">${esc(talId)}</div>`;
   const r = Math.max(0, Math.min(rank | 0, tal.maxRank));
-  let h = `<div class="t-name">${esc(tal.name)}</div>`;
-  h += `<div class="t-rank">Rank ${r}/${tal.maxRank}</div>`;
-  if (tal.reqPoints) h += `<div class="t-req">Requires ${tal.reqPoints} points in ${esc(tree.name)}</div>`;
-  if (tal.prereq) h += `<div class="t-req">Requires ${esc(tal.prereq)}</div>`;
+  const idx = treesOf(klass).findIndex(t => t.id === treeId);
+  const colour = TREE_COLOUR[idx] || "#8b8579";
+  const tier = Math.floor((tal.pos.charCodeAt(0) - 97)) + 1;
+
+  let h = `<div class="t-head">
+      <img class="t-ic" src="${ICON(tal.icon)}" alt="" loading="lazy">
+      <div>
+        <div class="t-name">${esc(tal.name)}</div>
+        <div class="t-sub">
+          <span style="color:${colour}">${esc(tree.name)}</span>
+          &middot; tier ${tier}${klass ? " &middot; " + esc(klass) : ""}
+        </div>
+      </div>
+    </div>`;
+
+  h += `<div class="t-rows">
+      <span class="k">Rank</span><span class="v">${r} / ${tal.maxRank}</span>` +
+    (tal.reqPoints
+      ? `<span class="k">Tier opens at</span><span class="v dim">${tal.reqPoints} points in ${esc(tree.name)}</span>` : "") +
+    (tal.prereq
+      ? `<span class="k">Needs first</span><span class="v dim">${esc(tal.prereq)}</span>` : "") +
+    `</div>`;
+
   if (r > 0) h += `<div class="t-desc">${esc(tal.ranks[r - 1] || "")}</div>`;
+  else h += `<div class="t-desc" style="color:#9a9baa">${esc(tal.ranks[0] || "")}</div>`;
+
   if (r < tal.maxRank) {
-    h += `<div class="t-nexth">Next rank:</div><div class="t-next">${esc(tal.ranks[r] || "")}</div>`;
+    h += `<div class="t-nexth">${r > 0 ? "Next rank:" : "At one point:"}</div>` +
+         `<div class="t-next">${esc(tal.ranks[r] || "")}</div>`;
+  } else {
+    h += `<div class="t-hint">Maxed</div>`;
   }
   return h;
 }
+
+/* a whole character on hover, rather than one line of prose */
+function botTip(id) {
+  const b = (lastState ? lastState.board : []).find(x => x.id === id);
+  if (!b) return "";
+  const fin = b.finishedAt !== null;
+  const who = [b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : null, b.race, b.klass]
+    .filter(Boolean).join(" ");
+  const total = (b.split || []).reduce((n, x) => n + x.points, 0);
+
+  let h = `<div class="t-head">
+      <div class="t-icons">
+        ${b.factionIcon ? `<img class="t-ic sm" src="${ICON(b.factionIcon)}" alt="">` : ""}
+        ${b.raceIcon ? `<img class="t-ic sm" src="${ICON(b.raceIcon)}" alt="">` : ""}
+        ${b.classIcon ? `<img class="t-ic sm" src="${ICON(b.classIcon)}" alt="">` : ""}
+      </div>
+      <div>
+        <div class="t-name" style="color:${CLASS_COLOUR(b.klass)}">${esc(b.name)}</div>
+        <div class="t-sub">${esc(who)} &middot; ${esc(b.faction || "")}</div>
+      </div>
+    </div>`;
+
+  h += `<div class="t-rows">
+      <span class="k">Level</span><span class="v">${b.level}${fin ? " \u2014 finished" : (b.alive ? "" : " \u2014 dead")}</span>
+      <span class="k">Time played</span><span class="v">${hhmm(b.played)}</span>
+      <span class="k">Deaths</span><span class="v ${b.deaths ? "" : "dim"}">${b.deaths}</span>
+      <span class="k">Talent points</span><span class="v">${total}</span>
+      <span class="k">At the keyboard</span><span class="v dim">${b.online && b.alive && !fin ? "yes" : "no"}</span>
+    </div>`;
+
+  if (total) {
+    h += `<div class="t-specs">` + (b.split || []).map((x, i) => x.points
+      ? `<span><img src="${ICON(x.icon)}" alt="">
+           <b style="color:${TREE_COLOUR[i]}">${x.points}</b>
+           <span style="color:#9a9baa">${esc(x.name || x.tree)}</span></span>` : "").join("") + `</div>`;
+    h += `<div class="t-bar">` + (b.split || []).map((x, i) => x.points
+      ? `<i style="width:${((x.points / total) * 100).toFixed(1)}%;background:${TREE_COLOUR[i]}"></i>` : "").join("") + `</div>`;
+  }
+
+  if (b.advantage) {
+    h += `<div class="t-sep"></div><div class="t-hint">Levels ${b.advantage >= 1 ? "+" : ""}` +
+         `${Math.round((b.advantage - 1) * 100)}% faster than an untalented ${esc(b.klass)}</div>`;
+  }
+  return h;
+}
+
+/* the spec split, with the specs named and drawn */
+function splitTip(id) {
+  const b = (lastState ? lastState.board : []).find(x => x.id === id);
+  if (!b || !Array.isArray(b.split)) return "";
+  const total = b.split.reduce((n, x) => n + x.points, 0);
+  let h = `<div class="t-name">Points spent</div>`;
+  h += `<div class="t-sub">${total} of ${b.level >= 10 ? b.level - 9 : 0} earned</div>`;
+  h += `<div class="t-rows">` + b.split.map((x, i) =>
+    `<span class="k" style="color:${TREE_COLOUR[i]}">${esc(x.name || x.tree)}</span>` +
+    `<span class="v ${x.points ? "" : "dim"}">${x.points}</span>`).join("") + `</div>`;
+  return h;
+}
+
+// Wowhead icons that read as the thing each stat buys
+const STAT_ICON = {
+  power: "ability_warrior_savageblow",
+  sustain: "spell_holy_sealofsacrifice",
+  defense: "ability_defend",
+  aoe: "spell_fire_selfdestruct",
+};
 
 const STAT_TIP = {
   power: ["Power", "How fast things die. Damage, crit and attack-speed talents feed this; it is the biggest single lever on levelling speed."],
@@ -526,9 +634,17 @@ function showTip(el, ev) {
   let html = "";
   if (el.dataset.tt === "talent") {
     html = talentTip(el.dataset.klass, el.dataset.tree, el.dataset.tal, el.dataset.rank);
+  } else if (el.dataset.tt === "bot") {
+    html = botTip(el.dataset.id);
+  } else if (el.dataset.tt === "split") {
+    html = splitTip(el.dataset.id);
   } else if (el.dataset.tt === "stat") {
     const s = STAT_TIP[el.dataset.stat];
-    html = `<div class="t-name">${s[0]}</div><div class="t-desc">${s[1]}</div>`;
+    html = `<div class="t-head">
+        <img class="t-ic" src="${ICON(STAT_ICON[el.dataset.stat])}" alt="">
+        <div><div class="t-name">${s[0]}</div>
+        <div class="t-sub">one of the four the race runs on</div></div>
+      </div><div class="t-desc">${s[1]}</div>`;
   } else if (el.dataset.tt === "text") {
     html = `<div class="t-name">${esc(el.dataset.title || "")}</div>` +
            `<div class="t-desc">${esc(el.dataset.body || "")}</div>`;
@@ -569,9 +685,7 @@ function talentIcon(t, small, klass) {
 function identCell(b) {
   if (!b.raceIcon && !b.factionIcon) return '<span></span>';
   const who = `${b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) + " " : ""}${b.race || ""}`;
-  return `<div class="idc"
-      data-tt="text" data-title="${esc(b.name)}"
-      data-body="${esc(who)} ${esc(b.klass || "")} of the ${esc(b.faction || "")}">
+  return `<div class="idc" data-tt="bot" data-id="${esc(b.id)}">
     ${b.factionIcon ? `<img src="${ICON(b.factionIcon)}" alt="${esc(b.faction)}" loading="lazy">` : ""}
     ${b.raceIcon ? `<img src="${ICON(b.raceIcon)}" alt="${esc(b.race)}" loading="lazy">` : ""}
     ${b.classIcon ? `<img src="${ICON(b.classIcon)}" alt="${esc(b.klass)}"
@@ -640,14 +754,15 @@ function specLine(klass, plan) {
   return out.length ? out.join('<span style="color:#3f3d38"> / </span>') : "no points yet";
 }
 
-function splitBar(split) {
+function splitBar(split, id) {
   const arr = Array.isArray(split) ? split : [];
   const total = arr.reduce((n, x) => n + x.points, 0);
   if (!total) return '<span class="split"></span>';
   const body = arr.map((x, i) => x.points
     ? `<i style="width:${((x.points / total) * 100).toFixed(1)}%;background:${TREE_COLOUR[i]}"></i>` : "").join("");
-  const label = arr.filter(x => x.points).map(x => `${x.tree} ${x.points}`).join(", ");
-  return `<span class="split" data-tt="text" data-title="Points spent" data-body="${esc(label)}">${body}</span>`;
+  return id
+    ? `<span class="split" data-tt="split" data-id="${esc(id)}">${body}</span>`
+    : `<span class="split">${body}</span>`;
 }
 
 /* ---------------- chart ---------------- */
@@ -743,15 +858,13 @@ function drawBoard(state) {
     return `<div class="row ${b.alive ? "" : "gone"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
       <div class="rank">${i}</div>
       ${identCell(b)}
-      <div class="who" style="--class:${CLASS_COLOUR(b.klass)}"><span class="dot ${b.online && b.alive && !fin ? "on" : ""}"
-        data-tt="text" data-title="${esc(b.name)}"
-        data-body="${b.online && b.alive && !fin ? "At the keyboard right now" : "Offline"}"></span><b
-        data-tt="text" data-title="${esc(b.name)}"
-        data-body="${esc(b.gender ? b.gender[0].toUpperCase() + b.gender.slice(1) : "")} ${esc(b.race || "")} ${esc(b.klass || "")} — ${esc(b.faction || "")}. ${esc(b.spec || "no points yet")}."
-        >${esc(b.name)}</b></div>
+      <div class="who" style="--class:${CLASS_COLOUR(b.klass)}"
+        data-tt="bot" data-id="${esc(b.id)}">
+        <span class="dot ${b.online && b.alive && !fin ? "on" : ""}"></span>
+        <b>${esc(b.name)}</b></div>
       <div class="lvl">${b.level}</div>
       <div class="track"><div class="fill ${fin ? "done" : (b.alive ? "" : "gone")}" style="width:${pct.toFixed(1)}%"></div></div>
-      <div>${splitBar(b.split)}</div>
+      <div>${splitBar(b.split, b.id)}</div>
       <div class="tops">${(b.top || []).map(t => talentIcon(t, true, b.klass)).join("")}</div>
       <div class="num"><b>${hhmm(b.played)}</b></div>
       <div class="num ${b.deaths ? "warn" : ""}">${b.deaths || "–"}</div>
@@ -891,7 +1004,7 @@ function drawProfiles(board) {
         <div class="pn" style="--class:${CLASS_COLOUR(b.klass)}"><b>${esc(b.name)}</b>
           <span class="specs">${esc(b.klass || "")} ${splitIcons(b.split)}</span></div>
       </div>
-      <div class="prow">${splitBar(b.split)}${badge}</div>
+      <div class="prow">${splitBar(b.split, b.id)}${badge}</div>
       <div class="adv" data-tt="text" data-title="How much the talents are worth"
         data-body="Experience per hour compared with the same character carrying no talents at all. It folds kill speed, downtime and pulling into one number.">
         levels <b>${b.advantage >= 1 ? "+" : ""}${Math.round(((b.advantage || 1) - 1) * 100)}%</b> faster than an untalented ${esc(b.klass || "character")}

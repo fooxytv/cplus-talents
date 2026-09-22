@@ -99,6 +99,19 @@ drinking, deaths an hour, and one headline — how much faster this build levels
 than the same character with nothing spent at all. Hover anything for the
 tooltip; talents show their real rank text from the edition data.
 
+### Hovers
+
+Tooltips carry the page's real data rather than a line of prose:
+
+- **a bot's name or crests** &mdash; the whole character: faction, race and class
+  icons, level, hours played, deaths, points, whether they are at the keyboard,
+  their spec split drawn out, and what the build is worth
+- **any talent icon** &mdash; its own icon, which spec and tier it sits in, the
+  rank held, what that rank actually does (the real text from the edition data),
+  and what the next rank would add
+- **a spec bar** &mdash; points per spec against points earned
+- **a stat** &mdash; what it buys, not what it is called
+
 ### Finding someone
 
 The leaderboard has a search box that matches name, class, race, faction and
