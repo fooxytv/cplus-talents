@@ -210,7 +210,15 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .tbl td:first-child{text-align:left; color:var(--dim)}
 .tbl .tree{display:flex; align-items:center; gap:6px}
 .tbl .tree i{width:8px; height:8px; border-radius:2px; flex:none}
-.tbl p{margin:10px 0 0; color:#5d5952; font-size:11px; line-height:1.55}
+  .tbl p{margin:10px 0 0; color:#5d5952; font-size:11px; line-height:1.55}
+.climb{display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:center;
+       margin-top:10px; padding-top:9px; border-top:1px solid var(--line);
+       font-size:11px; color:#5d5952}
+.climb b{color:var(--head)}
+.climb .mtr{height:7px; background:#17181d; border:1px solid #232429; border-radius:2px; overflow:hidden}
+.climb .mtr i{display:block; height:100%; background:linear-gradient(90deg,#5a4a1a,#c79c2e);
+              transition:width .4s ease}
+.climb .pct{color:var(--dim); font-variant-numeric:tabular-nums}
 
 /* ---------- profiles ---------- */
 .profiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px;
@@ -376,7 +384,7 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   </div>
   <div class="col">
     <div class="card">
-      <h2>Which build is winning</h2>
+      <h2>Which build is winning <span class="note" id="miniBeat"></span></h2>
       <div class="tbl" id="analysisMini"></div>
     </div>
     <div class="card">
@@ -784,11 +792,20 @@ function buildGroups(board) {
   const live = board.filter(b => b.lead);
   if (!live.length) return null;
 
+  const LADDER = [10, 20, 30, 40, 50];
+  const enough = n => n >= Math.max(3, live.length * 0.4);
+
   let mark = 0;
-  for (const lvl of [50, 40, 30, 20, 10]) {
-    const got = live.filter(b => splitAt(b.id, lvl) != null);
-    if (got.length >= Math.max(3, live.length * 0.4)) { mark = lvl; break; }
+  for (const lvl of [...LADDER].reverse()) {
+    if (enough(live.filter(b => splitAt(b.id, lvl) != null).length)) { mark = lvl; break; }
   }
+
+  // Split times only move when the field crosses a new level, so between
+  // milestones the table is genuinely still. Report the climb toward the next
+  // one, which does tick along, rather than leaving it looking dead.
+  const next = LADDER.find(l => l > mark) || null;
+  const nextAt = next ? live.filter(b => splitAt(b.id, next) != null).length : 0;
+  const nextNeeds = Math.max(3, Math.ceil(live.length * 0.4));
 
   // With several classes racing, "which build is winning" is really "which
   // class is winning" - their trees share no names, so grouping by tree would
@@ -817,13 +834,13 @@ function buildGroups(board) {
     };
   }).sort((a, b) => b.n - a.n);
 
-  return { mark, groups, live, mixed };
+  return { mark, groups, live, mixed, next, nextAt, nextNeeds };
 }
 
 function analysisTable(board, full) {
   const d = buildGroups(board);
   if (!d) return '<p class="hint">Nobody has spent a point yet.</p>';
-  const { mark, groups, live, mixed } = d;
+  const { mark, groups, live, mixed, next, nextAt, nextNeeds } = d;
   const ranked = groups.filter(g => g.split != null).sort((a, b) => a.split - b.split);
   const top = ranked[0];
 
@@ -838,15 +855,25 @@ function analysisTable(board, full) {
       <td>${g.deaths.toFixed(1)}</td>
     </tr>`).join("");
 
+  // what is actually moving, so the panel reads as alive between milestones
+  const climbing = next
+    ? `<div class="climb">
+         <span>Next split at level <b>${next}</b></span>
+         <span class="mtr"><i style="width:${Math.min(100, (nextAt / nextNeeds) * 100).toFixed(0)}%"></i></span>
+         <span class="pct">${nextAt}/${nextNeeds}</span>
+       </div>`
+    : "";
+
   const note = top
     ? `<p><b style="color:${top.colour}">${esc(top.label)}</b> reached level ${mark} fastest,
-       in <b>${top.split.toFixed(1)}h</b> played on average. Split times compare bots at the
-       same level, because levels get slower &mdash; averaging a whole career would only
-       flatter whoever is furthest behind.</p>`
-    : `<p>Not enough of the field has passed a common level yet. This fills in once
-       ${Math.max(3, Math.ceil(live.length * 0.4))} bots have reached level 10.</p>`;
+       in <b>${top.split.toFixed(1)}h</b> played on average. Split times only move when the
+       field crosses a new level, so the table holds still between them &mdash; the bar above
+       is the climb toward the next one.</p>`
+    : `<p>Nobody has a comparable time yet. The table fills in once ${nextNeeds} bots have
+       reached level ${next || 10}; the bar above is how close that is. Average level keeps
+       moving in the meantime.</p>`;
 
-  return `<table>${head}${body}</table>` + note;
+  return `<table>${head}${body}</table>` + climbing + note;
 }
 
 /* ---------------- profiles ---------------- */
@@ -1115,6 +1142,9 @@ async function poll() {
       drawBoard(state);
       drawChart(state.board, state.race.minutes);
       $("analysisMini").innerHTML = analysisTable(state.board, false);
+      // a visible pulse: the panel's numbers are coarse by nature, so say when
+      // it last looked rather than leaving "is this live?" unanswerable
+      $("miniBeat").textContent = "updated " + days(state.race.minutes) + " in";
       drawFeed(await (await fetch("api/feed?after=" + lastEvent)).json());
       if (selected) loadBot();
     } else if (view === "profiles") {

@@ -186,6 +186,14 @@ The weights are **judgement calls read off the tooltips**, not measured values.
 They are in a data file precisely so they can be argued with: change a number,
 re-run, see whether a different build wins.
 
+### Why the table holds still
+
+Split times only change when the field crosses a new level, so between
+milestones the numbers are genuinely frozen - which reads as broken. The panel
+therefore also shows the climb toward the next milestone, which does tick along,
+and stamps the race time it last looked at. Average level keeps moving
+throughout.
+
 ### Power and sustain are substitutes
 
 Worth knowing before you retune anything. In the current numbers, `power` and
