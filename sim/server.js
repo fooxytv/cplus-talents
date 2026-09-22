@@ -146,6 +146,30 @@ setInterval(() => {
 
 const botOf = id => current.bots.find(b => b.id === id);
 
+/*
+ * Past races are reconstructed from the database on demand: the bots table
+ * holds each route and personality, so loadRace rebuilds exactly the field that
+ * ran. Loading is not free, so the last few stay in memory - a finished race
+ * never changes, which makes it safe to cache for as long as we like.
+ */
+const pastCache = new Map();
+const PAST_CACHE_MAX = 6;
+
+function raceContext(raceId) {
+  if (!raceId || raceId === current.race.id) return current;
+  if (pastCache.has(raceId)) return pastCache.get(raceId);
+
+  const row = q.getRace.get(raceId);
+  if (!row) return null;
+
+  const loaded = race_.loadRace(db, q, raceId);
+  pastCache.set(raceId, loaded);
+  while (pastCache.size > PAST_CACHE_MAX) {
+    pastCache.delete(pastCache.keys().next().value);
+  }
+  return loaded;
+}
+
 function buildRate(s) {
   const T = engine.TUNING;
   return (1 + s.power * T.powerK) * (1 + s.aoe * T.aoeK)
@@ -165,9 +189,11 @@ function topTalents(trees, st, n = 5) {
   return all.slice(0, n);
 }
 
-function boardView() {
-  return q.board.all(current.race.id).map(b => {
-    const bot = botOf(b.bot_id);
+function boardView(ctx) {
+  ctx = ctx || current;
+  const find = id => ctx.bots.find(x => x.id === id);
+  return q.board.all(ctx.race.id).map(b => {
+    const bot = find(b.bot_id);
     const klass = b.klass || (bot && bot.klass) || CLASSES[0];
     const trees = treesFor(klass);
     const s = bot ? stats.statsAtStep(klass, trees, bot.route, b.step) : stats.zero();
@@ -199,7 +225,7 @@ function boardView() {
       progress: b.level >= xp.MAX_LEVEL ? 1 : b.xp / xp.toNext(b.level),
       deaths: b.deaths, alive: !!b.alive,
       played: b.played_minutes, finishedAt: b.finished_at,
-      online: bot ? engine.online(bot, current.race.minutes) : false,
+      online: bot ? engine.online(bot, ctx.race.minutes) : false,
       stats: s, rate: buildRate(s),
       advantage: bot ? engine.xpPerHour(bot, s) / Math.max(1, engine.xpPerHour(bot, stats.zero())) : 1,
       code: st ? share.encode(EDITION, klass, trees, st) : null,
@@ -214,11 +240,11 @@ function boardView() {
  * drinking, deaths per hour, and how much faster this build is than the same
  * character with no talents at all.
  */
-function effectsOf(bot) {
+function effectsOf(bot, ctx) {
   const T = engine.TUNING;
   const s = stats.statsAtStep(bot.klass, treesFor(bot.klass), bot.route, bot.step);
   const none = stats.zero();
-  const hc = { hardcore: !!current.race.hardcore };
+  const hc = { hardcore: !!((ctx || current).race.hardcore) };
   return {
     killSpeed: 1 + s.power * T.powerK,
     downtime: T.baseDowntime / (1 + s.sustain * T.sustainK),
@@ -252,11 +278,12 @@ function progressOf(bot) {
   };
 }
 
-function botView(id) {
-  const bot = botOf(id);
+function botView(id, ctx) {
+  ctx = ctx || current;
+  const bot = ctx.bots.find(x => x.id === id);
   if (!bot) return null;
   const row = db.prepare("SELECT * FROM bots WHERE race_id = ? AND id = ?")
-    .get(current.race.id, id);
+    .get(ctx.race.id, id);
   const trees = treesFor(bot.klass);
   const st = rules.replay(trees, bot.route, bot.step);
   const seen = {};
@@ -285,7 +312,7 @@ function botView(id) {
     // how close they are to the next level, and - from their own build and
     // play style - roughly how long it will take them to get there
     ...progressOf(bot),
-    effects: effectsOf(bot),
+    effects: effectsOf(bot, ctx),
     // personality, which is half the story of why they are winning or losing
     recklessness: bot.recklessness, hoursPerDay: bot.hoursPerDay,
     // the build as it stands right now, in the calculator's own language
@@ -397,6 +424,51 @@ const server = http.createServer((req, res) => {
     return view ? send(res, 200, view) : send(res, 404, { error: "no such bot" });
   }
 
+  // a finished race in the same shape as the running one, so the page can draw
+  // it with exactly the same code
+  const oldBot = p.match(/^\/api\/race\/([^/]+)\/bot\/(.+)$/);
+  if (oldBot) {
+    const ctx = raceContext(decodeURIComponent(oldBot[1]));
+    if (!ctx) return send(res, 404, { error: "no such race" });
+    const view = botView(decodeURIComponent(oldBot[2]), ctx);
+    return view ? send(res, 200, view) : send(res, 404, { error: "no such bot" });
+  }
+
+  const oldRace = p.match(/^\/api\/race\/([^/]+)$/);
+  if (oldRace) {
+    const id = decodeURIComponent(oldRace[1]);
+    const ctx = raceContext(id);
+    if (!ctx) return send(res, 404, { error: "no such race" });
+    const board = boardView(ctx);
+    const classes = [...new Set(board.map(b => b.klass))];
+    return send(res, 200, {
+      race: {
+        id: ctx.race.id, name: ctx.race.name, minutes: ctx.race.minutes,
+        status: ctx.race.status, hardcore: !!ctx.race.hardcore,
+        edition: EDITION, classes, mixed: classes.length > 1,
+        maxLevel: xp.MAX_LEVEL, createdAt: ctx.race.created_at,
+        live: ctx.race.id === current.race.id,
+      },
+      board,
+      // the same history the live chart runs on, so a finished race can be
+      // drawn the same way rather than as a table of end results
+      history: (() => {
+        const rows = db.prepare(
+          `SELECT bot_id, at_minutes, level, type, detail FROM events
+           WHERE race_id = ? AND type IN ('ding','death','finish') ORDER BY id`).all(id);
+        const tracks = {}, deaths = {}, finishes = {};
+        for (const r of rows) {
+          if (r.type === "ding") {
+            const d = JSON.parse(r.detail || "{}");
+            (tracks[r.bot_id] ||= []).push([r.at_minutes, r.level, d.played == null ? null : d.played]);
+          } else if (r.type === "death") (deaths[r.bot_id] ||= []).push([r.at_minutes, r.level]);
+          else finishes[r.bot_id] = [r.at_minutes, r.level];
+        }
+        return { tracks, deaths, finishes };
+      })(),
+    });
+  }
+
   // Level over time, which is what makes a race legible - the standings alone
   // never show you the overtake. Incremental: pass the last id you saw.
   if (p === "/api/history") {
@@ -427,17 +499,33 @@ const server = http.createServer((req, res) => {
     const races = q.listRaces.all(12);
     return send(res, 200, races.map(r => {
       const win = db.prepare(
-        `SELECT b.name, s.played_minutes, s.finished_at, b.spec
+        `SELECT b.name, s.played_minutes, s.finished_at, b.spec, b.klass, b.race, b.faction
          FROM bot_state s JOIN bots b ON b.race_id = s.race_id AND b.id = s.bot_id
          WHERE s.race_id = ? AND s.finished_at IS NOT NULL
          ORDER BY s.finished_at LIMIT 1`).get(r.id);
       const n = db.prepare("SELECT COUNT(*) n FROM bots WHERE race_id = ?").get(r.id).n;
+      const podium = db.prepare(
+        `SELECT b.name, b.klass, b.race, b.faction, b.spec, s.played_minutes, s.level
+         FROM bot_state s JOIN bots b ON b.race_id = s.race_id AND b.id = s.bot_id
+         WHERE s.race_id = ?
+         ORDER BY (s.finished_at IS NULL), s.finished_at, s.level DESC, s.xp DESC
+         LIMIT 3`).all(r.id);
+      const classes = db.prepare(
+        "SELECT DISTINCT klass FROM bots WHERE race_id = ?").all(r.id).map(x => x.klass);
       const done = db.prepare(
         "SELECT COUNT(*) n FROM bot_state WHERE race_id = ? AND finished_at IS NOT NULL").get(r.id).n;
       return {
         id: r.id, name: r.name, status: r.status, minutes: r.minutes,
         hardcore: !!r.hardcore, bots: n, finished: done,
-        winner: win ? { name: win.name, played: win.played_minutes, spec: win.spec } : null,
+        createdAt: r.created_at, classes,
+        podium: podium.map(x => ({
+          name: x.name, klass: x.klass, race: x.race, faction: x.faction,
+          spec: x.spec, played: x.played_minutes, level: x.level,
+        })),
+        winner: win ? {
+          name: win.name, played: win.played_minutes, spec: win.spec,
+          klass: win.klass, race: win.race, faction: win.faction,
+        } : null,
       };
     }));
   }

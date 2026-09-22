@@ -524,6 +524,45 @@ ok("a reloaded mixed race keeps each bot's class", (() => {
   return l.bots.every(b => ALL_CLASSES.includes(b.klass) && b.race && b.factionIcon);
 })());
 
+/* ---------------- a finished race, rebuilt ---------------- */
+/*
+ * The past-races tab redraws an old race from the database alone. That only
+ * works if reloading reproduces the field that actually ran, so check the
+ * rebuilt bots against the state the race left behind.
+ */
+const reborn = race_.loadRace(mdb, mq, "m1");
+const finalRows = mq.board.all("m1");
+
+ok("a rebuilt race has the same field",
+   reborn.bots.length === finalRows.length);
+
+ok("a rebuilt bot is at the level it finished on", reborn.bots.every(b => {
+  const row = finalRows.find(r => r.bot_id === b.id);
+  return row && row.level === b.level && row.played_minutes === b.playedMinutes;
+}));
+
+ok("a rebuilt bot kept its route and its class", reborn.bots.every(b => {
+  const row = mq.listBots.all("m1").find(r => r.id === b.id);
+  return row && row.klass === b.klass
+      && JSON.stringify(JSON.parse(row.route)) === JSON.stringify(b.route);
+}));
+
+ok("a rebuilt bot's build encodes the same as it did", reborn.bots.every(b => {
+  const trees = rules.classData(EDITION, b.klass).trees;
+  const st = rules.replay(trees, b.route, b.step);
+  return /^forever:[a-z]+-[0-9]+\.[0-9a-z]+$/.test(share.encode(EDITION, b.klass, trees, st));
+}));
+
+// split times drive the past race's analysis, so the events have to carry them
+ok("every ding recorded the hours played at the time", (() => {
+  const rows = mdb.prepare(
+    "SELECT detail FROM events WHERE race_id = ? AND type = 'ding'").all("m1");
+  return rows.length > 0 && rows.every(r => {
+    const d = JSON.parse(r.detail || "{}");
+    return typeof d.played === "number";
+  });
+})());
+
 mdb.close();
 fs.rmSync(mixTmp, { force: true });
 for (const ext of ["-wal", "-shm"]) fs.rmSync(mixTmp + ext, { force: true });

@@ -72,7 +72,7 @@ Four views across the top:
 | **The race** | level-over-time chart, leaderboard, live feed |
 | **Profiles** | a card per bot: who they are, top talents, what their build is worth |
 | **Analysis** | split times by build, and what the field is picking |
-| **Past races** | who won, and in how long |
+| **Past races** | every finished race, redrawn in full |
 
 
 `sim/server.js` keeps one race running and serves the page at `/sim/`. When
@@ -111,6 +111,27 @@ Tooltips carry the page's real data rather than a line of prose:
   and what the next rank would add
 - **a spec bar** &mdash; points per spec against points earned
 - **a stat** &mdash; what it buys, not what it is called
+
+### Two clocks, and which one the table uses
+
+The leaderboard orders finishers **first past the post, by the race clock** -
+not by hours played. Somebody who plays fourteen hours a day can cross the line
+before somebody who played fewer hours in total, which reads as a mistake until
+you know it. The `Played` column is hours at the keyboard, and the sort control
+beside the search box switches between them. The finishing position never
+renumbers when you re-sort.
+
+The analysis panel uses the second clock throughout: a split time is hours
+*played* to reach a level, so it measures the build rather than the schedule.
+
+### Past races
+
+Any finished race can be reopened and gets the same treatment as the live one:
+the level-over-time chart, the full final standings with identity, specs and
+talents, split times by class, and every bot's build openable in the calculator.
+It is rebuilt from the database rather than stored twice - the `bots` table
+keeps each route and personality, so reloading reproduces exactly the field that
+ran. `#history/r0003/Brybeard` links to one bot of one past race.
 
 ### Finding someone
 

@@ -90,6 +90,13 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
   width:170px; padding:3px 8px; font:inherit; font-size:11px; color:var(--text);
   background:#0a0b0e; border:1px solid #2c2d33; border-radius:3px;
 }
+.sorter{display:inline-flex; gap:2px; border:1px solid #2c2d33; border-radius:3px; overflow:hidden}
+.sorter button{
+  padding:3px 8px; font-size:10px; font-weight:600; letter-spacing:.2px;
+  color:#5d5952; background:#0a0b0e; border:0; text-transform:none;
+}
+.sorter button:hover{color:var(--head)}
+.sorter button.on{color:var(--gold); background:#1b1c22}
 .find::placeholder{color:#4f4c46}
 .find:focus{outline:none; border-color:#54555e; background:#101116}
 .find:not(:placeholder-shown){border-color:var(--gold); color:var(--head)}
@@ -320,6 +327,22 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .pl-row .mtr i{display:block; height:100%}
 .pl-row .pct{text-align:right; color:var(--dim); font-size:11px; font-variant-numeric:tabular-nums}
 
+.pastgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; padding:12px 14px}
+.pr{background:#101116; border:1px solid #1e1f25; border-radius:4px; padding:11px; display:grid; gap:9px; cursor:pointer}
+.pr:hover{border-color:#3a3b42}
+.pr .prh{display:flex; align-items:baseline; gap:8px}
+.pr .prh b{color:var(--head); font-size:14px}
+.pr .prh .st{margin-left:auto; font-size:10px; padding:1px 7px; border-radius:999px;
+             border:1px solid #3a3b42; color:#5d5952}
+.pr .prh .st.hc{border-color:#5a2222; color:#ff7b6b}
+.pr .prh .st.run{border-color:#2a4a20; color:var(--green)}
+.pr .pod{display:grid; gap:4px; font-size:11px}
+.pr .pod div{display:flex; align-items:center; gap:6px}
+.pr .pod .pl{width:14px; color:#5d5952; flex:none; text-align:right}
+.pr .pod img{width:16px; height:16px; border-radius:3px; border:1px solid #000; flex:none}
+.pr .pod .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600}
+.pr .pod .tm{margin-left:auto; color:var(--dim); font-variant-numeric:tabular-nums; flex:none}
+.pr .foot{font-size:10px; color:#5d5952; display:flex; gap:9px; flex-wrap:wrap}
 .past{padding:6px 0; font-size:12px}
 .past .r{display:grid; grid-template-columns:auto 1fr auto; gap:9px; padding:5px 14px; align-items:baseline}
 .past .r:hover{background:#15161b}
@@ -397,6 +420,12 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
           data-body="Hides anyone offline. Ranks stay as they are in the full field, so you can still see where they sit.">
           <input type="checkbox" id="onlineOnly"> online only
         </label>
+        <span class="sorter" data-tt="text" data-title="How the field is ordered"
+          data-body="Finish order is first past the post, by race clock - somebody who plays more hours a day can finish sooner having played fewer of them. Time played orders by hours at the keyboard instead.">
+          <button data-sort="finish" class="on">finish order</button>
+          <button data-sort="played">time played</button>
+          <button data-sort="level">level</button>
+        </span>
         <input type="search" id="find" class="find" placeholder="tauren, horde, mage…"
           data-tt="text" data-title="Filter the field"
           data-body="Matches name, class, race, faction and spec. Several words all have to match, so 'troll shaman' finds Troll Shamans.">
@@ -447,9 +476,38 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 <!-- ======== history ======== -->
 <div class="wrap one" id="v-history" hidden>
   <div class="col">
-    <div class="card">
-      <h2>Past races</h2>
-      <div class="past" id="past"></div>
+    <div class="card" id="pastListCard">
+      <h2>Past races <span class="note">pick one to see it in full</span></h2>
+      <div class="pastgrid" id="past"></div>
+    </div>
+
+    <div id="pastDetail" hidden>
+      <div class="col">
+        <div class="card">
+          <h2><button class="back" id="closePast">&larr; All races</button>
+            <span id="pastTitle" style="color:var(--head);font-weight:700"></span>
+            <span class="note" id="pastMeta"></span></h2>
+          <div class="chart"><svg id="pastChart" viewBox="0 0 1000 280"></svg></div>
+          <div class="legend" id="pastLegend"></div>
+        </div>
+        <div class="card">
+          <h2>Final standings <span class="note">hover a talent &middot; &#8599; opens the build in the calculator</span></h2>
+          <div class="hrow">
+            <span></span><span>Who</span><span>Bot</span><span>Lv</span><span>Progress</span>
+            <span>Spent</span><span>Top talents</span><span>Played</span><span>&dagger;</span><span></span>
+          </div>
+          <div class="rows" id="pastRows"></div>
+        </div>
+        <div class="card">
+          <h2>How it was won</h2>
+          <div class="tbl" id="pastAnalysis"></div>
+        </div>
+        <div class="card" id="pastBotCard" hidden>
+          <h2><button class="back" id="closePastBot">&larr; All bots</button>
+            <span class="note">or click the row again</span></h2>
+          <div class="detail" id="pastBot"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -487,6 +545,8 @@ let maxLevel = 60, lastState = null;
 let onlineOnly = false;
 try { onlineOnly = localStorage.getItem("sim.onlineOnly") === "1"; } catch (e) {}
 let query = "";
+// the server hands the board back in finish order; the rest are re-sorts of it
+let sortBy = "finish";
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
@@ -510,11 +570,18 @@ function readHash() {
   const h = decodeURIComponent(location.hash.slice(1));
   const legacy = h.match(/^bot=(.+)$/);              // links made before views
   if (legacy) return { view: "race", bot: legacy[1] };
-  const [v, b] = h.split("/");
-  return { view: ["race", "profiles", "analysis", "history"].includes(v) ? v : "race", bot: b || null };
+  const [v, a, b] = h.split("/");
+  const view = ["race", "profiles", "analysis", "history"].includes(v) ? v : "race";
+  // history carries a race as well: #history/r0003/Brybeard
+  return view === "history"
+    ? { view, race: a || null, bot: b || null }
+    : { view, race: null, bot: a || null };
 }
 function writeHash() {
-  location.hash = view + (selected ? "/" + encodeURIComponent(selected) : "");
+  const parts = view === "history"
+    ? [view, pastState ? pastState.race.id : null, pastSelected]
+    : [view, selected];
+  location.hash = parts.filter(Boolean).map(encodeURIComponent).join("/");
 }
 
 /* ---------------- tooltip ---------------- */
@@ -595,8 +662,11 @@ function botTip(id) {
 
   h += `<div class="t-rows">
       <span class="k">Level</span><span class="v">${b.level}${fin ? " \u2014 finished" : (b.alive ? "" : " \u2014 dead")}</span>
-      <span class="k">Time played</span><span class="v">${hhmm(b.played)}</span>
-      <span class="k">Deaths</span><span class="v ${b.deaths ? "" : "dim"}">${b.deaths}</span>
+      <span class="k">Time played</span><span class="v">${hhmm(b.played)}</span>` +
+    (b.finishedAt !== null
+      ? `<span class="k">Crossed the line</span><span class="v">${days(b.finishedAt)} into the race</span>`
+      : "") +
+    `<span class="k">Deaths</span><span class="v ${b.deaths ? "" : "dim"}">${b.deaths}</span>
       <span class="k">Talent points</span><span class="v">${total}</span>
       <span class="k">At the keyboard</span><span class="v dim">${b.online && b.alive && !fin ? "yes" : "no"}</span>
     </div>`;
@@ -782,7 +852,11 @@ function splitBar(split, id) {
 
 /* ---------------- chart ---------------- */
 
-function drawChart(board, raceMinutes) {
+function drawChart(board, raceMinutes, ctx) {
+  // a finished race is drawn by exactly this code, just handed its own data
+  ctx = ctx || { svg: "chart", note: "chartNote", legend: "legend",
+                 tracks, marks, mixed: lastState && lastState.race.mixed,
+                 selected };
   const W = 1000, H = 280, L = 26, R = 8, T = 8, B = 16;
   const span = Math.max(raceMinutes, 120);
   const x = m => L + (m / span) * (W - L - R);
@@ -800,35 +874,38 @@ function drawChart(board, raceMinutes) {
   }
 
   for (const b of board.slice().reverse()) {
-    const pts = tracks[b.id];
+    const pts = ctx.tracks[b.id];
     if (!pts || !pts.length) continue;
     let d = `M ${x(0).toFixed(1)} ${y(1).toFixed(1)}`;
     for (const p of pts) d += ` L ${x(p[0]).toFixed(1)} ${y(p[1]).toFixed(1)}`;
     // carry to now, so a stalled bot reads as a flat run rather than stopping
     if (b.alive && b.finishedAt === null) d += ` L ${x(raceMinutes).toFixed(1)} ${y(b.level).toFixed(1)}`;
-    const cls = selected ? (selected === b.id ? "on" : "off") : "";
-    bits.push(`<path class="${cls}" stroke="${colourFor(b)}" d="${d}"/>`);
+    const cls = ctx.selected ? (ctx.selected === b.id ? "on" : "off") : "";
+    const stroke = ctx.mixed ? CLASS_COLOUR(b.klass) : (TREE_COLOUR[b.leadIndex] || "#6c6960");
+    bits.push(`<path class="${cls}" stroke="${stroke}" d="${d}"/>`);
   }
   for (const b of board) {
-    if (selected && selected !== b.id) continue;
-    for (const p of (marks.deaths[b.id] || [])) {
+    if (ctx.selected && ctx.selected !== b.id) continue;
+    for (const p of (ctx.marks.deaths[b.id] || [])) {
       bits.push(`<circle class="dead" cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="${b.alive ? 1.8 : 3.4}"/>`);
     }
-    const f = marks.finishes[b.id];
+    const f = ctx.marks.finishes[b.id];
     if (f) bits.push(`<circle class="fin" cx="${x(f[0]).toFixed(1)}" cy="${y(f[1]).toFixed(1)}" r="3.4"/>`);
   }
 
-  $("chart").innerHTML = bits.join("");
-  $("chartNote").textContent = selected ? selected + " highlighted" : "click a bot to pick one out";
+  $(ctx.svg).innerHTML = bits.join("");
+  if ($(ctx.note)) {
+    $(ctx.note).textContent = ctx.selected ? ctx.selected + " highlighted" : "click a bot to pick one out";
+  }
   // in a mixed field the lines are coloured by class, so the legend names
   // classes; with one class it names that class's three trees
-  const keyBits = lastState && lastState.race.mixed
+  const keyBits = ctx.mixed
     ? [...new Set(board.map(b => b.klass))].sort().map(k =>
         `<span><i style="background:${CLASS_COLOUR(k)}"></i>${esc(k)}</span>`)
     : (board[0] && Array.isArray(board[0].split)
         ? board[0].split.map((x, i) => `<span>${specBadge(x.icon, x.name || x.tree, TREE_COLOUR[i])}</span>`)
         : []);
-  $("legend").innerHTML = keyBits.join("")
+  if ($(ctx.legend)) $(ctx.legend).innerHTML = keyBits.join("")
     + '<span><i style="background:#c23b3b;border-radius:50%;width:6px;height:6px"></i>death</span>'
     + `<span><i style="background:#ffd100;border-radius:50%;width:6px;height:6px"></i>reached ${maxLevel}</span>`;
 }
@@ -849,8 +926,43 @@ function drawHeader(state) {
     (dead ? ` · ${dead} dead` : "");
 }
 
+/* One row, wherever it is drawn - the live board and a finished race share it
+   so a past race is not a lesser view of the same thing. */
+function rowHtml(b, place, sel) {
+  const pct = ((b.level - 1 + b.progress) / (maxLevel - 1)) * 100;
+  const fin = b.finishedAt !== null;
+  return `<div class="row ${b.alive ? "" : "gone"} ${sel === b.id ? "on" : ""}" data-id="${esc(b.id)}">
+    <div class="rank">${place}</div>
+    ${identCell(b)}
+    <div class="who" style="--class:${CLASS_COLOUR(b.klass)}" data-tt="bot" data-id="${esc(b.id)}">
+      <span class="dot ${b.online && b.alive && !fin ? "on" : ""}"></span>
+      <b>${esc(b.name)}</b></div>
+    <div class="lvl">${b.level}</div>
+    <div class="track"><div class="fill ${fin ? "done" : (b.alive ? "" : "gone")}" style="width:${pct.toFixed(1)}%"></div></div>
+    <div>${splitBar(b.split, b.id)}</div>
+    <div class="tops">${(b.top || []).map(t => talentIcon(t, true, b.klass)).join("")}</div>
+    <div class="num"><b>${hhmm(b.played)}</b></div>
+    <div class="num ${b.deaths ? "warn" : ""}">${b.deaths || "\u2013"}</div>
+    ${b.code ? `<a class="calc" href="${CALC}#${b.code}" target="_blank" rel="noopener"
+        data-tt="text" data-title="Open in the talent calculator"
+        data-body="${esc(b.name)}'s build exactly as it stands"
+        onclick="event.stopPropagation()">&#8599;</a>` : "<span></span>"}
+  </div>`;
+}
+
 function drawBoard(state) {
+  // place is always the real finishing position, whatever the table is sorted
+  // by - re-sorting should not renumber the race
   const ranked = state.board.map((b, i) => ({ b, place: i + 1 }));
+
+  if (sortBy === "played") {
+    // unfinished bots have not played a comparable amount, so they follow
+    ranked.sort((x, y) =>
+      (y.b.finishedAt !== null) - (x.b.finishedAt !== null) ||
+      x.b.played - y.b.played);
+  } else if (sortBy === "level") {
+    ranked.sort((x, y) => y.b.level - x.b.level || y.b.progress - x.b.progress);
+  }
 
   // every word has to match somewhere, so "troll shaman" narrows rather than
   // widening the way a plain OR would
@@ -867,30 +979,10 @@ function drawBoard(state) {
     return terms.every(t => h.includes(t));
   });
 
-  $("rows").innerHTML = (shown.length ? shown : []).map(({ b, place: i }) => {
-    const pct = ((b.level - 1 + b.progress) / (maxLevel - 1)) * 100;
-    const fin = b.finishedAt !== null;
-    return `<div class="row ${b.alive ? "" : "gone"} ${selected === b.id ? "on" : ""}" data-id="${esc(b.id)}">
-      <div class="rank">${i}</div>
-      ${identCell(b)}
-      <div class="who" style="--class:${CLASS_COLOUR(b.klass)}"
-        data-tt="bot" data-id="${esc(b.id)}">
-        <span class="dot ${b.online && b.alive && !fin ? "on" : ""}"></span>
-        <b>${esc(b.name)}</b></div>
-      <div class="lvl">${b.level}</div>
-      <div class="track"><div class="fill ${fin ? "done" : (b.alive ? "" : "gone")}" style="width:${pct.toFixed(1)}%"></div></div>
-      <div>${splitBar(b.split, b.id)}</div>
-      <div class="tops">${(b.top || []).map(t => talentIcon(t, true, b.klass)).join("")}</div>
-      <div class="num"><b>${hhmm(b.played)}</b></div>
-      <div class="num ${b.deaths ? "warn" : ""}">${b.deaths || "–"}</div>
-      ${b.code ? `<a class="calc" href="${CALC}#${b.code}" target="_blank" rel="noopener"
-          data-tt="text" data-title="Open in the talent calculator"
-          data-body="${esc(b.name)}'s build exactly as it stands now"
-          onclick="event.stopPropagation()">&#8599;</a>` : "<span></span>"}
-    </div>`;
-  }).join("") || `<p class="hint">${
-    terms.length ? "Nothing matches \u201c" + esc(query) + "\u201d."
-                 : "Nobody is at the keyboard right now."}</p>`;
+  $("rows").innerHTML = shown.map(({ b, place }) => rowHtml(b, place)).join("")
+    || `<p class="hint">${
+      terms.length ? "Nothing matches \u201c" + esc(query) + "\u201d."
+                   : "Nobody is at the keyboard right now."}</p>`;
 
   $("findNote").textContent = (terms.length || onlineOnly)
     ? `showing ${shown.length} of ${ranked.length}` : "";
@@ -909,14 +1001,16 @@ function pick(id) {
 
 /* ---------------- split times ---------------- */
 
-function splitAt(id, lvl) {
-  const t = tracks[id];
+function splitAt(id, lvl, src) {
+  const t = (src || tracks)[id];
   if (!t) return null;
   for (const p of t) if (p[1] === lvl && p[2] != null) return p[2];
   return null;
 }
 
-function buildGroups(board) {
+function buildGroups(board, opts) {
+  opts = opts || {};
+  const src = opts.tracks || tracks;
   const live = board.filter(b => b.lead);
   if (!live.length) return null;
 
@@ -925,27 +1019,27 @@ function buildGroups(board) {
 
   let mark = 0;
   for (const lvl of [...LADDER].reverse()) {
-    if (enough(live.filter(b => splitAt(b.id, lvl) != null).length)) { mark = lvl; break; }
+    if (enough(live.filter(b => splitAt(b.id, lvl, src) != null).length)) { mark = lvl; break; }
   }
 
   // Split times only move when the field crosses a new level, so between
   // milestones the table is genuinely still. Report the climb toward the next
   // one, which does tick along, rather than leaving it looking dead.
   const next = LADDER.find(l => l > mark) || null;
-  const nextAt = next ? live.filter(b => splitAt(b.id, next) != null).length : 0;
+  const nextAt = next ? live.filter(b => splitAt(b.id, next, src) != null).length : 0;
   const nextNeeds = Math.max(3, Math.ceil(live.length * 0.4));
 
   // With several classes racing, "which build is winning" is really "which
   // class is winning" - their trees share no names, so grouping by tree would
   // put an Arms Warrior and an Arcane Mage in the same row and call it a
   // category.
-  const mixed = !!(lastState && lastState.race.mixed);
+  const mixed = opts.mixed !== undefined ? !!opts.mixed : !!(lastState && lastState.race.mixed);
   const keyOf = b => (mixed ? b.klass : b.lead);
   const keys = [...new Set(live.map(keyOf))];
 
   const groups = keys.map(key => {
     const g = live.filter(b => keyOf(b) === key);
-    const sp = g.map(b => splitAt(b.id, mark)).filter(v => v != null);
+    const sp = g.map(b => splitAt(b.id, mark, src)).filter(v => v != null);
     const sample = g[0];
     const idx = mixed ? -1 : sample.split.findIndex(x => x.tree === key);
     const leaf = mixed ? null : sample.split[idx];
@@ -965,8 +1059,8 @@ function buildGroups(board) {
   return { mark, groups, live, mixed, next, nextAt, nextNeeds };
 }
 
-function analysisTable(board, full) {
-  const d = buildGroups(board);
+function analysisTable(board, full, opts) {
+  const d = buildGroups(board, opts);
   if (!d) return '<p class="hint">Nobody has spent a point yet.</p>';
   const { mark, groups, live, mixed, next, nextAt, nextNeeds } = d;
   const ranked = groups.filter(g => g.split != null).sort((a, b) => a.split - b.split);
@@ -1060,12 +1154,23 @@ async function drawPopularity() {
 
 /* ---------------- one bot ---------------- */
 
-async function loadBot() {
-  if (!selected) return;
+async function loadBot(botId, raceId, target) {
+  const id = botId || selected;
+  const into = target || "detail";
+  const card = into === "detail" ? "detailCard" : "pastBotCard";
+  if (!id) return;
   let b;
   try {
-    const res = await fetch("api/bot/" + encodeURIComponent(selected));
-    if (!res.ok) { $("detailCard").hidden = true; selected = null; return; }
+    // a finished race answers on its own path; the running one keeps the short
+    const url = raceId
+      ? `api/race/${encodeURIComponent(raceId)}/bot/${encodeURIComponent(id)}`
+      : "api/bot/" + encodeURIComponent(id);
+    const res = await fetch(url);
+    if (!res.ok) {
+      $(card).hidden = true;
+      if (into === "detail") selected = null; else pastSelected = null;
+      return;
+    }
     b = await res.json();
   } catch (e) { return; }
 
@@ -1084,7 +1189,7 @@ async function loadBot() {
     b.race, b.klass,
   ].filter(Boolean).join(" ");
 
-  $("detail").innerHTML =
+  $(into).innerHTML =
     `<div class="dhead" style="--class:${CLASS_COLOUR(b.klass)}">
        <div class="lvlring" data-tt="text" data-title="Level ${b.level}"
          data-body="${b.level >= maxLevel ? "At the cap." : `${Math.round(b.progress * 100)}% of the way to ${b.level + 1}.`}">
@@ -1105,7 +1210,9 @@ async function loadBot() {
          <span class="sub specs">${specLine(b.klass, b.plan)}</span>
        </div>
        ${b.finishedAt !== null
-         ? `<span class="dstate done">reached ${maxLevel} in ${hhmm(b.played)}</span>`
+         ? `<span class="dstate done" data-tt="text" data-title="Finished"
+             data-body="${hhmm(b.played)} at the keyboard, crossing the line ${days(b.finishedAt)} into the race. Finish order goes by the race clock, not by hours played.">
+             reached ${maxLevel} in ${hhmm(b.played)}</span>`
          : (!b.alive ? `<span class="dstate dead">died at ${b.level}</span>` : "")}
      </div>
 
@@ -1160,21 +1267,106 @@ async function loadBot() {
 
      <a class="open" href="${CALC}#${b.code}" target="_blank" rel="noopener">
        Open this build in the calculator &rarr;</a>`;
-  $("detailCard").hidden = false;
+  $(card).hidden = false;
 }
 
 /* ---------------- past races ---------------- */
 
+let pastRaces = [];
+
 async function loadPast() {
   try {
-    const rows = (await (await fetch("api/past")).json()).filter(r => r.winner);
-    $("past").innerHTML = rows.length ? rows.map(r => `<div class="r">
-        <span class="id">${esc(r.name.replace(/^Race /, ""))}</span>
-        <span class="w"><b style="color:${CLASS_COLOUR(r.winner.klass)};font-weight:600">${esc(r.winner.name)}</b>
-          <span style="color:#5d5952">${esc(r.winner.klass || "")} ${esc(r.winner.spec)}</span></span>
-        <span class="t">${hhmm(r.winner.played)} · ${r.finished}/${r.bots} finished</span>
-      </div>`).join("") : '<p class="hint">no race has finished yet</p>';
-  } catch (e) { /* keep what is there */ }
+    pastRaces = await (await fetch("api/past")).json();
+  } catch (e) { return; }
+
+  if (!pastRaces.length) { $("past").innerHTML = '<p class="hint">No races yet.</p>'; return; }
+
+  $("past").innerHTML = pastRaces.map(r => {
+    const running = r.status !== "finished";
+    return `<div class="pr" data-id="${esc(r.id)}">
+      <div class="prh">
+        <b>${esc(r.name)}</b>
+        <span style="color:#5d5952;font-size:11px">${days(r.minutes)}</span>
+        ${r.hardcore ? '<span class="st hc">hardcore</span>' : ""}
+        <span class="st ${running ? "run" : ""}">${running ? "running" : "done"}</span>
+      </div>
+      <div class="pod">
+        ${(r.podium || []).map((x, i) => `<div>
+          <span class="pl">${i + 1}</span>
+          ${x.faction ? `<img src="${ICON(x.faction === "Horde" ? "inv_bannerpvp_01" : "inv_bannerpvp_02")}" alt="">` : ""}
+          <img src="${ICON("classicon_" + String(x.klass).toLowerCase().replace(/[^a-z]/g, ""))}" alt="">
+          <span class="nm" style="color:${CLASS_COLOUR(x.klass)}">${esc(x.name)}</span>
+          <span class="tm">${x.level >= 60 ? hhmm(x.played) : "L" + x.level}</span>
+        </div>`).join("") || '<div style="color:#4f4c46">nobody has finished</div>'}
+      </div>
+      <div class="foot">
+        <span>${r.finished}/${r.bots} reached 60</span>
+        <span>${(r.classes || []).length} classes</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  for (const el of $("past").querySelectorAll(".pr")) {
+    el.onclick = () => openPast(el.dataset.id);
+  }
+}
+
+/* ---------------- one finished race, in full ---------------- */
+
+let pastState = null;       // { race, board, history }
+let pastSelected = null;
+
+async function openPast(id) {
+  let d;
+  try {
+    const res = await fetch("api/race/" + encodeURIComponent(id));
+    if (!res.ok) return;
+    d = await res.json();
+  } catch (e) { return; }
+
+  pastState = d;
+  pastSelected = null;
+  $("pastListCard").hidden = true;
+  $("pastDetail").hidden = false;
+  $("pastBotCard").hidden = true;
+  writeHash();
+  drawPast();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function drawPast() {
+  if (!pastState) return;
+  const { race, board, history } = pastState;
+  const marks = { deaths: history.deaths || {}, finishes: history.finishes || {} };
+  const done = board.filter(b => b.finishedAt !== null).length;
+  const dead = board.filter(b => !b.alive).length;
+
+  $("pastTitle").textContent = race.name;
+  $("pastMeta").textContent =
+    `${board.length} bots \u00b7 ${done} reached ${race.maxLevel}` +
+    (dead ? ` \u00b7 ${dead} dead` : "") +
+    ` \u00b7 ran ${days(race.minutes)}` + (race.hardcore ? " \u00b7 hardcore" : "");
+
+  drawChart(board, race.minutes, {
+    svg: "pastChart", note: null, legend: "pastLegend",
+    tracks: history.tracks || {}, marks,
+    mixed: race.mixed, selected: pastSelected,
+  });
+
+  $("pastRows").innerHTML = board.map((b, i) => rowHtml(b, i + 1, pastSelected)).join("");
+  for (const el of $("pastRows").querySelectorAll(".row")) {
+    el.onclick = () => {
+      pastSelected = pastSelected === el.dataset.id ? null : el.dataset.id;
+      writeHash();
+      if (pastSelected) loadBot(pastSelected, race.id, "pastBot");
+      else $("pastBotCard").hidden = true;
+      drawPast();
+    };
+  }
+
+  $("pastAnalysis").innerHTML = analysisTable(board, true, {
+    tracks: history.tracks || {}, mixed: race.mixed,
+  });
 }
 
 /* ---------------- views ---------------- */
@@ -1185,7 +1377,10 @@ function setView(v) {
   for (const b of $("tabs").querySelectorAll("button")) b.classList.toggle("on", b.dataset.view === v);
   writeHash();
   if (v === "analysis") { $("analysisFull").innerHTML = analysisTable(lastState ? lastState.board : [], true); drawPopularity(); }
-  if (v === "history") loadPast();
+  if (v === "history") {
+    if (pastState) { $("pastListCard").hidden = true; $("pastDetail").hidden = false; drawPast(); }
+    else { $("pastListCard").hidden = false; $("pastDetail").hidden = true; loadPast(); }
+  }
   if (v === "profiles" && lastState) drawProfiles(lastState.board);
 }
 for (const b of $("tabs").querySelectorAll("button")) b.onclick = () => setView(b.dataset.view);
@@ -1199,6 +1394,29 @@ $("closeBot").onclick = () => {
   // wherever the panel happened to push them
   document.querySelector(".rows").scrollIntoView({ block: "center", behavior: "smooth" });
 };
+
+$("closePast").onclick = () => {
+  pastState = null; pastSelected = null;
+  $("pastDetail").hidden = true;
+  $("pastListCard").hidden = false;
+  $("pastBotCard").hidden = true;
+  writeHash();
+  loadPast();
+};
+$("closePastBot").onclick = () => {
+  pastSelected = null;
+  $("pastBotCard").hidden = true;
+  writeHash();
+  drawPast();
+};
+
+for (const b of document.querySelectorAll(".sorter button")) {
+  b.onclick = () => {
+    sortBy = b.dataset.sort;
+    for (const o of document.querySelectorAll(".sorter button")) o.classList.toggle("on", o === b);
+    if (lastState) drawBoard(lastState);
+  };
+}
 
 $("find").oninput = e => {
   query = e.target.value.trim();
@@ -1297,10 +1515,14 @@ async function poll() {
 (async () => {
   try { DICT = await (await fetch("api/talents")).json(); } catch (e) { /* tooltips degrade */ }
   const h = readHash();
-  selected = h.bot;
+  selected = h.view === "history" ? null : h.bot;
   $("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
   setView(h.view);
   loadPast();
+  if (h.view === "history" && h.race) {
+    await openPast(h.race);
+    if (h.bot) { pastSelected = h.bot; loadBot(h.bot, h.race, "pastBot"); drawPast(); }
+  }
   await poll();
   if (selected) loadBot();
   setInterval(poll, 1000);
