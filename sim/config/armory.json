@@ -1,0 +1,43 @@
+{
+  "_comment": [
+    "Where the armory poller looks. Credentials do NOT live here - they come",
+    "from BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET in the environment,",
+    "because a client secret must never be in a file that gets committed.",
+    "",
+    "Get a pair free at https://develop.battle.net - no approval needed.",
+    "",
+    "A namespace is what tells Blizzard which game you mean. The ones below are",
+    "the published ones. FOREVER IS DELIBERATELY ABSENT: it does not have one",
+    "yet, and inventing a plausible-looking string would only produce 404s that",
+    "look like missing characters rather than a missing game. Add it here the",
+    "day Blizzard publishes it and nothing else needs to change.",
+    "",
+    "Until then, point flavour at classic1x and track a Classic Era or Season of",
+    "Discovery character to prove the whole path end to end."
+  ],
+
+  "namespaces": {
+    "classic1x": "profile-classic1x-{region}",
+    "classic": "profile-classic-{region}",
+    "retail": "profile-{region}"
+  },
+
+  "//flavour": "which of the above to use when a race does not say",
+  "flavour": "classic1x",
+
+  "//region": "eu, us, kr or tw - a character's own region overrides this",
+  "region": "eu",
+
+  "//pollMinutes": [
+    "How often to check. There is no point going faster than people log out:",
+    "the profile only changes then, so a short interval spends requests to be",
+    "told the same thing. Ten minutes is already generous.",
+    "Blizzard allows 36,000 requests an hour, so a field of thirty at this rate",
+    "uses about 0.5% of it."
+  ],
+  "pollMinutes": 10,
+
+  "oauthHost": "https://oauth.battle.net",
+  "apiHost": "https://{region}.api.blizzard.com",
+  "locale": "en_GB"
+}

@@ -789,10 +789,211 @@ idb.close();
 fs.rmSync(ingTmp, { force: true });
 for (const ext of ["-wal", "-shm"]) fs.rmSync(ingTmp + ext, { force: true });
 
+async function armoryTests() {
+  /* ---------------- the armory poller ---------------- */
+
+  const armory = require("./armory");
+
+  /* a stand-in for Blizzard: no network, no credentials, scripted answers */
+  function fakeBlizzard(script) {
+    const calls = [];
+    const fetch = async (url, init) => {
+      calls.push({ url, init });
+      if (url.includes("/token")) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ access_token: "tok-" + calls.length, expires_in: 86400 }),
+        };
+      }
+      const next = script.shift();
+      if (!next) return { ok: false, status: 500, headers: { get: () => null } };
+      return {
+        ok: next.status === 200,
+        status: next.status,
+        headers: { get: k => (next.headers || {})[k] || null },
+        json: async () => next.body,
+      };
+    };
+    return { fetch, calls };
+  }
+
+  const profile = (level, loginMs, extra) => Object.assign({
+    level,
+    experience: 1234,
+    last_login_timestamp: loginMs,
+    character_class: { name: "Druid" },
+    race: { name: "Night Elf" },
+    faction: { type: "ALLIANCE", name: "Alliance" },
+    gender: { type: "FEMALE", name: "Female" },
+    realm: { slug: "wild-growth" },
+  }, extra || {});
+
+  /* --- namespaces --- */
+  ok("a published flavour maps to a namespace",
+     armory.namespaceFor("classic1x", "eu") === "profile-classic1x-eu");
+  ok("retail maps too", armory.namespaceFor("retail", "us") === "profile-us");
+
+  // the whole point of leaving Forever out: a made-up namespace would 404 and
+  // look like a missing character rather than a missing game
+  ok("forever has no namespace yet, and says so", (() => {
+    try { armory.namespaceFor("forever", "eu"); return false; }
+    catch (e) { return /armory\.json/.test(e.message) && /Forever/.test(e.message); }
+  })());
+
+  /* --- realm slugs --- */
+  ok("realms slug the way the api wants", armory.slug("Wild Growth") === "wild-growth");
+  ok("apostrophes are dropped, not encoded", armory.slug("Zul'jin") === "zuljin");
+
+  /* --- a profile becomes a reading --- */
+  ok("a reading is stamped with the last logout, not with now", (() => {
+    const when = Date.UTC(2026, 10, 5, 4, 0, 0);
+    const obs = armory.toObservation(profile(23, when), "Bella");
+    return obs.observedAt === new Date(when).toISOString();
+  })());
+
+  ok("level, xp and identity come through", (() => {
+    const obs = armory.toObservation(profile(23, Date.now()), "Bella");
+    return obs.level === 23 && obs.xp === 1234 && obs.klass === "Druid"
+        && obs.race === "Night Elf" && obs.faction === "Alliance"
+        && obs.source === "armory";
+  })());
+
+  ok("a profile with no login stamp still yields a reading", (() => {
+    const obs = armory.toObservation(profile(5, 0), "Bella");
+    return obs.level === 5 && !!Date.parse(obs.observedAt);
+  })());
+
+  /* --- polling a race --- */
+  const armTmp = path.join(os.tmpdir(), "sim-armory-" + Date.now() + ".db");
+  const adb = db_.open(armTmp);
+  const aq = db_.statements(adb);
+  const aRace = ingest.createRealRace(adb, aq, {
+    id: "arm1", name: "Armory test", editionId: EDITION,
+    startedAt: "2026-11-04T23:00:00.000Z",
+  });
+  ingest.addCharacter(adb, aq, aRace, {
+    name: "Bella", klass: "Druid", realm: "Wild Growth", region: "eu", source: "armory",
+  });
+  ingest.addCharacter(adb, aq, aRace, {
+    name: "Typo", klass: "Druid", realm: "Wild Growth", region: "eu", source: "armory",
+  });
+  // a manually tracked character must not be fetched
+  ingest.addCharacter(adb, aq, aRace, {
+    name: "Handwritten", klass: "Mage", source: "manual",
+  });
+
+  const login1 = Date.UTC(2026, 10, 5, 4, 0, 0);
+
+  const fake1 = fakeBlizzard([
+    { status: 200, body: profile(23, login1) },
+    { status: 404 },
+  ]);
+  const poll1 = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: fake1.fetch, clientId: "x", clientSecret: "y" }),
+    flavour: "classic1x",
+  });
+
+  ok("only armory-tracked characters are fetched", poll1.checked === 2);
+  ok("a found character is recorded", poll1.updated === 1);
+  ok("a character the armory has never seen is missing, not failed",
+     poll1.missing === 1 && poll1.failed === 0);
+  ok("the levels climbed are reported", poll1.levels === 22);
+  ok("the race moved", aq.board.all("arm1").find(b => b.bot_id === "Bella").level === 23);
+
+  /* --- the same snapshot again --- */
+  const fake2 = fakeBlizzard([
+    { status: 200, body: profile(23, login1) },
+    { status: 404 },
+  ]);
+  const poll2 = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: fake2.fetch, clientId: "x", clientSecret: "y" }),
+    flavour: "classic1x",
+  });
+  ok("an unchanged snapshot is skipped, not rewritten", poll2.unchanged === 1 && poll2.updated === 0);
+  ok("and no second observation is stored",
+     ingest.history(aq, "arm1", "Bella").length === 1);
+
+  /* --- they logged out again, further on --- */
+  const login2 = Date.UTC(2026, 10, 6, 2, 0, 0);
+  const fake3 = fakeBlizzard([
+    { status: 200, body: profile(31, login2) },
+    { status: 404 },
+  ]);
+  const poll3 = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: fake3.fetch, clientId: "x", clientSecret: "y" }),
+    flavour: "classic1x",
+  });
+  ok("a newer logout is taken", poll3.updated === 1 && poll3.levels === 8);
+  ok("the observation carries the logout time, so staleness is honest", (() => {
+    const h = ingest.history(aq, "arm1", "Bella");
+    return h.length === 2 && h[1].observed_at === new Date(login2).toISOString();
+  })());
+
+  /* --- rate limiting --- */
+  const fake4 = fakeBlizzard([
+    { status: 429, headers: { "retry-after": "120" } },
+    { status: 200, body: profile(40, Date.now()) },
+  ]);
+  const poll4 = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: fake4.fetch, clientId: "x", clientSecret: "y" }),
+    flavour: "classic1x",
+  });
+  ok("a rate limit stops the round rather than hammering",
+     poll4.updated === 0 && poll4.notes.some(n => /rate limited/.test(n)));
+
+  /* --- an expired token is retried once --- */
+  const fake5 = fakeBlizzard([
+    { status: 401 },
+    { status: 200, body: profile(44, Date.UTC(2026, 10, 7, 1, 0, 0)) },
+    { status: 404 },
+  ]);
+  const poll5 = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: fake5.fetch, clientId: "x", clientSecret: "y" }),
+    flavour: "classic1x",
+  });
+  ok("a 401 refreshes the token and retries", poll5.updated === 1);
+  ok("which took a second token", fake5.calls.filter(c => c.url.includes("/token")).length === 2);
+
+  /* --- no credentials --- */
+  ok("without credentials it says so plainly", (() => {
+    const c = armory.makeClient({ fetch: async () => ({ ok: true }), clientId: "", clientSecret: "" });
+    return c.configured() === false;
+  })());
+
+  // ok() takes a boolean; handing it a function would pass whatever happened,
+  // so this awaits the real thing
+  const pollWithoutCreds = await armory.pollRace(adb, aq, aRace, {
+    client: armory.makeClient({ fetch: async () => ({ ok: true }), clientId: "", clientSecret: "" }),
+    flavour: "classic1x",
+  });
+  ok("without credentials, polling fails loudly rather than silently", (() => {
+    // both armory-tracked characters fail, and each says why
+    return pollWithoutCreds.checked === 2
+        && pollWithoutCreds.failed === 2
+        && pollWithoutCreds.updated === 0
+        && pollWithoutCreds.notes.filter(n => /BLIZZARD_CLIENT_ID/.test(n)).length === 2;
+  })());
+
+  adb.close();
+  fs.rmSync(armTmp, { force: true });
+  for (const ext of ["-wal", "-shm"]) fs.rmSync(armTmp + ext, { force: true });
+
+
+}
+
 /* ---------------- report ---------------- */
 
-console.log(`\n  ${passed} passed, ${failures.length} failed`);
-if (failures.length) {
-  for (const f of failures) console.log("    FAIL  " + f);
-  process.exit(1);
+function report() {
+  console.log("\n  " + passed + " passed, " + failures.length + " failed");
+  if (failures.length) {
+    for (const f of failures) console.log("    FAIL  " + f);
+    process.exit(1);
+  }
 }
+
+// the armory tests are async, so everything else has already run by the time
+// this resolves
+armoryTests().then(report, err => {
+  console.log("\n  armory tests threw: " + err.message);
+  process.exit(1);
+});

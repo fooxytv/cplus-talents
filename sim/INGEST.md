@@ -86,8 +86,58 @@ like a bot's, and opens in the calculator the same way. **A build that cannot
 legally be reached is flagged rather than stored as fact** — a `note` event
 records what was asked for and what was reachable.
 
-## What is not built yet
+## The armory poller
 
-The adapters. `ingest.js` accepts readings; something still has to go and get
-them. An armory poller is the obvious first one, and cannot be written against
-Forever until Forever is in an API.
+[`armory.js`](armory.js) fetches characters from Blizzard's profile API and
+feeds them straight in. It is **off unless credentials are set**:
+
+```bash
+BLIZZARD_CLIENT_ID=...       # free from https://develop.battle.net
+BLIZZARD_CLIENT_SECRET=...   # never in a committed file
+```
+
+Then any character added with `"source":"armory"` and a `realm` is polled every
+`pollMinutes` (default 10). `POST /api/ingest/poll` with a `raceId` runs a round
+immediately, which is how you see an error without waiting.
+
+### The bit that matters
+
+**A reading is stamped with the character's last logout, not with when we
+asked.** Blizzard's summary carries `last_login_timestamp`, and that is the
+moment the snapshot was actually true. Stamping it with the poll time would make
+a two-day-old standing look fresh — the exact mistake this layer exists to
+avoid. It also means a snapshot whose logout time has not moved is *skipped*
+rather than written again: it is the same reading, and it would tell staleness
+nothing new.
+
+### Forever is deliberately absent
+
+`config/armory.json` lists the published namespaces — `classic1x` (Era, Hardcore,
+Season of Discovery), `classic` (progression realms), `retail`. **Forever has
+none yet**, and asking for it says so rather than guessing:
+
+```
+no namespace for flavour "forever" - add one to sim/config/armory.json.
+Forever has none until Blizzard publishes it.
+```
+
+Inventing a plausible-looking string would produce 404s that look like missing
+*characters* rather than a missing *game*, which is a much worse failure. Add
+the real one the day it is published and nothing else changes.
+
+Until then, point `flavour` at `classic1x` and track a Classic Era or SoD
+character to prove the whole path end to end.
+
+### How it fails
+
+| | |
+|---|---|
+| never logged out | `404` → counted as **missing**, not failed. On launch night that is the normal case |
+| token expired | refreshed once and retried, then given up on |
+| rate limited | the round **stops** rather than hammering; Blizzard allows 36,000/hour and a field of thirty at ten minutes uses about 0.5% |
+| no credentials | every character fails with the reason, rather than silently doing nothing |
+
+## What is still not built
+
+Nothing fetches Forever, because nothing can yet. When it appears, the work is
+one line in `config/armory.json`.

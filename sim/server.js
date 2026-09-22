@@ -28,6 +28,7 @@ const rules = require("./rules");
 const stats = require("./stats");
 const share = require("./share");
 const ingest = require("./ingest");
+const armory = require("./armory");
 const routes = require("./routes");
 const roster = require("./roster");
 const engine = require("./engine");
@@ -400,6 +401,44 @@ function send(res, code, body, type = "application/json") {
   res.end(buf);
 }
 
+/* ---------------- the armory poller ---------------- */
+/*
+ * Off unless credentials are present. It polls every real race that has
+ * armory-tracked characters - there is no point going faster than people log
+ * out, since the profile only changes then.
+ */
+const POLL_MINUTES = Number(process.env.SIM_ARMORY_MINUTES || armory.CONFIG.pollMinutes || 10);
+const armoryOn = !!(process.env.BLIZZARD_CLIENT_ID && process.env.BLIZZARD_CLIENT_SECRET);
+let polling = false;
+
+async function pollArmory() {
+  if (polling) return;                       // a slow round must not overlap
+  polling = true;
+  try {
+    const races = db.prepare(
+      "SELECT * FROM races WHERE kind = 'real' AND status = 'running'").all();
+    for (const race of races) {
+      const out = await armory.pollRace(db, q, race);
+      if (out.updated || out.failed) {
+        console.log(`armory ${race.id}: ${out.updated} updated, ${out.levels} levels, ` +
+          `${out.unchanged} unchanged, ${out.missing} not found, ${out.failed} failed`);
+        for (const n of out.notes.slice(0, 5)) console.log("  " + n);
+      }
+      if (out.updated) pastCache.delete(race.id);
+    }
+  } catch (e) {
+    console.warn("armory poll failed: " + e.message);
+  } finally {
+    polling = false;
+  }
+}
+
+if (armoryOn) {
+  console.log(`armory polling every ${POLL_MINUTES} min`);
+  setInterval(pollArmory, POLL_MINUTES * 60 * 1000);
+  setTimeout(pollArmory, 5000);
+}
+
 /* ---------------- ingest ---------------- */
 
 async function handleIngest(req, res, p, url) {
@@ -450,6 +489,21 @@ async function handleIngest(req, res, p, url) {
       if (now > race.minutes) q.setMinutes.run(now, race.status, race.id);
       pastCache.delete(race.id);
       return send(res, 200, { ok: true, results });
+    }
+
+    // poll now rather than waiting for the interval - useful when adding
+    // somebody mid-race, and the only way to see an error promptly
+    if (p === "/api/ingest/poll") {
+      if (!armoryOn) {
+        return send(res, 400, {
+          error: "armory polling is off: BLIZZARD_CLIENT_ID and BLIZZARD_CLIENT_SECRET are not set",
+        });
+      }
+      const race = q.getRace.get(String(body.raceId || ""));
+      if (!race) return send(res, 404, { error: "no such race" });
+      const out = await armory.pollRace(db, q, race);
+      pastCache.delete(race.id);
+      return send(res, 200, { ok: true, ...out });
     }
 
     return send(res, 404, { error: "not an ingest endpoint" });
@@ -683,6 +737,7 @@ const server = http.createServer((req, res) => {
       kind: row.kind || "sim",
       startedAt: row.started_at || row.created_at,
       staleness: ingest.staleness(q, raceId),
+      armory: { enabled: armoryOn, everyMinutes: armoryOn ? POLL_MINUTES : null },
       recent: ingest.recent(q, raceId, 40).map(o => ({
         bot: o.bot_id, name: o.name, source: o.source,
         observedAt: o.observed_at, at: o.at_minutes,
