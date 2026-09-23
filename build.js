@@ -92,7 +92,9 @@ if (fs.existsSync(faviconPath)) {
   console.warn("  src/favicon.svg is missing - the page will have no tab icon");
 }
 
-for (const token of ["__TALENT_DATA__", "__EDITIONS__", "__LOGOS__", "__EDITION_ICONS__", "__FAVICON__"]) {
+const version = require("./src/version.js").info();
+
+for (const token of ["__TALENT_DATA__", "__EDITIONS__", "__LOGOS__", "__EDITION_ICONS__", "__FAVICON__", "__VERSION__"]) {
   if (!tpl.includes(token)) {
     console.error(`src/template.html is missing the ${token} placeholder`);
     process.exit(1);
@@ -104,7 +106,8 @@ fs.writeFileSync(outPath, tpl
   .replace("__EDITIONS__", JSON.stringify(editions))
   .replace("__LOGOS__", JSON.stringify(logos))
   .replace("__EDITION_ICONS__", JSON.stringify(edIcons))
-  .replace("__FAVICON__", favicon));
+  .replace("__FAVICON__", favicon)
+  .replace("__VERSION__", JSON.stringify(version)));
 
 const count = d => Object.values(d).reduce(
   (n, c) => n + c.trees.reduce((m, t) => m + t.talents.length, 0), 0);

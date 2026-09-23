@@ -21,7 +21,13 @@ services:
     restart: unless-stopped
 
   talents:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_SHA: "${GIT_SHA:-}"
+        GIT_DATE: "${GIT_DATE:-}"
+        GIT_DIRTY: "${GIT_DIRTY:-0}"
+        BUILD_TIME: "${BUILD_TIME:-}"
     image: cplus-talents
     container_name: cplus-talents
     # Reachable on its own port too, for when you want the app without the
@@ -42,6 +48,11 @@ services:
     build:
       context: .
       dockerfile: sim/Dockerfile
+      args:
+        GIT_SHA: "${GIT_SHA:-}"
+        GIT_DATE: "${GIT_DATE:-}"
+        GIT_DIRTY: "${GIT_DIRTY:-0}"
+        BUILD_TIME: "${BUILD_TIME:-}"
     image: cplus-talents-sim
     container_name: cplus-talents-sim
     ports:

@@ -367,6 +367,28 @@ node sim/run.js             # or headless, straight to a results table
 node sim/test.js
 ```
 
+## Which version is running
+
+The footer shows the build date and the commit it came from, and the commit
+links to it on GitHub. `/api/version` says the same thing without opening the
+page, which is what `deploy/update.sh` checks after a rebuild - a deploy that
+did not take is otherwise indistinguishable from one that did.
+
+A `+` after the commit means the build had uncommitted changes, so it is not
+exactly that commit.
+
+Build with the commit baked in:
+
+```bash
+./build.sh              # everything
+./build.sh talents      # one service
+```
+
+The images cannot work it out themselves - `.dockerignore` excludes `.git` on
+purpose - so it is passed in as a build argument. Running `docker compose build`
+directly still works; the footer just reads `dev`, which is honest rather than
+wrong.
+
 ## Running it in public
 
 There are no accounts, so two environment variables stand in for them. `deploy/` has a

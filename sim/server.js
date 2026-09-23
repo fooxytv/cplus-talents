@@ -29,6 +29,7 @@ const stats = require("./stats");
 const share = require("./share");
 const ingest = require("./ingest");
 const armory = require("./armory");
+const version = require("../src/version.js");
 const routes = require("./routes");
 const roster = require("./roster");
 const engine = require("./engine");
@@ -389,6 +390,7 @@ const PAGE = path.join(__dirname, "public", "watch.html");
 const HTML = fs.readFileSync(PAGE, "utf8")
   .split("__CALC__").join(CALC_BASE)
   .split("__BASE__").join(BASE)
+  .split("__VERSION__").join(JSON.stringify(version.info()))
   .split('"api/').join('"' + BASE + '/api/');
 
 function send(res, code, body, type = "application/json") {
@@ -744,6 +746,10 @@ const server = http.createServer((req, res) => {
         level: o.level, played: o.played, note: o.note,
       })),
     });
+  }
+
+  if (p === "/api/version") {
+    return send(res, 200, version.info());
   }
 
   if (p === "/api/health") {

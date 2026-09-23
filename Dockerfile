@@ -4,6 +4,18 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+# .dockerignore excludes .git on purpose, so the image cannot work out its own
+# commit. It is passed in instead - see deploy/README.md. Left unset the page
+# says "dev", which is honest rather than wrong.
+ARG GIT_SHA=""
+ARG GIT_DATE=""
+ARG GIT_DIRTY="0"
+ARG BUILD_TIME=""
+ENV GIT_SHA=$GIT_SHA
+ENV GIT_DATE=$GIT_DATE
+ENV GIT_DIRTY=$GIT_DIRTY
+ENV BUILD_TIME=$BUILD_TIME
+
 # index.html is built from src/ during the image build, so the image can never
 # drift from the talent data it ships with.
 COPY build.js server.js ./

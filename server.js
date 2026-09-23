@@ -13,6 +13,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { DatabaseSync } = require("node:sqlite");
 const { validateDataset } = require("./src/validate.js");
+const version = require("./src/version.js");
 
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || "0.0.0.0";
@@ -543,6 +544,14 @@ async function api(req, res, url) {
       editions: [{ id: CUSTOM, name: "Classic+", maxPoints: MAX_POINTS }].concat(
         [...EDITIONS.values()].map(e => ({ id: e.id, name: e.name, maxPoints: e.maxPoints }))),
     });
+  }
+
+  /* ---- which build is running ----
+   * So a deploy can be checked without opening the page and squinting at a
+   * footer. deploy/update.sh asserts against this.
+   */
+  if (parts[1] === "version") {
+    return sendJson(res, 200, version.info());
   }
 
   // ---- spellbooks: what each class learns, and when ----

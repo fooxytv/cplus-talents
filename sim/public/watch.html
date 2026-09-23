@@ -382,6 +382,9 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 .past .t{color:var(--dim); font-variant-numeric:tabular-nums; font-size:11px}
 .hint{padding:18px 14px; color:#55524c; font-size:12px; text-align:center; margin:0}
 .note-foot{padding:6px 22px 26px; max-width:1620px; margin:0 auto; color:#55524c; font-size:11px}
+.note-foot .sep{color:#3a3831; margin:0 4px}
+.note-foot a{color:#7d776c; text-decoration:none}
+.note-foot a:hover{color:var(--head); text-decoration:underline}
 
 /* ---------- tooltip, matching the calculator's ---------- */
 #tip{
@@ -556,6 +559,8 @@ button{font:inherit; color:inherit; cursor:pointer; background:none; border:0}
 <p class="note-foot">
   Bots pick their own talents as they level, and what they pick is what decides the race.
   Nothing here touches the live game.
+  <span class="sep">&middot;</span>
+  <span id="verLabel"></span>
 </p>
 
 <div id="tip"></div>
@@ -1658,7 +1663,23 @@ async function poll() {
   try { DICT = await (await fetch("api/talents")).json(); } catch (e) { /* tooltips degrade */ }
   const h = readHash();
   selected = h.view === "history" ? null : h.bot;
-  $("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
+  // which build this is - baked in when the image was made, because the page has
+// no other way to know
+(function () {
+  const v = __VERSION__;
+  const el = $("verLabel");
+  if (!el) return;
+  const text = "v" + v.version + " · " + v.sha + (v.dirty ? "+" : "");
+  if (v.sha && v.sha !== "dev") {
+    el.innerHTML = '<a href="' + v.commitUrl + '" target="_blank" rel="noopener"></a>';
+    el.firstChild.textContent = text;
+    el.firstChild.title = "Commit " + v.sha + ", built " + v.built;
+  } else {
+    el.textContent = text;
+  }
+})();
+
+$("feed").innerHTML = '<p class="hint">waiting for the first level…</p>';
   setView(h.view);
   loadPast();
   if (h.view === "history" && h.race) {

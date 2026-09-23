@@ -23,6 +23,11 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+      args:
+        GIT_SHA: "${GIT_SHA:-}"
+        GIT_DATE: "${GIT_DATE:-}"
+        GIT_DIRTY: "${GIT_DIRTY:-0}"
+        BUILD_TIME: "${BUILD_TIME:-}"
     image: cplus-talents
     ports:
       # LAN only. Cloudflare reaches the container over the compose network,
@@ -57,6 +62,11 @@ services:
     build:
       context: ..
       dockerfile: sim/Dockerfile
+      args:
+        GIT_SHA: "${GIT_SHA:-}"
+        GIT_DATE: "${GIT_DATE:-}"
+        GIT_DIRTY: "${GIT_DIRTY:-0}"
+        BUILD_TIME: "${BUILD_TIME:-}"
     image: cplus-talents-sim
     ports:
       - "${SIM_PORT:-5503}:8080"

@@ -267,6 +267,17 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
 #tip .t-hint span{display:block}
 #tip .t-hint .muted{color:#9a9baa}
 
+.sitefoot{
+  margin-top:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  justify-content:center; padding:14px 22px 18px;
+  border-top:1px solid var(--line); color:#5d5952; font-size:11px;
+}
+.sitefoot a{color:#7d776c; text-decoration:none}
+.sitefoot a:hover{color:var(--head); text-decoration:underline}
+.sitefoot .sep{color:#3a3831}
+.sitefoot .dim{color:#4f4c46}
+@media (max-width:640px){ .sitefoot{gap:6px; padding:12px} }
+
 /* ---------- bottom ---------- */
 .summary{
   display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;
@@ -3149,6 +3160,44 @@ async function boot() {
 }
 
 boot();
+</script>
+
+<footer class="sitefoot">
+  <span class="ver" id="verLabel"></span>
+  <span class="sep">&middot;</span>
+  <a id="verRepo" href="#" target="_blank" rel="noopener">source</a>
+  <span class="sep">&middot;</span>
+  <span class="dim">a fan project &mdash; not affiliated with Blizzard</span>
+</footer>
+
+<script>
+/*
+ * Which build is this? Baked in at build time, because the running page has no
+ * other way to know - and a deploy that quietly did not take is otherwise
+ * indistinguishable from one that did.
+ */
+(function () {
+  const v = __VERSION__;
+  const label = document.getElementById("verLabel");
+  const repo = document.getElementById("verRepo");
+
+  label.textContent = "v" + v.version + " · " + v.sha + (v.dirty ? "+" : "");
+  label.title = v.dirty
+    ? "Built from a working tree with uncommitted changes, so this is not exactly "
+      + v.sha + ". Built " + v.built + "."
+    : "Commit " + v.sha + ", built " + v.built + ".";
+
+  if (v.sha && v.sha !== "dev") {
+    const a = document.createElement("a");
+    a.href = v.commitUrl;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = label.textContent;
+    a.title = label.title;
+    label.replaceWith(a);
+  }
+  repo.href = v.repo;
+})();
 </script>
 </body>
 </html>
