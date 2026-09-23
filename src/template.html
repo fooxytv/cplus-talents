@@ -2469,9 +2469,13 @@ function openInfo() {
       : 'Saved builds live on this server and everyone can see them.') + '</p>' +
 
     '<h4>Levelling path</h4>' +
-    '<p>Under the trees is an order the build could be levelled in, one point per level ' +
-    'from ' + FIRST_POINT_LEVEL + '. It is worked out from the build, so it is always a ' +
-    'legal path - not necessarily the order you clicked in.</p>' +
+    '<p>Under the trees is the order the build is levelled in, one point per level ' +
+    'from ' + FIRST_POINT_LEVEL + '. Points you click are kept in the order you clicked ' +
+    'them, so it is your path, not a rearrangement of it.</p>' +
+    '<p>A build opened from a link carries ranks but no history, so the order is ' +
+    'worked out from the build itself - and anything you click after that is added ' +
+    'where you put it. Either way the path is always legal: no point appears before ' +
+    'the one that unlocks it.</p>' +
 
     '<div class="sugg">' +
       '<h4>Suggestions</h4>' +

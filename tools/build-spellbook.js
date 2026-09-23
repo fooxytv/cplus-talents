@@ -35,6 +35,33 @@ const BOOKS = {
 };
 
 /** Wowhead class ids, and the slug its class page lives under. */
+/*
+ * Wowhead's Forever class pages carry Season of Discovery's rune engravings.
+ * They are not in Forever - they are a vanilla Classic thing - and they showed
+ * up in the spellbook as level-1 "granted" abilities: Devastate, Commanding
+ * Shout, Molten Blast, Saber Slash, Balefire Bolt and so on.
+ *
+ * Spell ids fall into three cleanly separated bands across all nine classes:
+ *
+ *      10 -    66,844   1,379 spells   real vanilla
+ * 398,196 -   469,145     215 spells   Season of Discovery runes
+ * 1,221,404 - 1,316,995   114 spells   Forever's own new spells
+ *
+ * The gaps either side of the middle band are 331,000 and 752,000 wide, so
+ * cutting it out is safe. Two things ruled out the alternatives:
+ *
+ * - Filtering by name would delete real content. Mutilate exists in BOTH the
+ *   rune band and Forever's own band; so does Lightning Bolt.
+ * - "Also exists under the classic flavour" does not identify a rune either:
+ *   Heroic Strike is in both flavours and is perfectly genuine.
+ *
+ * test/spellbook-tests.js asserts the bands stay separated, so if Forever ever
+ * ships something inside this range the build fails rather than quietly losing
+ * it.
+ */
+const SOD_RUNES = { from: 390000, to: 500000 };
+const isSodRune = id => id >= SOD_RUNES.from && id < SOD_RUNES.to;
+
 const CLASSES = [
   { id: 1, slug: "warrior", name: "Warrior" },
   { id: 2, slug: "paladin", name: "Paladin" },
@@ -200,8 +227,8 @@ async function buildBook(key) {
      * than a spellbook wants:
      *   cat 7          class abilities. Weapon skills and racials come under
      *                  other categories and belong to a different chrclass.
-     *   skill non-empty rune engravings carry an empty skill array, which is how
-     *                  Season of Discovery leaks into this data.
+     *   skill non-empty drops rows with no skill line at all.
+     *   not a SoD rune see SOD_RUNES below - the big one.
      * What survives is then split by whether a trainer teaches it - a row with a
      * source or a training cost is trained, anything else is simply granted,
      * which is why talent spells and starting abilities all sit at level 1.
@@ -211,6 +238,7 @@ async function buildBook(key) {
       Array.isArray(r.skill) && r.skill.length > 0 &&
       typeof r.level === "number" && r.level > 0 && r.level <= spec.maxLevel &&
       typeof r.name === "string" && r.name &&
+      !isSodRune(r.id) &&
       !/^S0\d\s|Tuning and Overrides|\(DND\)|\(NYI\)/i.test(r.name));
 
     for (const r of keep) wanted.add(r.id);
