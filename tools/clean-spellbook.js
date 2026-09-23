@@ -73,6 +73,49 @@ for (const klass of Object.keys(book.classes)) {
 console.log(`\n${collapsed} duplicate ranks collapsed`);
 console.log([...new Set(collapsedSamples)].map(x => "  " + x).join("\n"));
 
+/*
+ * Passive talent effects were also landing at level 1, because Wowhead lists a
+ * talent's spell with no level requirement: "Improved Battle Shout Rank 5",
+ * "Shield Specialization Rank 5", "Magic Attunement Rank 2".
+ *
+ * A spellbook is what you LEARN by levelling; a talent is something you choose,
+ * and it is already drawn in the tree. Two signs give them away and neither
+ * catches a real starting ability:
+ *
+ *   rank 2 or higher at level 1 - nobody starts with rank 5 of anything. The
+ *                                 real ones are all Rank 1 or rankless.
+ *   shares a name with a talent - catches the rankless ones, Weaponmaster and
+ *                                 Hack and Slash, which really are Forever
+ *                                 talents and so really do belong in the tree.
+ *
+ * What survives is exactly two abilities per class, which is what vanilla
+ * actually gives you at level 1.
+ */
+const editionFile = path.join(__dirname, "..", "src", "editions", "forever.json");
+const edition = JSON.parse(fs.readFileSync(editionFile, "utf8"));
+
+let passives = 0;
+const passiveSamples = [];
+for (const klass of Object.keys(book.classes)) {
+  const talentNames = new Set();
+  const cls = edition.classes[klass];
+  if (cls) for (const tree of cls.trees) for (const t of tree.talents) talentNames.add(t.name);
+
+  book.classes[klass] = book.classes[klass].filter(e => {
+    if (e.trained || e.level !== 1) return true;
+    const rank = Number(String(e.rank || "").replace(/[^0-9]/g, "")) || 0;
+    const isPassiveTalent = rank >= 2 || talentNames.has(e.name);
+    if (!isPassiveTalent) return true;
+    passives++;
+    if (passiveSamples.length < 12) {
+      passiveSamples.push(`${klass}: ${e.name}${e.rank ? " " + e.rank : ""}`);
+    }
+    return false;
+  });
+}
+console.log("\n" + passives + " talent passives removed from level 1");
+console.log(passiveSamples.map(x => "  " + x).join("\n"));
+
 // A spell that survives here but is only in the rune band would mean the band
 // is wrong; report the extremes so the bands stay checkable by eye.
 const ids = Object.values(book.classes).flat().map(e => e.id).sort((a, b) => a - b);

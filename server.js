@@ -454,13 +454,41 @@ function sendJson(res, status, body, extraHeaders) {
   res.end(text);
 }
 
-function sendFile(res, file, status = 200) {
+/*
+ * Data files get an ETag and must-revalidate rather than a flat hour.
+ *
+ * A flat max-age was actively harmful: when the Season of Discovery runes were
+ * removed from the Forever spellbook the server was serving the fix while
+ * browsers kept the old copy for up to an hour, so the bug looked unfixed.
+ * Revalidating costs a 304 - a few bytes - and means a data fix is visible on
+ * the next request rather than whenever a cache happens to expire.
+ *
+ * Images and fonts keep the long cache: they are replaced by changing the name,
+ * not the contents.
+ */
+const REVALIDATE = new Set([".json"]);
+
+function sendFile(res, file, status = 200, req) {
   fs.readFile(file, (err, buf) => {
     if (err) return sendJson(res, 404, { error: "not found" });
+
+    const ext = path.extname(file);
+    const etag = '"' + crypto.createHash("sha1").update(buf).digest("base64").slice(0, 22) + '"';
+
+    if (req && req.headers["if-none-match"] === etag) {
+      res.writeHead(304, { etag, "cache-control": "no-cache" });
+      return res.end();
+    }
+
+    const cache = ext === ".html" ? "no-cache"
+      : REVALIDATE.has(ext) ? "no-cache"
+      : "public, max-age=3600";
+
     res.writeHead(status, {
-      "content-type": TYPES[path.extname(file)] || "application/octet-stream",
+      "content-type": TYPES[ext] || "application/octet-stream",
       "content-length": buf.length,
-      "cache-control": path.extname(file) === ".html" ? "no-cache" : "public, max-age=3600",
+      "cache-control": cache,
+      etag,
     });
     res.end(buf);
   });
@@ -523,7 +551,7 @@ async function api(req, res, url) {
     const id = parts[2];
     // membership of the set built at boot, so no path from the url reaches disk
     if (!id || !SPELLBOOKS.has(id)) return sendJson(res, 404, { error: "no spellbook for that edition" });
-    return sendFile(res, path.join(SPELLBOOK_DIR, id + ".json"));
+    return sendFile(res, path.join(SPELLBOOK_DIR, id + ".json"), 200, req);
   }
 
   // ---- suggestions: anyone may leave one, only an admin may read them ----

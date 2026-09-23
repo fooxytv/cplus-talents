@@ -96,6 +96,42 @@ ok("a talent's ranks are one entry, not five", (() => {
   return true;
 })());
 
+/*
+ * Level 1 is where the junk collected: SoD runes first, then passive talent
+ * effects sitting at max rank. Vanilla gives a class two abilities at level 1,
+ * so anything much past that means something has leaked in again.
+ */
+for (const klass of Object.keys(book.classes)) {
+  const granted = book.classes[klass].filter(e => !e.trained && e.level === 1);
+  ok(`${klass} starts with a believable number of abilities`, granted.length <= 3);
+}
+
+ok("nothing starts at rank 2 or higher", (() => {
+  for (const klass of Object.keys(book.classes)) {
+    for (const e of book.classes[klass]) {
+      if (e.trained || e.level !== 1) continue;
+      const rank = Number(String(e.rank || "").replace(/[^0-9]/g, "")) || 0;
+      if (rank >= 2) return false;
+    }
+  }
+  return true;
+})());
+
+// A talent belongs in the tree, which the page already draws. Finding one in
+// the spellbook at level 1 means the passive filter has stopped working.
+ok("no talent is listed as a level-1 ability", (() => {
+  for (const klass of Object.keys(book.classes)) {
+    const cls = edition.classes[klass];
+    if (!cls) continue;
+    const names = new Set();
+    for (const tree of cls.trees) for (const t of tree.talents) names.add(t.name);
+    for (const e of book.classes[klass]) {
+      if (!e.trained && e.level === 1 && names.has(e.name)) return false;
+    }
+  }
+  return true;
+})());
+
 ok("every spell has what the page needs to draw it",
    all.every(e => e.id && e.name && e.icon && Number.isFinite(e.level)));
 

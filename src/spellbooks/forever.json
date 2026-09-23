@@ -3,7 +3,7 @@
  "name": "Forever",
  "maxLevel": 60,
  "source": "https://www.wowhead.com/forever/",
- "generated": "2026-09-23T06:59:29.416Z",
+ "generated": "2026-09-23T07:46:20.631Z",
  "classes": {
   "Warrior": [
    {
@@ -30,63 +30,6 @@
     "icon": "ability_rogue_ambush",
     "rank": "Rank 1",
     "desc": "A strong attack that increases melee damage by 11 and causes a high amount of threat."
-   },
-   {
-    "id": 12861,
-    "name": "Improved Battle Shout",
-    "level": 1,
-    "icon": "ability_warrior_battleshout",
-    "rank": "Rank 5",
-    "desc": "Increases the melee attack power bonus of your Battle Shout by 25%."
-   },
-   {
-    "id": 12879,
-    "name": "Improved Demoralizing Shout",
-    "level": 1,
-    "icon": "ability_warrior_warcry",
-    "rank": "Rank 5",
-    "desc": "Increases the melee attack power reduction of your Demoralizing Shout by 40%."
-   },
-   {
-    "id": 12963,
-    "name": "Improved Overpower",
-    "level": 1,
-    "icon": "inv_sword_05",
-    "rank": "Rank 2",
-    "desc": "Increases the critical strike chance of your Overpower ability by 50%.",
-    "talent": true
-   },
-   {
-    "id": 12708,
-    "name": "Improved Pummel",
-    "level": 1,
-    "icon": "inv_gauntlets_04",
-    "rank": "Rank 3",
-    "desc": "Gives your Pummel ability a 40% chance to daze the target."
-   },
-   {
-    "id": 12944,
-    "name": "Improved Shield Block",
-    "level": 1,
-    "icon": "ability_defend",
-    "rank": "Rank 3",
-    "desc": "Allows your Shield Block ability to block an additional attack and increases the duration by 2 seconds."
-   },
-   {
-    "id": 12765,
-    "name": "Improved Taunt",
-    "level": 1,
-    "icon": "spell_nature_reincarnation",
-    "rank": "Rank 2",
-    "desc": "Reduces the cooldown of your Taunt ability by 2 sec."
-   },
-   {
-    "id": 12281,
-    "name": "Weaponmaster",
-    "level": 1,
-    "icon": "inv_sword_27",
-    "desc": "Gives you a 0% chance to get an extra attack on the same target after dealing damage with your Sword.",
-    "talent": true
    },
    {
     "id": 100,
@@ -1133,15 +1076,6 @@
     "icon": "ability_thunderbolt",
     "rank": "Rank 1",
     "desc": "Fills the Paladin with holy spirit for 30 sec, granting each melee attack an additional 2 to 9 Holy damage. Slower weapons cause more Holy damage per swing. Only one Seal can be active on the Paladin at any one time."
-   },
-   {
-    "id": 20149,
-    "name": "Shield Specialization",
-    "level": 1,
-    "icon": "inv_shield_06",
-    "rank": "Rank 2",
-    "desc": "Increases the amount of damage absorbed by your shield by 20%.",
-    "talent": true
    },
    {
     "id": 19740,
@@ -4051,14 +3985,6 @@
     "icon": "ability_rogue_eviscerate",
     "rank": "Rank 1",
     "desc": "Finishing move that causes damage per combo point, increased by Attack Power: 1 point : [(100% of Spell Power) + (5 * (1 * 1))]-[(100% of Spell Power) + (5 * (1 * 1))] damage 2 points: [(100% of Spell Power) + (2 * 5 * (1 * 1))]-[(100% of Spell Power) + (2 * 5 * (1 * 1))] damage 3 points: [(100% of Spell Power) + (3 * 5 * (1 * 1))]-[(100% of Spell Power) + (3 * 5 * (1 * 1))] damage 4 points: [(100% of Spell Power) + (4 * 5 * (1 * 1))]-[(100% of Spell Power) + (4 * 5 * (1 * 1))] damage 5 points: [(100% of Spell Power) + (5 * 5 * (1 * 1))]-[(100% of Spell Power) + (5 * 5 * (1 * 1))] damage"
-   },
-   {
-    "id": 13706,
-    "name": "Hack and Slash",
-    "level": 1,
-    "icon": "inv_weapon_shortblade_05",
-    "desc": "Increases your chance to get a critical strike with Daggers and Fist Weapons by 5%.",
-    "talent": true
    },
    {
     "id": 1752,
@@ -7180,22 +7106,6 @@
     "trained": true
    },
    {
-    "id": 16301,
-    "name": "Shield Specialization",
-    "level": 1,
-    "icon": "inv_shield_06",
-    "rank": "Rank 5",
-    "desc": "Increases your chance to block attacks with a shield by 5% and increases the amount blocked by 25%."
-   },
-   {
-    "id": 29088,
-    "name": "Weapon Mastery",
-    "level": 1,
-    "icon": "ability_hunter_swiftstrike",
-    "rank": "Rank 5",
-    "desc": "Increases the damage you deal with all weapons by 10%."
-   },
-   {
     "id": 8042,
     "name": "Earth Shock",
     "level": 4,
@@ -8838,14 +8748,6 @@
     "icon": "spell_frost_frostarmor02",
     "rank": "Rank 1",
     "desc": "Increases Armor by 30. If an enemy strikes the caster, they may have their movement slowed by 30% and the time between their attacks increased by 25% for 5 sec. Only one type of Armor spell can be active on the Mage at any time. Lasts 30 min."
-   },
-   {
-    "id": 12606,
-    "name": "Magic Attunement",
-    "level": 1,
-    "icon": "spell_nature_abolishmagic",
-    "rank": "Rank 2",
-    "desc": "Increases the effect of your Amplify Magic and Dampen Magic spells by 50%."
    },
    {
     "id": 5504,
