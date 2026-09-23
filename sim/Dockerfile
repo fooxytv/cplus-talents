@@ -18,6 +18,8 @@ ENV BUILD_TIME=$BUILD_TIME
 COPY sim ./sim
 COPY src/editions ./src/editions
 COPY src/version.js ./src/version.js
+# version.js reads this; without it every build would report 0.0.0
+COPY VERSION ./VERSION
 # the edition logo shown in the corner of the page
 COPY src/logos ./src/logos
 

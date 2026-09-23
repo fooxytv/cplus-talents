@@ -369,13 +369,19 @@ node sim/test.js
 
 ## Which version is running
 
-The footer shows the build date and the commit it came from, and the commit
-links to it on GitHub. `/api/version` says the same thing without opening the
-page, which is what `deploy/update.sh` checks after a rebuild - a deploy that
-did not take is otherwise indistinguishable from one that did.
+The footer reads `v0.1.0.167b0a6` - the version from the `VERSION` file, then
+the commit it was built from, which links to that commit on GitHub.
+`/api/version` says the same without opening the page, and that is what
+`deploy/update.sh` checks after a rebuild: a deploy that did not take is
+otherwise indistinguishable from one that did.
 
-A `+` after the commit means the build had uncommitted changes, so it is not
-exactly that commit.
+Bump it by editing `VERSION`. It must be semver (`MAJOR.MINOR.PATCH`); anything
+else falls back to `0.0.0` rather than shipping a version string that is not
+one.
+
+A `-dirty` suffix means the build had uncommitted changes and so is not exactly
+that commit. It is spelled that way rather than `+` because `+` means build
+metadata in semver and would read as part of the version.
 
 Build with the commit baked in:
 

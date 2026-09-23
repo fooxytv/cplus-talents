@@ -2,6 +2,9 @@
 /**
  * What version is this, and which commit built it?
  *
+ * The number lives in the VERSION file at the repo root - edit it to bump.
+ * Everything else is worked out.
+ *
  * Two places need the answer and neither can rely on the other's environment:
  *
  *  - Running from a clone, git is right there and knows everything.
@@ -11,13 +14,17 @@
  *    variables.
  *
  * So: ask the environment first, fall back to git, and say "dev" rather than
- * guessing. A wrong version number is worse than an honest absence - the whole
- * point is being able to tell what is deployed.
+ * guessing. A wrong commit is worse than an admitted unknown - the whole point
+ * is being able to tell what is deployed.
  */
 
+const fs = require("node:fs");
+const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
 const REPO = "https://github.com/fooxytv/cplus-talents";
+const SEMVER = /^\d+\.\d+\.\d+$/;
+const FALLBACK = "0.0.0";
 
 function fromGit(args) {
   try {
@@ -31,34 +38,48 @@ function fromGit(args) {
   }
 }
 
+/** The number from VERSION, refusing anything that is not semver. */
+function semver() {
+  const file = path.join(__dirname, "..", "VERSION");
+  let raw = "";
+  try { raw = fs.readFileSync(file, "utf8").trim(); } catch (e) { return FALLBACK; }
+  // A malformed VERSION would otherwise ship a version string that is not one,
+  // and the point of the footer is that it can be trusted.
+  return SEMVER.test(raw) ? raw : FALLBACK;
+}
+
 function info() {
   const sha = (process.env.GIT_SHA || fromGit(["rev-parse", "--short=7", "HEAD"]) || "").trim();
   const built = (process.env.BUILD_TIME || new Date().toISOString()).trim();
 
   // A working tree with uncommitted changes is not the commit it claims to be,
-  // and saying so has saved more time than it has ever cost.
+  // and saying so has saved more time than it has ever cost. Marked "-dirty"
+  // rather than "+", because "+" means build metadata in semver and would read
+  // as part of the version.
   const dirty = process.env.GIT_DIRTY === "1" ||
     (!process.env.GIT_SHA && fromGit(["status", "--porcelain"]).length > 0);
 
-  // Dates make a better version than a number nobody remembers to bump: the
-  // question being answered is "how old is this", not "which release is it".
-  const day = (process.env.GIT_DATE || fromGit(["log", "-1", "--format=%cs"]) ||
+  const commitDate = (process.env.GIT_DATE || fromGit(["log", "-1", "--format=%cs"]) ||
     built.slice(0, 10)).trim();
 
+  const version = semver();
+  const id = `${version}.${sha || "dev"}${dirty ? "-dirty" : ""}`;
+
   return {
-    version: day.replace(/-/g, "."),
-    sha: sha || "dev",
+    version,                         // 0.1.0
+    sha: sha || "dev",               // 167b0a6
     dirty: !!dirty,
+    id,                              // 0.1.0.167b0a6
+    commitDate,
     built,
     repo: REPO,
     commitUrl: sha ? `${REPO}/commit/${sha}` : REPO,
   };
 }
 
-/** "2026.09.23 · 3afca8e" - what the footer shows. */
+/** "v0.1.0.167b0a6" - what the footer shows. */
 function label(v) {
-  const i = v || info();
-  return `${i.version} · ${i.sha}${i.dirty ? "+" : ""}`;
+  return "v" + (v || info()).id;
 }
 
-module.exports = { info, label, REPO };
+module.exports = { info, label, semver, REPO, SEMVER };

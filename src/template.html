@@ -3181,11 +3181,12 @@ boot();
   const label = document.getElementById("verLabel");
   const repo = document.getElementById("verRepo");
 
-  label.textContent = "v" + v.version + " · " + v.sha + (v.dirty ? "+" : "");
-  label.title = v.dirty
-    ? "Built from a working tree with uncommitted changes, so this is not exactly "
-      + v.sha + ". Built " + v.built + "."
-    : "Commit " + v.sha + ", built " + v.built + ".";
+  label.textContent = "v" + v.id;
+  label.title = (v.dirty
+    ? "Version " + v.version + ", built from a working tree with uncommitted "
+      + "changes - so this is not exactly " + v.sha + ". "
+    : "Version " + v.version + ", commit " + v.sha + ". ")
+    + "Built " + v.built + ".";
 
   if (v.sha && v.sha !== "dev") {
     const a = document.createElement("a");

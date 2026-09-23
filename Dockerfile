@@ -18,6 +18,7 @@ ENV BUILD_TIME=$BUILD_TIME
 
 # index.html is built from src/ during the image build, so the image can never
 # drift from the talent data it ships with.
+COPY VERSION ./
 COPY build.js server.js ./
 COPY src ./src
 COPY docs ./docs

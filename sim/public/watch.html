@@ -1669,7 +1669,7 @@ async function poll() {
   const v = __VERSION__;
   const el = $("verLabel");
   if (!el) return;
-  const text = "v" + v.version + " · " + v.sha + (v.dirty ? "+" : "");
+  const text = "v" + v.id;
   if (v.sha && v.sha !== "dev") {
     el.innerHTML = '<a href="' + v.commitUrl + '" target="_blank" rel="noopener"></a>';
     el.firstChild.textContent = text;

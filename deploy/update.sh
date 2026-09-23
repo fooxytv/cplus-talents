@@ -46,6 +46,8 @@ echo "==> checking the running site is this commit"
 running=$(curl -fsS localhost:"${PORT:-5502}"/api/version | sed -n 's/.*"sha":"\([^"]*\)".*/\1/p')
 if [ "$running" = "$GIT_SHA" ]; then
   echo "    serving $running - matches"
+  curl -fsS localhost:"${PORT:-5502}"/api/version |
+    grep -o '"id":"[^"]*"' | sed 's/^/    /'
 else
   echo "    WARNING: pulled $GIT_SHA but the site reports '$running'"
   echo "    the rebuild did not take; try: docker compose up -d --build --force-recreate"

@@ -51,7 +51,9 @@ process.env.BUILD_TIME = "2026-11-04T23:00:00Z";
 let v = load().info();
 
 ok("the commit comes from the environment", v.sha === "abc1234");
-ok("the version is the commit date", v.version === "2026.11.04");
+ok("the version is the number in VERSION", /^\d+\.\d+\.\d+$/.test(v.version));
+ok("the commit date is kept separately", v.commitDate === "2026-11-04");
+ok("the id is version dot commit", v.id === v.version + ".abc1234");
 ok("the build time is kept", v.built === "2026-11-04T23:00:00Z");
 ok("the commit url points at the commit",
    v.commitUrl === "https://github.com/fooxytv/cplus-talents/commit/abc1234");
@@ -60,9 +62,17 @@ ok("a clean build is not marked dirty", v.dirty === false);
 process.env.GIT_DIRTY = "1";
 ok("a dirty build says so", load().info().dirty === true);
 
-ok("the label is version and commit", (() => {
+ok("the label is v, version, commit", (() => {
   const mod = load();
-  return mod.label(mod.info()) === "2026.11.04 · abc1234+";
+  const i = mod.info();
+  return mod.label(i) === "v" + i.version + ".abc1234-dirty";
+})());
+
+// "+" means build metadata in semver, so a dirty build must not use it or the
+// marker would read as part of the version
+ok("a dirty build is marked -dirty, not +", (() => {
+  const i = load().info();
+  return i.id.endsWith("-dirty") && !i.id.includes("+");
 })());
 
 /* ---------------- no environment, no git ---------------- */
@@ -75,8 +85,32 @@ v = load().info();
 ok("without an environment it still produces something", !!v.version && !!v.sha);
 ok("the commit is either real or honestly 'dev'",
    v.sha === "dev" || /^[0-9a-f]{7}$/.test(v.sha));
-ok("the version always looks like a date", /^\d{4}\.\d{2}\.\d{2}$/.test(v.version));
+ok("the version is always semver", /^\d+\.\d+\.\d+$/.test(v.version));
 restoreEnv();
+
+/* ---------------- the VERSION file ---------------- */
+
+const versionFile = fs.readFileSync(path.join(ROOT, "VERSION"), "utf8").trim();
+ok("VERSION holds a semver number", /^\d+\.\d+\.\d+$/.test(versionFile));
+ok("and that is what is reported", load().semver() === versionFile);
+
+// A malformed VERSION would otherwise ship a version string that is not one.
+ok("a malformed VERSION falls back rather than shipping nonsense", (() => {
+  const file = path.join(ROOT, "VERSION");
+  const original = fs.readFileSync(file, "utf8");
+  try {
+    fs.writeFileSync(file, "not-a-version\n");
+    return load().semver() === "0.0.0";
+  } finally {
+    fs.writeFileSync(file, original);
+  }
+})());
+
+ok("the images carry VERSION, or every build would report 0.0.0", (() => {
+  const a = fs.readFileSync(path.join(ROOT, "Dockerfile"), "utf8");
+  const b = fs.readFileSync(path.join(ROOT, "sim", "Dockerfile"), "utf8");
+  return /COPY VERSION/.test(a) && /COPY VERSION/.test(b);
+})());
 
 /* ---------------- baked into the page ---------------- */
 
@@ -84,7 +118,8 @@ const page = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
 
 ok("the built page has a footer", page.includes("sitefoot"));
 ok("the placeholder was replaced", !page.includes("__VERSION__"));
-ok("the page carries a version object", /"version":"\d{4}\.\d{2}\.\d{2}"/.test(page));
+ok("the page carries a version object", /"version":"\d+\.\d+\.\d+"/.test(page));
+ok("the page carries the display id", /"id":"\d+\.\d+\.\d+\./.test(page));
 ok("the page carries a commit", /"sha":"[0-9a-f]{7}"|"sha":"dev"/.test(page));
 ok("the page knows where the source is", page.includes("github.com/fooxytv/cplus-talents"));
 
