@@ -640,6 +640,61 @@ const suite = `
   selectEdition(EDITIONS[0]);
   ok('unknown editions are rejected, not guessed', decode('nosuchedition:warrior-5') === false);
 
+  /* ---------------- the json export ---------------- */
+  /*
+   * It exists so something else can reason about a build, which means it has to
+   * carry what is AVAILABLE as well as what is spent - a list of taken talents
+   * cannot answer "what should I take next".
+   */
+  selectEdition(editionById('forever'));
+  selectClass('Shaman');
+  level = 60;
+  resetAll();
+  var enh = trees().find(function (t) { return t.name === 'Enhancement'; });
+  var thund = enh.talents.find(function (t) { return t.name === 'Thundering Strikes'; });
+  learn(enh, thund); learn(enh, thund); learn(enh, thund);
+
+  var j = buildAsJson();
+  ok('the export knows the edition and class', j.edition.id === 'forever' && j.class === 'Shaman');
+  ok('the export counts the points', j.points.spent === 3 && j.points.remaining === 48);
+  ok('the export carries a share code', /^forever:shaman-/.test(j.shareCode));
+  ok('the export has every tree', j.trees.length === 3);
+
+  var ex = j.trees.find(function (t) { return t.name === 'Enhancement'; })
+    .talents.find(function (t) { return t.name === 'Thundering Strikes'; });
+  ok('a talent reports its rank', ex.rank === 3 && ex.maxRank === 5);
+  ok('a talent says what it does now', typeof ex.current === 'string' && ex.current.length > 10);
+  ok('and what one more point would do', typeof ex.next === 'string' && ex.next !== ex.current);
+  ok('a maxed talent has no next rank', (function () {
+    learn(enh, thund); learn(enh, thund);
+    var t = buildAsJson().trees.find(function (t) { return t.name === 'Enhancement'; })
+      .talents.find(function (t) { return t.name === 'Thundering Strikes'; });
+    return t.maxed === true && t.next === null;
+  })());
+
+  var gated = j.trees.find(function (t) { return t.name === 'Enhancement'; })
+    .talents.find(function (t) { return t.requires.pointsInTree > 0 && t.rank === 0; });
+  ok('a gated talent says what gates it', gated && gated.requires.pointsInTree > 0);
+  ok('and that it cannot be taken yet', gated && gated.canLearnNow === false);
+  ok('an open talent says it can be taken', j.trees.some(function (t) {
+    return t.talents.some(function (x) { return x.canLearnNow === true; });
+  }));
+
+  ok('the export includes the levelling path', (function () {
+    var p = buildAsJson().levellingPath;
+    return p.length === totalPoints() && p[0].level === FIRST_POINT_LEVEL;
+  })());
+
+  ok('the export explains its own quirks', Array.isArray(j.notes) && j.notes.length > 0);
+
+  ok('the export survives a round trip through JSON', (function () {
+    try { return JSON.parse(JSON.stringify(buildAsJson())).class === 'Shaman'; }
+    catch (e) { return false; }
+  })());
+
+  resetAll();
+  selectEdition(EDITIONS[0]);
+
   report(out.join(' @@ ') + ' @@ ' + pass + ' passed, ' + fail + ' failed');
   } catch (err) {
     report('ERROR: ' + (err && err.message) + ' @@ ' + String(err.stack).slice(0, 240));

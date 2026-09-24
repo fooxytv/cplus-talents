@@ -702,6 +702,8 @@ body.editing .tree-edit{display:block}
     <div class="stat" id="doneAt" style="display:none">Complete at <b>&nbsp;</b></div>
     <button class="btn gold" id="link">Copy link</button>
     <button class="btn" id="addonBtn" title="Copy this build for the in-game addon">For game</button>
+    <button class="btn" id="jsonBtn"
+      title="Copy the whole build as JSON - what is spent, what is still available, and what each rank does. Shift-click to download it.">JSON</button>
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">Lock</button>
     <button class="btn" id="reset">Reset all</button>
@@ -1837,6 +1839,102 @@ function exportForAddon(name) {
   ].join("|");
 }
 
+/**
+ * The build as JSON, for handing to something that has to reason about it.
+ *
+ * Deliberately more than the build: an optimiser needs to know what is still
+ * AVAILABLE and what each point would actually do, not just which talents are
+ * already taken. So every talent carries its current rank text, the next rank's
+ * text, what gates it, and whether it could be taken right now.
+ *
+ * Self-contained on purpose. Whatever reads this should not need the page, the
+ * edition files, or anything else to make sense of it.
+ */
+function buildAsJson() {
+  const ranksOf = tal => (Array.isArray(tal.ranks) ? tal.ranks : []);
+
+  const treeData = trees().map(tree => {
+    const spentHere = treePoints(tree);
+    return {
+      id: tree.id,
+      name: tree.name,
+      pointsSpent: spentHere,
+      talents: sortedTalents(tree).map(tal => {
+        const rank = state[tree.id][tal.id];
+        const list = ranksOf(tal);
+        return {
+          name: tal.name,
+          position: { tier: row(tal.pos) + 1, column: Number(tal.pos[1]) },
+          rank,
+          maxRank: tal.maxRank,
+          maxed: rank >= tal.maxRank,
+          requires: {
+            pointsInTree: tal.reqPoints || 0,
+            talent: tal.prereq || null,
+          },
+          // what it does now, and what one more point would do
+          current: rank > 0 ? (list[rank - 1] || null) : null,
+          next: rank < tal.maxRank ? (list[rank] || null) : null,
+          canLearnNow: canLearn(tree, tal),
+        };
+      }),
+    };
+  });
+
+  const path = levelPath().map(step => ({
+    level: step.level,
+    tree: step.tree.name,
+    talent: step.tal.name,
+    rank: step.rank,
+  }));
+
+  const spent = totalPoints();
+  return {
+    generated: new Date().toISOString(),
+    source: location.href,
+    edition: { id: edition.id, name: edition.name },
+    class: klass,
+    level,
+    points: {
+      spent,
+      availableAtThisLevel: availablePoints(),
+      remaining: Math.max(0, availablePoints() - spent),
+      maxForEdition: edition.maxPoints,
+    },
+    spec: treeData.filter(t => t.pointsSpent > 0)
+      .map(t => t.name + " " + t.pointsSpent).join(" / ") || "nothing spent",
+    shareCode: encode(),
+    trees: treeData,
+    levellingPath: path,
+    notes: [
+      "A talent can only be taken when its tier is open: pointsInTree counts " +
+      "points spent in TIERS ABOVE it in the same tree, not the tree total.",
+      "canLearnNow already accounts for tier, prerequisite, max rank and " +
+      "points remaining at the current level.",
+      "levellingPath is one point per level from " + FIRST_POINT_LEVEL + ".",
+    ],
+  };
+}
+
+function exportJson(download) {
+  if (!totalPoints()) { toast("Spend some points first"); return; }
+  const text = JSON.stringify(buildAsJson(), null, 2);
+
+  if (download) {
+    const blob = new Blob([text], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = slug(klass) + "-" + edition.id + "-" + totalPoints() + "pts.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast("Saved " + a.download);
+    return;
+  }
+  copy(text, "Copied " + Math.round(text.length / 1024) + "KB of JSON");
+}
+
 function copyForAddon() {
   if (!totalPoints()) { toast("Spend some points first"); return; }
   const name = (document.getElementById("bname").value || "").trim();
@@ -2479,6 +2577,12 @@ function openInfo() {
         'clearing your browser data clears it - so for anything you want to keep, save the link.'
       : 'Saved builds live on this server and everyone can see them.') + '</p>' +
 
+    '<h4>Taking the build elsewhere</h4>' +
+    '<p><b>For game</b> copies a line the in-game addon understands. ' +
+    '<b>JSON</b> copies the whole build in a form something else can reason ' +
+    'about - not just what is spent, but what is still available, what gates ' +
+    'each talent, and what one more point in it would do. Shift-click to save ' +
+    'it as a file instead.</p>' +
     '<h4>Levelling path</h4>' +
     '<p>Under the trees is the order the build is levelled in, one point per level ' +
     'from ' + FIRST_POINT_LEVEL + '. Points you click are kept in the order you clicked ' +
@@ -3070,6 +3174,8 @@ function iconifyButtons() {
 iconifyButtons();
 
 document.getElementById("addonBtn").onclick = copyForAddon;
+// shift-click saves a file instead, for when it is too big to paste comfortably
+document.getElementById("jsonBtn").onclick = e => exportJson(e.shiftKey);
 document.getElementById("bookBtn").onclick = () => setBook(!bookOn);
 document.getElementById("bk-talents").onchange = e => { bookShowTalents = e.target.checked; renderBook(); };
 const bkSearch = document.getElementById("bk-search");
