@@ -109,6 +109,31 @@ fs.writeFileSync(outPath, tpl
   .replace("__FAVICON__", favicon)
   .replace("__VERSION__", JSON.stringify(version)));
 
+/*
+ * Parse what was just written. A stray quote in a string of prose killed the
+ * whole page script once - every function undefined, a blank page - and the
+ * build reported success because writing the file had worked fine. The tests
+ * caught it, but only after it had been committed and pushed.
+ */
+{
+  const built = fs.readFileSync(outPath, "utf8");
+  const scripts = [...built.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  if (!scripts.length) {
+    console.error("the built page has no script at all");
+    process.exit(1);
+  }
+  for (let i = 0; i < scripts.length; i++) {
+    try {
+      new Function(scripts[i][1]);
+    } catch (e) {
+      console.error(`script ${i + 1} of ${scripts.length} does not parse: ${e.message}`);
+      console.error("index.html was written but is broken - not shipping it");
+      process.exit(1);
+    }
+  }
+  console.log(`  ${scripts.length} scripts parse`);
+}
+
 const count = d => Object.values(d).reduce(
   (n, c) => n + c.trees.reduce((m, t) => m + t.talents.length, 0), 0);
 console.log(
