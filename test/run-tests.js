@@ -778,6 +778,27 @@ const suite = `
     return p.length === totalPoints() && p[0].level === FIRST_POINT_LEVEL;
   })());
   ok('the export explains its own quirks', Array.isArray(j.notes) && j.notes.length > 0);
+  // An empty build is the most useful thing to export, not the least: it is
+  // what you send when the question is "what should I take".
+  ok('an empty build still exports', (function () {
+    resetAll();
+    var e = buildAsJson();
+    return e.points.spent === 0
+        && e.talents.length > 40
+        && e.talents.every(function (t) { return t.rank === 0; })
+        && e.spec === 'nothing spent';
+  })());
+
+  ok('an empty build still knows what can be taken first', (function () {
+    var e = buildAsJson();
+    var open = e.talents.filter(function (t) { return t.canLearnNow; });
+    // only the first tier of each tree is reachable with nothing spent
+    return open.length > 0 && open.every(function (t) { return t.tier === 1; });
+  })());
+
+  ok('an empty build has an empty levelling path',
+    buildAsJson().levellingPath.length === 0);
+
   ok('the export survives a round trip through JSON', (function () {
     try { return JSON.parse(JSON.stringify(buildAsJson())).class === 'Shaman'; }
     catch (e) { return false; }

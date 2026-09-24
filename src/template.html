@@ -2015,7 +2015,13 @@ function buildAsJson() {
 }
 
 function exportJson(download) {
-  if (!totalPoints()) { toast("Spend some points first"); return; }
+  /*
+   * No "spend something first" here, unlike the addon export. That guard was
+   * copied across without thinking and was exactly backwards: this is the whole
+   * class, and an empty build is the most useful thing to hand over - it is
+   * what you send when the question is "what should I take", rather than
+   * "what do you make of this".
+   */
   const text = JSON.stringify(buildAsJson(), null, 2);
 
   if (download) {
