@@ -37,30 +37,33 @@ const BOOKS = {
 /** Wowhead class ids, and the slug its class page lives under. */
 /*
  * Wowhead's Forever class pages carry Season of Discovery's rune engravings.
- * They are not in Forever - they are a vanilla Classic thing - and they showed
- * up in the spellbook as level-1 "granted" abilities: Devastate, Commanding
- * Shout, Molten Blast, Saber Slash, Balefire Bolt and so on.
+ * They are a vanilla Classic thing, not a Forever one, and they arrived in the
+ * spellbook as level-1 "granted" abilities: Devastate, Molten Blast, Saber
+ * Slash, Balefire Bolt.
  *
- * Spell ids fall into three cleanly separated bands across all nine classes:
+ * Identifying them took two goes and the first was wrong, so: the ID BAND IS
+ * NOT ENOUGH. Ids fall in three groups -
  *
- *      10 -    66,844   1,379 spells   real vanilla
- * 398,196 -   469,145     215 spells   Season of Discovery runes
- * 1,221,404 - 1,316,995   114 spells   Forever's own new spells
+ *        10 -    66,844   original vanilla
+ *   398,196 -   469,145   SoD runes ... AND Forever's re-implemented spells
+ * 1,221,404 - 1,316,995   Forever's own new spells
  *
- * The gaps either side of the middle band are 331,000 and 752,000 wide, so
- * cutting it out is safe. Two things ruled out the alternatives:
+ * - and the middle one holds both. Forever re-created many core abilities with
+ * new ids in the range SoD used, so cutting the band out removed 98 genuine
+ * spells, Victory Rush at 20 among them.
  *
- * - Filtering by name would delete real content. Mutilate exists in BOTH the
- *   rune band and Forever's own band; so does Lightning Bolt.
- * - "Also exists under the classic flavour" does not identify a rune either:
- *   Heroic Strike is in both flavours and is perfectly genuine.
+ * The LEVEL is what separates them. A rune is engraved rather than learnt, so
+ * it has no level requirement and lands at level 1; a real ability has a level
+ * and usually a rank ladder. Filtering on both together splits the band 117 to
+ * 98 and leaves every real spell in place.
  *
- * test/spellbook-tests.js asserts the bands stay separated, so if Forever ever
- * ships something inside this range the build fails rather than quietly losing
- * it.
+ * test/spellbook-tests.js holds the evidence as assertions.
  */
 const SOD_RUNES = { from: 390000, to: 500000 };
-const isSodRune = id => id >= SOD_RUNES.from && id < SOD_RUNES.to;
+const isSodRune = r =>
+  r.id >= SOD_RUNES.from && r.id < SOD_RUNES.to &&
+  (!r.level || r.level <= 1) &&
+  !(Array.isArray(r.source) && r.source.length) && !r.trainingcost;
 
 const CLASSES = [
   { id: 1, slug: "warrior", name: "Warrior" },
@@ -238,7 +241,7 @@ async function buildBook(key) {
       Array.isArray(r.skill) && r.skill.length > 0 &&
       typeof r.level === "number" && r.level > 0 && r.level <= spec.maxLevel &&
       typeof r.name === "string" && r.name &&
-      !isSodRune(r.id) &&
+      !isSodRune(r) &&
       !/^S0\d\s|Tuning and Overrides|\(DND\)|\(NYI\)/i.test(r.name));
 
     for (const r of keep) wanted.add(r.id);

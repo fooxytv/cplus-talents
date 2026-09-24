@@ -3,7 +3,7 @@
  "name": "Forever",
  "maxLevel": 60,
  "source": "https://www.wowhead.com/forever/",
- "generated": "2026-09-23T07:46:20.631Z",
+ "generated": "2026-09-24T11:10:42.995Z",
  "classes": {
   "Warrior": [
    {
@@ -30,6 +30,13 @@
     "icon": "ability_rogue_ambush",
     "rank": "Rank 1",
     "desc": "A strong attack that increases melee damage by 11 and causes a high amount of threat."
+   },
+   {
+    "id": 461475,
+    "name": "Valor of Azeroth",
+    "level": 2,
+    "icon": "ability_warrior_innerrage",
+    "desc": "Inspires all members of your party or raid to fight for the Valor of Azeroth, increasing critical chance of all spells and attacks by 5% and granting (60 * 1.5) Attack Power. Lasts 2 hrs. May not be combined with similar long-duration effects."
    },
    {
     "id": 100,
@@ -263,6 +270,13 @@
     "icon": "ability_warrior_decisivestrike",
     "rank": "Rank 1",
     "desc": "Slams the opponent, causing weapon damage plus 16."
+   },
+   {
+    "id": 402927,
+    "name": "Victory Rush",
+    "level": 20,
+    "icon": "ability_warrior_devastate",
+    "desc": "Instantly attack the target causing (1 + Attack Power * 15 / 100) damage and healing you for 10% of your maximum health. Only useable within 20 sec after you kill a non-trivial enemy."
    },
    {
     "id": 6192,
@@ -1499,13 +1513,6 @@
     "trained": true
    },
    {
-    "id": 1313342,
-    "name": "Flash of Light",
-    "level": 26,
-    "icon": "spell_holy_flashheal",
-    "desc": "Heals a friendly target for (42.9% of Spell Power)."
-   },
-   {
     "id": 19939,
     "name": "Flash of Light",
     "level": 26,
@@ -1591,13 +1598,6 @@
     "desc": "The paladin sacrifices himself to remove the targeted party member from harms way. Enemies will stop attacking the protected party member, who will be immune to all harmful attacks but cannot take any action for 3 min.",
     "cost": 11000,
     "trained": true
-   },
-   {
-    "id": 1313348,
-    "name": "Holy Light",
-    "level": 30,
-    "icon": "spell_holy_holybolt",
-    "desc": "Heals a friendly target for (71.4% of Spell Power)."
    },
    {
     "id": 1042,
@@ -1689,13 +1689,6 @@
     "desc": "Protects the paladin from all damage and spells for 10 sec, but reduces all damage you deal by 50%. Applies Forbearance for 1 min. Cannot be cast while Forbearance is active.",
     "cost": 13000,
     "trained": true
-   },
-   {
-    "id": 1313343,
-    "name": "Flash of Light",
-    "level": 34,
-    "icon": "spell_holy_flashheal",
-    "desc": "Heals a friendly target for (42.9% of Spell Power)."
    },
    {
     "id": 19940,
@@ -1792,13 +1785,6 @@
     "trained": true
    },
    {
-    "id": 1313349,
-    "name": "Holy Light",
-    "level": 38,
-    "icon": "spell_holy_holybolt",
-    "desc": "Heals a friendly target for (71.4% of Spell Power)."
-   },
-   {
     "id": 3472,
     "name": "Holy Light",
     "level": 38,
@@ -1869,6 +1855,13 @@
     "trained": true
    },
    {
+    "id": 407632,
+    "name": "Hammer of the Righteous",
+    "level": 40,
+    "icon": "ability_paladin_hammeroftherighteous",
+    "desc": "Hammer the current target and up to 3 additional nearby targets, causing Holy damage to each equal to 3 times the damage per second of your main hand weapon. Cooldown shared with Crusader Strike."
+   },
+   {
     "id": 20473,
     "name": "Holy Shock",
     "level": 40,
@@ -1926,13 +1919,6 @@
     "desc": "Cleanses a friendly target, removing 1 poison effect, 1 disease effect, and 1 magic effect.",
     "cost": 21000,
     "trained": true
-   },
-   {
-    "id": 1313344,
-    "name": "Flash of Light",
-    "level": 42,
-    "icon": "spell_holy_flashheal",
-    "desc": "Heals a friendly target for (42.9% of Spell Power)."
    },
    {
     "id": 19941,
@@ -2039,13 +2025,6 @@
     "trained": true
    },
    {
-    "id": 1313350,
-    "name": "Holy Light",
-    "level": 46,
-    "icon": "spell_holy_holybolt",
-    "desc": "Heals a friendly target for (71.4% of Spell Power)."
-   },
-   {
     "id": 10328,
     "name": "Holy Light",
     "level": 46,
@@ -2145,13 +2124,6 @@
     "desc": "Protects the paladin from all damage and spells for 12 sec, but reduces all damage you deal by 50%. Applies Forbearance for 1 min. Cannot be cast while Forbearance is active.",
     "cost": 28000,
     "trained": true
-   },
-   {
-    "id": 1313345,
-    "name": "Flash of Light",
-    "level": 50,
-    "icon": "spell_holy_flashheal",
-    "desc": "Heals a friendly target for (42.9% of Spell Power)."
    },
    {
     "id": 19942,
@@ -2376,13 +2348,6 @@
     "trained": true
    },
    {
-    "id": 1313351,
-    "name": "Holy Light",
-    "level": 54,
-    "icon": "spell_holy_holybolt",
-    "desc": "Heals a friendly target for (71.4% of Spell Power)."
-   },
-   {
     "id": 10329,
     "name": "Holy Light",
     "level": 54,
@@ -2422,13 +2387,6 @@
     "desc": "Causes 30 Holy damage to any creature that strikes a party member within 30 yards. Players may only have one Aura on them per Paladin at any one time.",
     "cost": 42000,
     "trained": true
-   },
-   {
-    "id": 1313346,
-    "name": "Flash of Light",
-    "level": 58,
-    "icon": "spell_holy_flashheal",
-    "desc": "Heals a friendly target for (42.9% of Spell Power)."
    },
    {
     "id": 19943,
@@ -3883,6 +3841,13 @@
     "desc": "The hunter takes on the aspects of a beast, becoming untrackable and increasing Melee Attack Power by 110. Only one Aspect can be active at a time."
    },
    {
+    "id": 469145,
+    "name": "Aspect of the Falcon",
+    "level": 60,
+    "icon": "ability_hunter_pet_dragonhawk",
+    "desc": "The hunter takes on the aspects of a Falcon, increasing melee and ranged Attack Power by the same amount as their highest rank of Aspect of the Hawk. While Aspect of the Falcon is active, the Improved Aspect of the Hawk talent can now proc from and benefit melee attacks. Only one Aspect can be active at a time."
+   },
+   {
     "id": 25296,
     "name": "Aspect of the Hawk",
     "level": 60,
@@ -4522,6 +4487,15 @@
     "desc": "Performs a feint, causing no damage but lowering your threat by a large amount, making the enemy less likely to attack you.",
     "cost": 20000,
     "trained": true
+   },
+   {
+    "id": 399956,
+    "name": "Mutilate",
+    "level": 40,
+    "icon": "ability_rogue_deadlybrew",
+    "rank": "Rank 2",
+    "desc": "Instantly attacks with both weapons for 75% weapon damage plus an additional 25 with each weapon. Damage increased by 20% against Poisoned targets. Awards 2 Combo Points.",
+    "talent": true
    },
    {
     "id": 1860,
@@ -5654,6 +5628,15 @@
     "trained": true
    },
    {
+    "id": 402284,
+    "name": "Penance",
+    "level": 30,
+    "icon": "spell_holy_penance",
+    "rank": "Rank 1",
+    "desc": "Dealing (28.5% of Spell Power) Holy damage every 1 sec.",
+    "talent": true
+   },
+   {
     "id": 6065,
     "name": "Power Word: Shield",
     "level": 30,
@@ -6097,6 +6080,14 @@
     "desc": "A powerful prayer that heals the target and their party for (28.6% of Spell Power). Party members must be within 40 yards of target.",
     "cost": 18000,
     "trained": true
+   },
+   {
+    "id": 401863,
+    "name": "Prayer of Mending",
+    "level": 40,
+    "icon": "spell_holy_prayerofmendingtga",
+    "desc": "Places a spell on the target that heals them the next time they take damage. When the heal occurs, Prayer of Mending jumps to a party or raid member within 0 yards. Jumps up to 0 times and lasts until canceled after each jump. This spell can only be placed on one target at a time.",
+    "talent": true
    },
    {
     "id": 9485,
@@ -7243,6 +7234,14 @@
     "trained": true
    },
    {
+    "id": 408341,
+    "name": "Fire Nova",
+    "level": 12,
+    "icon": "spell_fire_sealoffire",
+    "rank": "Rank 1",
+    "desc": "Instantly inflicts (10% of Spell Power) fire damage to enemies within 10 yd of your active Fire totem."
+   },
+   {
     "id": 547,
     "name": "Healing Wave",
     "level": 12,
@@ -7462,6 +7461,14 @@
     "trained": true
    },
    {
+    "id": 408342,
+    "name": "Fire Nova",
+    "level": 22,
+    "icon": "spell_fire_sealoffire",
+    "rank": "Rank 2",
+    "desc": "Instantly inflicts (14.3% of Spell Power) fire damage to enemies within 10 yd of your active Fire totem."
+   },
+   {
     "id": 8166,
     "name": "Poison Cleansing Totem",
     "level": 22,
@@ -7469,6 +7476,13 @@
     "desc": "Summons a Poison Cleansing Totem with 5 health at the feet of the caster that attempts to remove 1 poison effect from party members within 30 yards every 5 seconds. Lasts 5 min.",
     "cost": 3000,
     "trained": true
+   },
+   {
+    "id": 437009,
+    "name": "Totemic Projection",
+    "level": 22,
+    "icon": "ability_shaman_totemrelocation",
+    "desc": "Relocates your active totems to the specified location."
    },
    {
     "id": 131,
@@ -7763,6 +7777,14 @@
     "trained": true
    },
    {
+    "id": 408343,
+    "name": "Fire Nova",
+    "level": 32,
+    "icon": "spell_fire_sealoffire",
+    "rank": "Rank 3",
+    "desc": "Instantly inflicts (14.3% of Spell Power) fire damage to enemies within 10 yd of your active Fire totem."
+   },
+   {
     "id": 959,
     "name": "Healing Wave",
     "level": 32,
@@ -8048,6 +8070,14 @@
     "trained": true
    },
    {
+    "id": 408491,
+    "name": "Lava Burst",
+    "level": 40,
+    "icon": "spell_shaman_lavaburst",
+    "desc": "You hurl molten lava at the target, dealing (35.7% of Spell Power) Fire damage. If your Flame Shock is on the target, Lava Burst deals 20% increased damage.",
+    "talent": true
+   },
+   {
     "id": 8134,
     "name": "Lightning Shield",
     "level": 40,
@@ -8076,6 +8106,14 @@
     "desc": "Imbue the Shaman's weapon with wind. Each hit has a 20% chance of granting you 2 extra attacks with 221 extra melee attack power. When appied to main hand, disables any benefit you personally receive from Windfury Totem. Lasts for 60 minutes.",
     "cost": 12000,
     "trained": true
+   },
+   {
+    "id": 408344,
+    "name": "Fire Nova",
+    "level": 42,
+    "icon": "spell_fire_sealoffire",
+    "rank": "Rank 4",
+    "desc": "Instantly inflicts (14.3% of Spell Power) fire damage to enemies within 10 yd of your active Fire totem."
    },
    {
     "id": 10537,
@@ -8365,6 +8403,14 @@
     "desc": "Imbue the Shaman's weapon with wind. Each hit has a 20% chance of granting you 2 extra attacks with 315 extra melee attack power. When applied to main hand, disables any benefit you personally receive from Windfury Totem. Lasts for 60 minutes.",
     "cost": 24000,
     "trained": true
+   },
+   {
+    "id": 408345,
+    "name": "Fire Nova",
+    "level": 52,
+    "icon": "spell_fire_sealoffire",
+    "rank": "Rank 5",
+    "desc": "Instantly inflicts (14.3% of Spell Power) fire damage to enemies within 10 yd of your active Fire totem."
    },
    {
     "id": 10448,
@@ -9281,6 +9327,15 @@
     "trained": true
    },
    {
+    "id": 400640,
+    "name": "Ice Lance",
+    "level": 28,
+    "icon": "spell_frost_frostblast",
+    "rank": "Rank 2",
+    "desc": "Deals 38 Frost damage to an enemy target. Deals 300% increased damage to Frozen targets.",
+    "talent": true
+   },
+   {
     "id": 8494,
     "name": "Mana Shield",
     "level": 28,
@@ -9656,6 +9711,14 @@
     "desc": "Blasts enemies near the caster for [(2.9% of Spell Power) * 1] to [(2.9% of Spell Power) * 1] Frost damage and freezes them in place for up to 8 sec. Damage caused may interrupt the effect.",
     "cost": 15000,
     "trained": true
+   },
+   {
+    "id": 401502,
+    "name": "Frostfire Bolt",
+    "level": 40,
+    "icon": "ability_mage_frostfirebolt",
+    "rank": "Rank 1",
+    "desc": "Launches a bolt of frostfire at the enemy, causing (81.4% of Spell Power) Frostfire damage, slowing movement speed by 40% and causing an additional 27 Frostfire damage over 9 sec. This spell will be checked against the lower of the target's Frost and Fire resists and counts as both Frost and Fire damage."
    },
    {
     "id": 7320,
@@ -10525,6 +10588,14 @@
     "trained": true
    },
    {
+    "id": 403839,
+    "name": "Shadow Cleave",
+    "level": 6,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 2",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (10% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (11 * 5). Lasts 15 sec]"
+   },
+   {
     "id": 980,
     "name": "Bane of Agony",
     "level": 8,
@@ -10624,6 +10695,14 @@
     "trained": true
    },
    {
+    "id": 403840,
+    "name": "Shadow Cleave",
+    "level": 12,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 3",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (18.7% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (17 * 5). Lasts 15 sec]"
+   },
+   {
     "id": 6222,
     "name": "Corruption",
     "level": 14,
@@ -10703,6 +10782,14 @@
     "trained": true
    },
    {
+    "id": 440892,
+    "name": "Curse of the Elements",
+    "level": 20,
+    "icon": "warlock_curse_shadow",
+    "rank": "Rank 1",
+    "desc": "Curses the target for 5 min, reducing Magic resistances by 30 and increases Magic damage taken by 4%. Only one Curse per Warlock can be active on any one target."
+   },
+   {
     "id": 706,
     "name": "Demon Armor",
     "level": 20,
@@ -10760,6 +10847,14 @@
     "desc": "Sends a shadowy bolt at the enemy, causing (85.7% of Spell Power) Shadow damage.",
     "cost": 2000,
     "trained": true
+   },
+   {
+    "id": 403841,
+    "name": "Shadow Cleave",
+    "level": 20,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 4",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (25 * 5). Lasts 15 sec]"
    },
    {
     "id": 713,
@@ -10968,6 +11063,14 @@
     "desc": "Sends a shadowy bolt at the enemy, causing (85.7% of Spell Power) Shadow damage.",
     "cost": 5000,
     "trained": true
+   },
+   {
+    "id": 403842,
+    "name": "Shadow Cleave",
+    "level": 28,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 5",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (33 * 5). Lasts 15 sec]"
    },
    {
     "id": 20752,
@@ -11197,6 +11300,14 @@
     "trained": true
    },
    {
+    "id": 403843,
+    "name": "Shadow Cleave",
+    "level": 36,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 6",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (41 * 5). Lasts 15 sec]"
+   },
+   {
     "id": 11711,
     "name": "Bane of Agony",
     "level": 38,
@@ -11414,6 +11525,14 @@
     "desc": "Sends a shadowy bolt at the enemy, causing (85.7% of Spell Power) Shadow damage.",
     "cost": 12000,
     "trained": true
+   },
+   {
+    "id": 403844,
+    "name": "Shadow Cleave",
+    "level": 44,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 7",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (49 * 5). Lasts 15 sec]"
    },
    {
     "id": 11725,
@@ -11683,6 +11802,14 @@
     "desc": "Sends a shadowy bolt at the enemy, causing (85.7% of Spell Power) Shadow damage.",
     "cost": 18000,
     "trained": true
+   },
+   {
+    "id": 403848,
+    "name": "Shadow Cleave",
+    "level": 52,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 8",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (57 * 5). Lasts 15 sec]"
    },
    {
     "id": 11740,
@@ -11975,6 +12102,13 @@
     "talent": true
    },
    {
+    "id": 437169,
+    "name": "Portal of Summoning",
+    "level": 60,
+    "icon": "inv_misc_rune_10",
+    "desc": "Begins a ritual that creates a summoning portal. The summoning portal can be used by 2 party or raid members to summon a targeted party or raid member. The ritual portal requires the caster and 2 additional party or raid members to complete. In order to participate, all players must be out of combat and right-click the portal and not move until the ritual is complete."
+   },
+   {
     "id": 18540,
     "name": "Ritual of Doom",
     "level": 60,
@@ -11990,6 +12124,14 @@
     "rank": "Rank 10",
     "desc": "Sends a shadowy bolt at the enemy, causing (85.7% of Spell Power) Shadow damage.",
     "trained": true
+   },
+   {
+    "id": 403852,
+    "name": "Shadow Cleave",
+    "level": 60,
+    "icon": "inv_mace_1h_stratholme_d_02",
+    "rank": "Rank 10",
+    "desc": "Punish up to 10 nearby enemies with a Shadow lash, dealing (28.6% of Spell Power) to each. Shadow Cleave benefits from and triggers most talents and effects that Shadow Bolt benefits from and triggers. [S03 - Tuning and Overrides Passive - All Classes: Hitting a target with Shadow Cleave also grants you 4 Spell Damage for each point of your defense skill beyond (60 * 5). Lasts 15 sec]"
    },
    {
     "id": 28610,
@@ -12184,6 +12326,14 @@
     "desc": "Heals a friendly target for (28.6% of Spell Power) and another (49.7% of Spell Power) over 21 sec.",
     "cost": 800,
     "trained": true
+   },
+   {
+    "id": 437138,
+    "name": "Revive",
+    "level": 12,
+    "icon": "ability_druid_lunarguidance",
+    "rank": "Rank 1",
+    "desc": "Brings a dead player back to life with 70 health and 135 mana. Cannot be cast when in combat."
    },
    {
     "id": 5211,
@@ -13183,6 +13333,14 @@
     "desc": "Decrease the armor of the target by 395 for 40 sec. While affected, the target cannot stealth or turn invisible.",
     "cost": 16000,
     "trained": true
+   },
+   {
+    "id": 414644,
+    "name": "Lacerate",
+    "level": 42,
+    "icon": "ability_druid_lacerate",
+    "rank": "Rank 1",
+    "desc": "Lacerates the enemy target, making them bleed for 50 damage over 15 sec plus 10% weapon damage per existing application of Lacerate on the target. Causes a high amount of threat. This effect stacks up to 5 times on the same target."
    },
    {
     "id": 9745,
