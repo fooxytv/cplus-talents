@@ -696,6 +696,82 @@ const suite = `
 
   resetAll();
 
+  /* ---------------- the order travels in the code ---------------- */
+  /*
+   * Remembering the order in this browser only ever helped a reload. A saved
+   * build opened later, or a link sent to somebody else, still came back sorted
+   * by grid position - which is what a 48-point build did, and it was reported.
+   */
+  selectEdition(editionById('forever'));
+  selectClass('Shaman');
+  level = 60;
+  resetAll();
+  var oEnh = trees().find(function (t) { return t.name === 'Enhancement'; });
+  var oEle = trees().find(function (t) { return t.name === 'Elemental'; });
+  var oPick = function (tr, n) { return tr.talents.find(function (x) { return x.name === n; }); };
+
+  // deliberately not grid order: the second tree first, then back
+  learn(oEle, oPick(oEle, 'Concussion'));
+  learn(oEnh, oPick(oEnh, 'Thundering Strikes'), true);
+  learn(oEle, oPick(oEle, 'Convection'));
+  var builtOrder = levelPath().map(function (s) { return s.tal.name + s.rank; }).join(',');
+  var orderedCode = encode();
+
+  ok('the code carries an order', orderedCode.indexOf('!') > 0);
+  ok('the order sits before the fingerprint',
+    orderedCode.indexOf('!') < orderedCode.lastIndexOf('.'));
+
+  // import it with no memory of having built it, which is what opening a saved
+  // build or somebody else's link actually does
+  resetAll();
+  var savedDrafts = {};
+  Object.keys(drafts).forEach(function (k) { savedDrafts[k] = drafts[k]; delete drafts[k]; });
+  decode(orderedCode);
+  ok('importing keeps the order it was built in',
+    levelPath().map(function (s) { return s.tal.name + s.rank; }).join(',') === builtOrder);
+  ok('importing keeps the points too', totalPoints() === 7);
+  Object.keys(savedDrafts).forEach(function (k) { drafts[k] = savedDrafts[k]; });
+
+  // codes made before this existed have no "!" and must still work
+  var oldCode = orderedCode.replace(/![^.]*/, '');
+  resetAll();
+  ok('a code with no order still loads', decode(oldCode) !== false && totalPoints() === 7);
+  ok('and gets a derived path rather than none', levelPath().length === 7);
+
+  // a hand-edited order must not be allowed to claim points that are not there
+  resetAll();
+  var tampered = orderedCode.replace(/!([^.]*)/, '!' + '000');
+  decode(tampered);
+  ok('an order that does not fit the build is ignored', levelPath().length === totalPoints());
+
+  ok('an empty build produces no order segment', (function () {
+    resetAll();
+    return encode().indexOf('!') === -1;
+  })());
+
+  // the index has to reach the biggest class there is
+  ok('a class with more than 62 talents round-trips', (function () {
+    selectEdition(editionById('wotlk'));
+    selectClass('Death Knight');
+    level = 60;
+    resetAll();
+    var tr = trees()[0];
+    var first = tr.talents.filter(function (t) { return t.reqPoints === 0; })[0];
+    learn(tr, first, true);
+    var second = trees()[1].talents.filter(function (t) { return t.reqPoints === 0; })[0];
+    learn(trees()[1], second);
+    var want = levelPath().map(function (s) { return s.tal.name + s.rank; }).join(',');
+    var c = encode();
+    resetAll();
+    Object.keys(drafts).forEach(function (k) { delete drafts[k]; });
+    decode(c);
+    return levelPath().map(function (s) { return s.tal.name + s.rank; }).join(',') === want;
+  })());
+
+  selectEdition(editionById('forever'));
+  selectClass('Shaman');
+  resetAll();
+
   /* ---------------- the json export ---------------- */
   /*
    * It exists so something else can decide where the next point should go.

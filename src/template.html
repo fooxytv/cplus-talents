@@ -1666,13 +1666,102 @@ function refreshFingerprints() {
 
 // Codes carry their edition as a prefix ("forever:druid-5000...."). A bare code
 // means the Classic+ trees, which is what every code written before editions was.
+/*
+ * Carrying the levelling order in the share code.
+ *
+ * A code is positions and ranks, which says WHAT was taken but not in what
+ * order - so importing a build rebuilt the path from the grid instead of from
+ * the clicks, and a carefully ordered 48-point build came back sorted by
+ * position. Remembering the order in this browser only helped a reload; a
+ * saved build opened later, or a link sent to somebody else, still lost it.
+ *
+ * So it goes in the code, after a "!" and before the fingerprint:
+ *
+ *   forever:shaman-0500320...!aabbbcc....1e9ff75
+ *
+ * Each point is the index of its talent in the same flat order the rank digits
+ * use. One base62 character each, except for classes with more than 62 talents
+ * - Wrath's Death Knight has 88 - where two are used. The width is worked out
+ * from the class, which is known before the order is read.
+ *
+ * Old codes have no "!" and are read exactly as before.
+ */
+const ORDER_MARK = "!";
+const ORDER_ALPHABET =
+  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+/** Every talent of the current class, in the order the rank digits use. */
+function flatTalents() {
+  const out = [];
+  for (const tree of trees()) for (const tal of sortedTalents(tree)) out.push({ tree, tal });
+  return out;
+}
+
+const orderWidth = n => (n <= ORDER_ALPHABET.length ? 1 : 2);
+
+function toBase(n, width) {
+  let out = "";
+  let v = n;
+  for (let i = 0; i < width; i++) {
+    out = ORDER_ALPHABET[v % ORDER_ALPHABET.length] + out;
+    v = Math.floor(v / ORDER_ALPHABET.length);
+  }
+  return out;
+}
+
+function fromBase(str) {
+  let v = 0;
+  for (const ch of str) {
+    const i = ORDER_ALPHABET.indexOf(ch);
+    if (i < 0) return -1;
+    v = v * ORDER_ALPHABET.length + i;
+  }
+  return v;
+}
+
+/** The clicked order as characters, or "" when there is nothing worth saying. */
+function encodeOrder() {
+  const flat = flatTalents();
+  if (!spendOrder.length || !orderMatches(spendOrder)) return "";
+
+  const index = {};
+  flat.forEach((x, i) => { index[orderKey(x.tree, x.tal)] = i; });
+
+  const width = orderWidth(flat.length);
+  let out = "";
+  for (const key of spendOrder) {
+    const i = index[key];
+    if (i === undefined) return "";          // talent gone: do not ship a lie
+    out += toBase(i, width);
+  }
+  return out;
+}
+
+/** Characters back to spend keys, or null if they do not make sense. */
+function decodeOrder(str) {
+  if (!str) return null;
+  const flat = flatTalents();
+  const width = orderWidth(flat.length);
+  if (str.length % width !== 0) return null;
+
+  const keys = [];
+  for (let at = 0; at < str.length; at += width) {
+    const i = fromBase(str.slice(at, at + width));
+    if (i < 0 || i >= flat.length) return null;
+    keys.push(orderKey(flat[i].tree, flat[i].tal));
+  }
+  return keys;
+}
+
 function encode() {
   let s = "";
   for (const tree of trees()) for (const tal of sortedTalents(tree)) s += state[tree.id][tal.id];
   s = s.replace(/0+$/, "");
   const stamp = FINGERPRINTS[klass] ? "." + FINGERPRINTS[klass] : "";
   const prefix = isCustom() ? "" : edition.id + ":";
-  return prefix + slug(klass) + (s ? "-" + s : "") + stamp;
+  const order = encodeOrder();
+  return prefix + slug(klass) + (s ? "-" + s : "") +
+    (order ? ORDER_MARK + order : "") + stamp;
 }
 function decode(code) {
   if (!code) return false;
@@ -1704,14 +1793,32 @@ function decode(code) {
     return true;
   }
 
-  const digits = i < 0 ? "" : code.slice(i + 1);
-  spendOrder = [];          // a link carries ranks, not the order they went in
+  let digits = i < 0 ? "" : code.slice(i + 1);
+
+  // the order rides after a "!", if the code carries one at all
+  let orderPart = "";
+  const bang = digits.indexOf(ORDER_MARK);
+  if (bang >= 0) {
+    orderPart = digits.slice(bang + 1);
+    digits = digits.slice(0, bang);
+  }
+
+  spendOrder = [];
   let n = 0;
   for (const tree of trees()) for (const tal of sortedTalents(tree)) {
     const v = parseInt(digits[n++], 10);
     state[tree.id][tal.id] = isNaN(v) ? 0 : Math.min(v, tal.maxRank);
   }
-  seedOrder();              // give it a plausible history so later clicks append
+
+  /*
+   * An order from a code is only used if it accounts for exactly the ranks the
+   * same code just set. They travel together so they should always agree - but
+   * a hand-edited url should show a legal path rather than a path that claims
+   * points the build does not have.
+   */
+  const fromCode = decodeOrder(orderPart);
+  if (fromCode && orderMatches(fromCode)) spendOrder = fromCode;
+  else seedOrder();         // no order, or one that does not fit: work one out
   if (!isValid(state) || totalPoints() > availablePoints()) {
     state = newState();
     spendOrder = [];
@@ -2693,11 +2800,13 @@ function openInfo() {
     '<p>Under the trees is the order the build is levelled in, one point per level ' +
     'from ' + FIRST_POINT_LEVEL + '. Points you click are kept in the order you clicked ' +
     'them, so it is your path, not a rearrangement of it.</p>' +
-    '<p>The order is remembered in this browser, so reloading the page or ' +
-    'reopening your own link keeps it. A link opened on another machine ' +
-    'carries ranks but no history, so there the order is worked out from the ' +
-    'build itself. Either way the path is always legal: no point appears before ' +
-    'the one that unlocks it.</p>' +
+    '<p>The order travels with the build. A link made now carries it, so ' +
+    'saving a build, reloading the page or sending the link to somebody else ' +
+    'all give back the path you actually clicked.</p>' +
+    '<p>Links made before this was added carry ranks but no order, so those ' +
+    'are worked out from the build itself - rebuild and re-save to fix one. ' +
+    'Either way the path is always legal: no point appears before the one ' +
+    'that unlocks it.</p>' +
 
     '<div class="sugg">' +
       '<h4>Suggestions</h4>' +
