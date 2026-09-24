@@ -122,8 +122,38 @@ The race at `/sim/` is a second container on the same hostname, so there is no
 extra DNS record to create — but the tunnel needs to know which of the two gets
 a request.
 
-In the Cloudflare Zero Trust dashboard, under the tunnel's public hostnames, add
-a route **above** the existing one:
+There are two ways to publish it, and the second is easier.
+
+### Its own hostname (recommended)
+
+One DNS record, one tunnel route, **no path matching** - which is the part that
+goes wrong. Add a CNAME for `race` pointing at `<tunnel-id>.cfargotunnel.com`,
+then a public hostname:
+
+| | |
+|---|---|
+| Subdomain | `race` |
+| Path | *(leave empty)* |
+| Service | `http://sim:8080` |
+
+and set two things in `.env`, because the sim is then at the root of its own
+host rather than under a prefix:
+
+```
+BASE_PATH=
+SIM_CALC_BASE=https://talents.fooxy.tv/
+```
+
+`BASE_PATH=` with nothing after it means "the root". It has to be *set* and
+empty - unset means "use the default", which is `/sim`.
+
+`SIM_CALC_BASE` has to become absolute, or "open this build in the calculator"
+would point at `race.fooxy.tv` and 404.
+
+### Under the calculator's hostname
+
+One origin, no new DNS record, but the tunnel has to match on path. Add a route
+**above** the existing one:
 
 | | |
 |---|---|
@@ -134,6 +164,9 @@ a route **above** the existing one:
 Order matters. The existing route has no path and therefore matches everything,
 so a `sim/*` rule placed under it never fires. `sim` is the compose service
 name, the same way the first route points at `talents:8080`.
+
+Nothing in the app depends on sharing an origin with the calculator: the two
+only link to each other, and the sim keeps its own browser storage.
 
 Check it on the LAN first, before touching the tunnel:
 

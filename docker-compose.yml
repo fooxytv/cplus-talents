@@ -61,7 +61,9 @@ services:
       - sim-data:/data
     environment:
       SIM_DB: /data/sim.db
-      BASE_PATH: /sim
+      # /sim to sit under the calculator; set BASE_PATH= (empty) to serve at
+      # the root of a hostname of its own - see deploy/README.md
+      BASE_PATH: "${BASE_PATH-/sim}"
       SIM_CALC_BASE: "/"
       # Left unset on purpose: bots, classes, speed and hardcore come from
       # sim/config/race.json. Set them in .env only to override the file for

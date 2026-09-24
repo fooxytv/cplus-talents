@@ -71,7 +71,14 @@ const CLASS_SPEC = (() => {
   const v = pick("SIM_CLASS", "classes", "*");
   return Array.isArray(v) ? v.join(",") : String(v);
 })();
-const BASE = (process.env.BASE_PATH || "/sim").replace(/\/$/, "");
+/*
+ * Where this is mounted. "" means the root of its own hostname, which is what
+ * a dedicated subdomain wants - and an empty string is falsy, so `||` would
+ * quietly put it back under /sim. Asking whether the variable was SET is the
+ * difference between "serve at the root" and "not configured".
+ */
+const BASE = (process.env.BASE_PATH === undefined ? "/sim" : process.env.BASE_PATH)
+  .replace(/\/+$/, "");
 const INTERMISSION_SECONDS = Number(pick("SIM_INTERMISSION", "intermission", 20));
 /*
  * Writing is off unless a key is set. This serves on a public hostname, and an

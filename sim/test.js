@@ -981,6 +981,24 @@ async function armoryTests() {
 
 }
 
+/* ---------------- mounting ---------------- */
+/*
+ * A lint rather than a behaviour test: server.js starts a race on require, so
+ * it cannot be imported here. What matters is the shape of one expression.
+ *
+ * BASE_PATH="" means "serve at the root of my own hostname", which is what a
+ * dedicated subdomain wants. An empty string is falsy, so `||` silently put it
+ * back under /sim - the server answered either way, so the only visible symptom
+ * was race.fooxy.tv/sim/ urls on a host that needed no prefix at all.
+ */
+const serverSrc = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
+
+ok("BASE_PATH is read by asking whether it was set, not whether it is truthy",
+   /process\.env\.BASE_PATH === undefined/.test(serverSrc));
+
+ok("and not with a falsy fallback that swallows an empty value",
+   !/process\.env\.BASE_PATH \s*\|\|/.test(serverSrc));
+
 /* ---------------- report ---------------- */
 
 function report() {
