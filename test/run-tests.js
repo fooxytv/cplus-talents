@@ -640,6 +640,62 @@ const suite = `
   selectEdition(EDITIONS[0]);
   ok('unknown editions are rejected, not guessed', decode('nosuchedition:warrior-5') === false);
 
+  /* ---------------- the levelling path survives a reload ---------------- */
+  /*
+   * A share code carries ranks and no history, and the address bar IS the
+   * build - so reloading the page meant re-reading your own link and losing
+   * the order you clicked in. The path then rearranged itself for no reason a
+   * reader could see. The order is the one thing a code cannot carry, so the
+   * draft keeps it and seedOrder prefers it over a guess.
+   */
+  selectEdition(editionById('forever'));
+  selectClass('Shaman');
+  level = 60;
+  resetAll();
+  var pEle = trees().find(function (t) { return t.name === 'Elemental'; });
+  var pEnh = trees().find(function (t) { return t.name === 'Enhancement'; });
+  var pick = function (tr, n) { return tr.talents.find(function (x) { return x.name === n; }); };
+
+  learn(pEle, pick(pEle, 'Concussion'));
+  learn(pEnh, pick(pEnh, 'Thundering Strikes'));
+  learn(pEle, pick(pEle, 'Convection'));
+  var clickedPath = levelPath().map(function (s) { return s.tal.name; }).join(',');
+  ok('the path follows the clicks',
+    clickedPath === 'Concussion,Thundering Strikes,Convection');
+
+  var savedCode = encode();
+  ok('the order is remembered for this build', orderMatches(drafts[stateKey].order));
+
+  // exactly what opening the link does
+  seedOrder();
+  ok('reopening the build keeps the clicked order',
+    levelPath().map(function (s) { return s.tal.name; }).join(',') === clickedPath);
+
+  // a record that does not account for the build must be refused, or the path
+  // would claim points that are not there
+  ok('a stale order is rejected', orderMatches(['Elemental::Concussion']) === false);
+  ok('an order of the right length but wrong talents is rejected',
+    orderMatches(['Elemental::Concussion', 'Elemental::Concussion',
+                  'Elemental::Concussion']) === false);
+  ok('a non-array is rejected', orderMatches(null) === false);
+
+  // with no usable record it still produces a legal path rather than nothing
+  var keep = drafts[stateKey];
+  delete drafts[stateKey];
+  seedOrder();
+  ok('without a record the path is derived, not empty',
+    levelPath().length === totalPoints());
+  drafts[stateKey] = keep;
+
+  ok('drafts are written where a reload can find them', (function () {
+    try {
+      var raw = localStorage.getItem('cplus-drafts');
+      return typeof raw === 'string' && raw.length > 2;
+    } catch (e) { return true; }   // storage blocked: nothing to assert
+  })());
+
+  resetAll();
+
   /* ---------------- the json export ---------------- */
   /*
    * It exists so something else can decide where the next point should go.

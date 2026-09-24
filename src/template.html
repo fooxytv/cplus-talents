@@ -860,7 +860,34 @@ let state = {};   // state[treeId][talentId] = rank
  * them `state` currently is, so a stash always lands in the right slot even when
  * the edition changed on the way.
  */
-const drafts = {};
+/*
+ * Per class and edition: the build, and the order its points were clicked in.
+ *
+ * Kept in localStorage rather than only in memory. A share code carries ranks
+ * and no history, and the address bar IS the build - so reloading the page
+ * meant re-reading your own link, losing the order, and watching the levelling
+ * path rearrange itself for no visible reason. The order is the one thing a
+ * code cannot carry, so it is the one thing worth storing.
+ */
+const DRAFT_KEY = "cplus-drafts";
+const drafts = (() => {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};                      // private browsing, or something wrote junk
+  }
+})();
+
+function saveDrafts() {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+  } catch (e) {
+    // Out of quota, or storage is blocked. The drafts still work for this
+    // session; they just will not outlive it.
+  }
+}
 let stateKey = null;
 const draftKey = (edId, k) => edId + "::" + k;
 /**
@@ -889,7 +916,9 @@ function forgetTree(tree) {
 }
 
 function stashDraft() {
-  if (stateKey) drafts[stateKey] = { st: state, order: spendOrder };
+  if (!stateKey) return;
+  drafts[stateKey] = { st: state, order: spendOrder };
+  saveDrafts();
 }
 let nodes = {};   // nodes[treeId][talentId] = {el, rankEl}
 let arrows = [];  // {tree, talent, path, head}
@@ -1374,7 +1403,39 @@ function derivedPath() {
  * as point 51.
  */
 function seedOrder() {
+  // A remembered order beats a guessed one. A share code carries ranks and no
+  // history, so opening your own link - or just reloading the page, since the
+  // address bar is the build - used to replace the order you clicked in with a
+  // derived one, and the path visibly rearranged itself for no reason the
+  // reader could see. The draft for this class still holds the real order, so
+  // use it whenever it accounts for exactly the build being shown.
+  const draft = stateKey && drafts[stateKey];
+  if (draft && Array.isArray(draft.order) && orderMatches(draft.order)) {
+    spendOrder = draft.order.slice();
+    return;
+  }
   spendOrder = derivedPath().map(step => orderKey(step.tree, step.tal));
+}
+
+/**
+ * Does this record of clicks account for exactly the build on screen? Counting
+ * per talent rather than comparing totals, since the same number of points can
+ * be spread completely differently.
+ */
+function orderMatches(order) {
+  if (!Array.isArray(order) || order.length !== totalPoints()) return false;
+  const want = {};
+  for (const tree of trees()) {
+    for (const tal of tree.talents) {
+      const r = state[tree.id][tal.id];
+      if (r) want[orderKey(tree, tal)] = r;
+    }
+  }
+  const have = {};
+  for (const key of order) have[key] = (have[key] || 0) + 1;
+  const keys = Object.keys(want);
+  if (keys.length !== Object.keys(have).length) return false;
+  return keys.every(k => want[k] === have[k]);
 }
 
 /**
@@ -2626,9 +2687,10 @@ function openInfo() {
     '<p>Under the trees is the order the build is levelled in, one point per level ' +
     'from ' + FIRST_POINT_LEVEL + '. Points you click are kept in the order you clicked ' +
     'them, so it is your path, not a rearrangement of it.</p>' +
-    '<p>A build opened from a link carries ranks but no history, so the order is ' +
-    'worked out from the build itself - and anything you click after that is added ' +
-    'where you put it. Either way the path is always legal: no point appears before ' +
+    '<p>The order is remembered in this browser, so reloading the page or ' +
+    'reopening your own link keeps it. A link opened on someone else's machine ' +
+    'carries ranks but no history, so there the order is worked out from the ' +
+    'build itself. Either way the path is always legal: no point appears before ' +
     'the one that unlocks it.</p>' +
 
     '<div class="sugg">' +
