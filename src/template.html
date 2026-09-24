@@ -703,7 +703,7 @@ body.editing .tree-edit{display:block}
     <button class="btn gold" id="link">Copy link</button>
     <button class="btn" id="addonBtn" title="Copy this build for the in-game addon">For game</button>
     <button class="btn" id="jsonBtn"
-      title="Copy the whole build as JSON - what is spent, what is still available, and what each rank does. Shift-click to download it.">JSON</button>
+      title="Copy the whole class as JSON - every talent, every rank and what it does, what gates it, and the current build. Shift-click to download it.">JSON</button>
     <span class="lock-badge">&#128274; Locked</span>
     <button class="btn" id="lockBtn">Lock</button>
     <button class="btn" id="reset">Reset all</button>
@@ -1840,46 +1840,65 @@ function exportForAddon(name) {
 }
 
 /**
- * The build as JSON, for handing to something that has to reason about it.
+ * The whole class as JSON, with the current build in it.
  *
- * Deliberately more than the build: an optimiser needs to know what is still
- * AVAILABLE and what each point would actually do, not just which talents are
- * already taken. So every talent carries its current rank text, the next rank's
- * text, what gates it, and whether it could be taken right now.
+ * Two things are needed by anything asked to improve a build, and only one of
+ * them is the build:
+ *
+ *   the state    which talents have points, and how many are left
+ *   the rules    every talent in the class, every rank it has and what that
+ *                rank does, what gates it, and what can be taken right now
+ *
+ * So this is the complete class reference, not a diff. Every talent carries its
+ * full rank list - not just the current and next - because a choice between
+ * three points here and five there cannot be weighed from two of them.
  *
  * Self-contained on purpose. Whatever reads this should not need the page, the
- * edition files, or anything else to make sense of it.
+ * edition files, or anything else to make sense of it, which is why the tier
+ * rule is written into the payload rather than assumed.
  */
 function buildAsJson() {
   const ranksOf = tal => (Array.isArray(tal.ranks) ? tal.ranks : []);
 
-  const treeData = trees().map(tree => {
+  /*
+   * One flat list, not a tree of trees. The thing reading this is deciding
+   * where a point should go, and every row is a candidate answer - so each one
+   * carries everything needed to judge it without looking anything up:
+   * which tree it is in, what gates it, what it does at every rank, and
+   * whether it could be taken right now.
+   */
+  const talents = [];
+  for (const tree of trees()) {
     const spentHere = treePoints(tree);
-    return {
-      id: tree.id,
-      name: tree.name,
-      pointsSpent: spentHere,
-      talents: sortedTalents(tree).map(tal => {
-        const rank = state[tree.id][tal.id];
-        const list = ranksOf(tal);
-        return {
-          name: tal.name,
-          position: { tier: row(tal.pos) + 1, column: Number(tal.pos[1]) },
-          rank,
-          maxRank: tal.maxRank,
-          maxed: rank >= tal.maxRank,
-          requires: {
-            pointsInTree: tal.reqPoints || 0,
-            talent: tal.prereq || null,
-          },
-          // what it does now, and what one more point would do
-          current: rank > 0 ? (list[rank - 1] || null) : null,
-          next: rank < tal.maxRank ? (list[rank] || null) : null,
-          canLearnNow: canLearn(tree, tal),
-        };
-      }),
-    };
-  });
+    for (const tal of sortedTalents(tree)) {
+      const rank = state[tree.id][tal.id];
+      const list = ranksOf(tal);
+      talents.push({
+        tree: tree.name,
+        treeId: tree.id,
+        name: tal.name,
+        icon: tal.icon || null,
+        tier: row(tal.pos) + 1,
+        column: Number(tal.pos[1]),
+        rank,
+        maxRank: tal.maxRank,
+        maxed: rank >= tal.maxRank,
+        // The gate, and whether it is currently open. pointsAbove is what the
+        // requirement is actually measured against, which is the single
+        // easiest thing to get wrong about these trees.
+        requiresPointsInTree: tal.reqPoints || 0,
+        requiresTalent: tal.prereq || null,
+        pointsInTree: spentHere,
+        pointsAbove: pointsBelowTier(tree, row(tal.pos), state),
+        canLearnNow: canLearn(tree, tal),
+        // every rank, so the fifth point here can be weighed against the
+        // second point somewhere else
+        ranks: list.map((text, i) => ({ rank: i + 1, description: text })),
+        current: rank > 0 ? (list[rank - 1] || null) : null,
+        next: rank < tal.maxRank ? (list[rank] || null) : null,
+      });
+    }
+  }
 
   const path = levelPath().map(step => ({
     level: step.level,
@@ -1892,7 +1911,13 @@ function buildAsJson() {
   return {
     generated: new Date().toISOString(),
     source: location.href,
-    edition: { id: edition.id, name: edition.name },
+    edition: {
+      id: edition.id,
+      name: edition.name,
+      maxLevel: edition.maxLevel,
+      maxPoints: edition.maxPoints,
+      firstPointAtLevel: FIRST_POINT_LEVEL,
+    },
     class: klass,
     level,
     points: {
@@ -1901,17 +1926,29 @@ function buildAsJson() {
       remaining: Math.max(0, availablePoints() - spent),
       maxForEdition: edition.maxPoints,
     },
-    spec: treeData.filter(t => t.pointsSpent > 0)
-      .map(t => t.name + " " + t.pointsSpent).join(" / ") || "nothing spent",
+    spec: trees().filter(t => treePoints(t) > 0)
+      .map(t => t.name + " " + treePoints(t)).join(" / ") || "nothing spent",
     shareCode: encode(),
-    trees: treeData,
+    // a summary only - everything talent-level is in the flat list
+    trees: trees().map(t => ({
+      id: t.id, name: t.name, icon: t.icon || null, pointsSpent: treePoints(t),
+    })),
+    talents,
     levellingPath: path,
     notes: [
-      "A talent can only be taken when its tier is open: pointsInTree counts " +
-      "points spent in TIERS ABOVE it in the same tree, not the tree total.",
+      "talents is a flat list of EVERY talent in the class, spent or not. " +
+      "There is no nesting: each row names its own tree.",
+      "A talent opens when pointsAbove >= requiresPointsInTree. pointsAbove " +
+      "counts points spent in TIERS ABOVE it in the same tree - not the tree " +
+      "total, and not points beside it. pointsInTree is given too, but it is " +
+      "NOT what the requirement is measured against.",
+      "requiresTalent must be at its MAX rank before the talent it gates opens.",
       "canLearnNow already accounts for tier, prerequisite, max rank and " +
       "points remaining at the current level.",
-      "levellingPath is one point per level from " + FIRST_POINT_LEVEL + ".",
+      "ranks lists every rank and what it does; rank is how many are spent " +
+      "now, and current and next point into that list.",
+      "One point is earned per level from " + FIRST_POINT_LEVEL + ", so a " +
+      "build is capped by level as well as by maxPoints.",
     ],
   };
 }
@@ -2578,11 +2615,13 @@ function openInfo() {
       : 'Saved builds live on this server and everyone can see them.') + '</p>' +
 
     '<h4>Taking the build elsewhere</h4>' +
-    '<p><b>For game</b> copies a line the in-game addon understands. ' +
-    '<b>JSON</b> copies the whole build in a form something else can reason ' +
-    'about - not just what is spent, but what is still available, what gates ' +
-    'each talent, and what one more point in it would do. Shift-click to save ' +
-    'it as a file instead.</p>' +
+    '<p><b>For game</b> copies a line the in-game addon understands.</p>' +
+    '<p><b>JSON</b> copies the whole class in a form something else can reason ' +
+    'about: every talent, every rank and what that rank does, what gates each ' +
+    'one, what can be taken right now, and the build as it stands. It is meant ' +
+    'for handing to a tool or an assistant and asking it to improve the build - ' +
+    'which needs the options, not just the choices. Shift-click saves it as a ' +
+    'file instead.</p>' +
     '<h4>Levelling path</h4>' +
     '<p>Under the trees is the order the build is levelled in, one point per level ' +
     'from ' + FIRST_POINT_LEVEL + '. Points you click are kept in the order you clicked ' +

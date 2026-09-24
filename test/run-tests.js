@@ -642,9 +642,9 @@ const suite = `
 
   /* ---------------- the json export ---------------- */
   /*
-   * It exists so something else can reason about a build, which means it has to
-   * carry what is AVAILABLE as well as what is spent - a list of taken talents
-   * cannot answer "what should I take next".
+   * It exists so something else can decide where the next point should go.
+   * That needs the whole class, every rank, and the gate on each talent - a
+   * list of what is already taken answers nothing.
    */
   selectEdition(editionById('forever'));
   selectClass('Shaman');
@@ -658,35 +658,70 @@ const suite = `
   ok('the export knows the edition and class', j.edition.id === 'forever' && j.class === 'Shaman');
   ok('the export counts the points', j.points.spent === 3 && j.points.remaining === 48);
   ok('the export carries a share code', /^forever:shaman-/.test(j.shareCode));
-  ok('the export has every tree', j.trees.length === 3);
+  ok('the export says how the edition is shaped',
+    j.edition.maxPoints === 51 && j.edition.firstPointAtLevel === FIRST_POINT_LEVEL);
 
-  var ex = j.trees.find(function (t) { return t.name === 'Enhancement'; })
-    .talents.find(function (t) { return t.name === 'Thundering Strikes'; });
+  /* --- one flat list, not a tree of trees --- */
+  ok('talents are a flat array', Array.isArray(j.talents));
+  ok('the export lists every talent in the class', (function () {
+    var inPage = trees().reduce(function (n, t) { return n + t.talents.length; }, 0);
+    return j.talents.length === inPage && j.talents.length > 40;
+  })());
+  ok('every row names its own tree, so nothing has to be traversed',
+    j.talents.every(function (t) { return typeof t.tree === 'string' && t.tree.length > 0; }));
+  ok('trees are only a summary now',
+    j.trees.length === 3 && j.trees.every(function (t) { return t.talents === undefined; }));
+  ok('talents with no points are included too',
+    j.talents.some(function (t) { return t.rank === 0; }));
+
+  /* --- every rank, so points can be weighed against each other --- */
+  ok('every talent carries every rank', j.talents.every(function (t) {
+    if (t.ranks.length !== t.maxRank) return false;
+    for (var i = 0; i < t.ranks.length; i++) {
+      if (t.ranks[i].rank !== i + 1) return false;
+      if (typeof t.ranks[i].description !== 'string') return false;
+    }
+    return true;
+  }));
+
+  var ex = j.talents.find(function (t) { return t.name === 'Thundering Strikes'; });
   ok('a talent reports its rank', ex.rank === 3 && ex.maxRank === 5);
-  ok('a talent says what it does now', typeof ex.current === 'string' && ex.current.length > 10);
-  ok('and what one more point would do', typeof ex.next === 'string' && ex.next !== ex.current);
+  ok('current and next agree with the rank list',
+    ex.current === ex.ranks[2].description && ex.next === ex.ranks[3].description);
   ok('a maxed talent has no next rank', (function () {
     learn(enh, thund); learn(enh, thund);
-    var t = buildAsJson().trees.find(function (t) { return t.name === 'Enhancement'; })
-      .talents.find(function (t) { return t.name === 'Thundering Strikes'; });
+    var t = buildAsJson().talents.find(function (x) { return x.name === 'Thundering Strikes'; });
     return t.maxed === true && t.next === null;
   })());
 
-  var gated = j.trees.find(function (t) { return t.name === 'Enhancement'; })
-    .talents.find(function (t) { return t.requires.pointsInTree > 0 && t.rank === 0; });
-  ok('a gated talent says what gates it', gated && gated.requires.pointsInTree > 0);
+  /* --- the gates, which are the easiest thing to get wrong --- */
+  var gated = j.talents.find(function (t) { return t.requiresPointsInTree > 0 && t.rank === 0; });
+  ok('a gated talent says what gates it', gated && gated.requiresPointsInTree > 0);
   ok('and that it cannot be taken yet', gated && gated.canLearnNow === false);
-  ok('an open talent says it can be taken', j.trees.some(function (t) {
-    return t.talents.some(function (x) { return x.canLearnNow === true; });
-  }));
+  ok('an open talent says it can be taken',
+    j.talents.some(function (t) { return t.canLearnNow === true; }));
+  ok('a prerequisite is named where there is one',
+    j.talents.some(function (t) { return typeof t.requiresTalent === 'string'; }));
+
+  // The requirement is measured against points in tiers ABOVE, not the tree
+  // total - so both numbers are given, and they really can differ.
+  ok('the export gives the number the gate is actually measured against',
+    j.talents.every(function (t) {
+      return typeof t.pointsAbove === 'number' && typeof t.pointsInTree === 'number';
+    }));
+  ok('pointsAbove is never more than the tree total',
+    j.talents.every(function (t) { return t.pointsAbove <= t.pointsInTree; }));
+  ok('canLearnNow agrees with the gate it reports',
+    j.talents.every(function (t) {
+      if (!t.canLearnNow) return true;
+      return t.pointsAbove >= t.requiresPointsInTree && !t.maxed;
+    }));
 
   ok('the export includes the levelling path', (function () {
     var p = buildAsJson().levellingPath;
     return p.length === totalPoints() && p[0].level === FIRST_POINT_LEVEL;
   })());
-
   ok('the export explains its own quirks', Array.isArray(j.notes) && j.notes.length > 0);
-
   ok('the export survives a round trip through JSON', (function () {
     try { return JSON.parse(JSON.stringify(buildAsJson())).class === 'Shaman'; }
     catch (e) { return false; }
