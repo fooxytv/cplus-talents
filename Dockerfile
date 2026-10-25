@@ -1,6 +1,12 @@
 # The app has no npm dependencies — http and sqlite both come from Node itself,
 # so there is no install step and nothing to audit.
-FROM node:24-alpine
+FROM node:24.21.0-alpine
+
+# The image's bundled package managers are never used at runtime, and npm's
+# own dependencies were the only vulnerabilities Trivy found here.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+        /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+        /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 WORKDIR /app
 
