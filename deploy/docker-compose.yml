@@ -90,7 +90,7 @@ services:
   # Zero Trust dashboard, point its public hostname at http://talents:8080, and
   # put its token in .env.
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.3
     profiles: ["tunnel"]
     command: tunnel run
     environment:
