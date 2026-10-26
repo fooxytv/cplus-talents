@@ -249,7 +249,10 @@ body.locked .tree.spent .tree-clear{visibility:hidden}
 
 /* ---------- tooltip ---------- */
 #tip{
-  position:fixed; z-index:80; width:326px; display:none; pointer-events:none;
+  /* Above #modal (90), because the add-talent library shows tooltips over it.
+     Safe to sit on top of everything: pointer-events:none, so it never eats a
+     click meant for what is underneath. */
+  position:fixed; z-index:100; width:326px; display:none; pointer-events:none;
   background:rgba(10,12,18,.68); border:1px solid rgba(255,255,255,.14); border-radius:5px;
   padding:10px 12px 11px; box-shadow:0 10px 30px rgba(0,0,0,.7);
   backdrop-filter:blur(14px) saturate(1.2);
@@ -3099,11 +3102,13 @@ function openHistory() {
 }
 function closeModal() {
   addingAt = null;
+  hideTip();                   // a library tooltip must not outlive the modal
   document.getElementById("modal").classList.remove("open");
 }
 
 function showTab(which) {
   document.querySelectorAll("#modal .tab").forEach(t => t.classList.toggle("on", t.dataset.tab === which));
+  hideTip();                   // this replaces the body under any open tooltip
   const body = document.getElementById("modal-body");
   if (which === "custom") {
     body.innerHTML =
@@ -3161,12 +3166,46 @@ function fillClasses() {
   if (library.some(t => t.klass === klass)) sel.value = klass;
 }
 
+/**
+ * The normal tooltip, for a talent sitting in the library rather than in a
+ * tree. There is no build state to read - nothing is learnt yet - so it shows
+ * what the talent DOES instead of a rank count: rank 1, and the top rank too
+ * when there is more than one, which is how you tell a 5-rank filler from a
+ * 5-rank mainstay before planting it.
+ *
+ * reqPoints is deliberately left out: insertTalent recomputes it from the row
+ * you drop the talent on, so the library's own figure would be a lie.
+ */
+function showTipForLib(t) {
+  const e = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const ranks = Array.isArray(t.ranks) ? t.ranks : [];
+
+  let h = '<div class="t-name">' + e(t.name) + '</div>';
+  h += '<div class="t-req" style="color:#8f8f98">' + e(t.expansion) + " · " +
+       e(t.klass) + " / " + e(t.tree) + '</div>';
+  if (t.maxRank > 1) h += '<div class="t-rank">' + t.maxRank + ' ranks</div>';
+  h += '<div class="t-desc">' + e(ranks[0] || "No description.") + '</div>';
+  if (t.maxRank > 1 && ranks.length > 1)
+    h += '<div class="t-nexth">At rank ' + ranks.length + ':</div>' +
+         '<div class="t-next">' + e(ranks[ranks.length - 1]) + '</div>';
+  h += '<div class="t-hint"><span>Click to add it here</span></div>';
+
+  hovered = null;            // the main view's tooltip refresh must not fight this
+  tip.innerHTML = h;
+  tip.style.display = "block";
+  place(lastX, lastY);
+}
+
 function renderLibrary() {
   const list = document.getElementById("l-list");
   if (!list || !library) return;
   const q = document.getElementById("l-q").value.trim().toLowerCase();
   const exp = document.getElementById("l-exp").value;
   const cls = document.getElementById("l-cls").value;
+
+  // Replacing the rows below leaves any open tooltip orphaned - the node it
+  // belonged to is gone, so its mouseleave will never fire.
+  hideTip();
 
   const hits = library.filter(t =>
     (!exp || t.expansion === exp) &&
@@ -3185,10 +3224,17 @@ function renderLibrary() {
     '</div>').join("");
 
   list.querySelectorAll(".lib-row").forEach(rowEl => {
+    const find = () => library.find(x => x.key === rowEl.dataset.key);
     rowEl.onclick = () => {
-      const t = library.find(x => x.key === rowEl.dataset.key);
-      if (t) insertTalent({ name: t.name, icon: t.icon, maxRank: t.maxRank, ranks: t.ranks.slice() });
+      const t = find();
+      if (t) {
+        hideTip();                  // the row is about to vanish with the modal
+        insertTalent({ name: t.name, icon: t.icon, maxRank: t.maxRank, ranks: t.ranks.slice() });
+      }
     };
+    rowEl.onmouseenter = () => { const t = find(); if (t) showTipForLib(t); };
+    rowEl.onmouseleave = hideTip;
+    rowEl.onmousemove = moveTip;
   });
 }
 
