@@ -275,8 +275,8 @@ version of the Druid talents" — rather than showing you a build that is not th
 saved. Saving such a code is refused with the same explanation.
 
 **So: edited trees invalidate existing builds and links for that class.** Export your
-talents (`Export JSON` in edit mode) before a big reshuffle, and expect to rebuild saved
-specs afterwards.
+talents (`Export JSON` in edit mode — shift-click for every class) before a big reshuffle,
+and expect to rebuild saved specs afterwards.
 
 The store is one table:
 
@@ -497,8 +497,13 @@ the cells they pass through empty if you want them to read cleanly.
 
 **Save** writes to SQLite, and every visitor gets the edited trees from then on. **Revert**
 throws away unsaved changes, **Reset to shipped** drops the override and goes back to the
-talents in the image, and **Export JSON** downloads the dataset so you can drop it into
-`src/talents.json` and commit it.
+talents in the image, and **Export JSON** downloads **the class you are editing** as
+`talents-<class>.json` — a dataset in its own right, keyed by class name, so it validates
+and drops into the matching key. **Shift-click** for all nine classes as `talents.json`,
+which is the whole file `src/talents.json` wants.
+
+A single tree is not offered: `validate.js` wants three per class, so a lone tree would be
+neither a dataset nor something you could drop anywhere.
 
 ### History — nothing is lost
 

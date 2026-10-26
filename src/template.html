@@ -731,7 +731,8 @@ body.editing .tree-edit{display:block}
     <button class="btn gold" id="ed-save">Save</button>
     <button class="btn" id="ed-history">History</button>
     <button class="btn" id="ed-revert">Revert</button>
-    <button class="btn" id="ed-export">Export JSON</button>
+    <button class="btn" id="ed-export"
+            title="Download the class you are editing. Shift-click for all classes (that is the file src/talents.json wants).">Export JSON</button>
     <button class="btn danger" id="ed-reset">Reset to shipped</button>
   </div>
 </div>
@@ -3417,15 +3418,34 @@ async function resetDataset() {
   } catch (e) { toast(e.message); }
 }
 
-function exportDataset() {
-  const blob = new Blob([JSON.stringify(DATA, null, 1)], { type: "application/json" });
+/**
+ * Exports the class on screen, which is the one being edited. The whole
+ * dataset - all nine classes - is what src/talents.json wants, so that stays
+ * available on shift; it is just not what you want when you have been working
+ * on one class and need to see, share or diff what you changed.
+ *
+ * A class is the smallest thing worth exporting. Keyed by class name rather
+ * than bare trees so the file says which class it is, and so it is a dataset
+ * in its own right: validate.js accepts it, and it drops into a dataset at the
+ * matching key. A single tree would be neither - validate.js wants three.
+ */
+function exportDataset(wholeDataset) {
+  const one = !wholeDataset;
+  const payload = one ? { [klass]: DATA[klass] } : DATA;
+  const file = one ? "talents-" + slug(klass) + ".json" : "talents.json";
+
+  const blob = new Blob([JSON.stringify(payload, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "talents.json";
+  a.download = file;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
-  toast("Downloaded talents.json - drop it into src/ and rebuild");
+  toast(one
+    ? "Downloaded " + file + " - " + klass + " only. Shift-click for all " +
+      Object.keys(DATA).length + " classes."
+    : "Downloaded talents.json - all " + Object.keys(DATA).length +
+      " classes. Drop it into src/ and rebuild.");
 }
 
 /* ---------- drag and drop (edit mode) ---------- */
@@ -3476,7 +3496,7 @@ document.getElementById("lockBtn").onclick = () => setLocked(!locked);
 document.getElementById("editBtn").onclick = () => setEditing(!editing);
 document.getElementById("ed-save").onclick = saveDataset;
 document.getElementById("ed-revert").onclick = revertDataset;
-document.getElementById("ed-export").onclick = exportDataset;
+document.getElementById("ed-export").onclick = e => exportDataset(e.shiftKey);
 document.getElementById("ed-reset").onclick = resetDataset;
 document.getElementById("ed-history").onclick = openHistory;
 /**

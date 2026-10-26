@@ -880,6 +880,40 @@ const suite = `
     catch (e) { return false; }
   })());
 
+  /* ---------- edit mode's Export JSON ---------- */
+  /*
+   * It used to hand back all nine classes whichever one you had been editing,
+   * which is the whole file src/talents.json wants but not what you want after
+   * working on one class. Plain click is now the class on screen; the whole
+   * dataset moved to shift.
+   *
+   * The download itself cannot be driven here, so this captures what the click
+   * puts in the blob - the bytes that would land on disk.
+   */
+  (function () {
+    var caught = [];
+    var realCreate = URL.createObjectURL;
+    var realClick = HTMLAnchorElement.prototype.click;
+    URL.createObjectURL = function (b) { caught.push({ blob: b }); return 'blob:stub'; };
+    HTMLAnchorElement.prototype.click = function () {
+      if (this.download && caught.length) caught[caught.length - 1].name = this.download;
+    };
+    try {
+      exportDataset(false);
+      exportDataset(true);
+    } finally {
+      URL.createObjectURL = realCreate;
+      HTMLAnchorElement.prototype.click = realClick;
+    }
+
+    ok('Export JSON names the file after the class being edited',
+       caught.length === 2 && caught[0].name === 'talents-shaman.json');
+    ok('and shift-click still writes talents.json',
+       caught.length === 2 && caught[1].name === 'talents.json');
+    ok('the two exports are different sizes',
+       caught.length === 2 && caught[0].blob.size < caught[1].blob.size);
+  })();
+
   resetAll();
   selectEdition(EDITIONS[0]);
 
