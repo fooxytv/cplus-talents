@@ -455,9 +455,27 @@ Click **Edit mode** in the top bar (or open `/?edit=1`). The trees become a work
 
 Adding a talent offers two sources:
 
-- **From Classic / TBC / Wrath** — search all 1,840 talents from the three expansions,
-  filtered by expansion and class. Picking one brings its icon, rank count and every
-  rank's tooltip text with it. Death Knight talents are in there too.
+- **From talents & spellbooks** — one searchable list of 3,332 entries, filtered by
+  kind, source and class. Hovering any row shows the usual tooltip, so you can read
+  what something does before placing it. It holds:
+
+  | Source | What |
+  | --- | --- |
+  | Classic / TBC / WotLK | 1,840 talents from Wowhead (`library.json`), Death Knights included |
+  | Forever, Cataclysm | 1,066 talents from the editions this app already ships |
+  | Spellbook | 426 class abilities — Lava Burst, Riptide, Victory Rush — reshaped as talents |
+
+  **Click** takes the whole rank ladder. **Shift-click** takes one rank carrying the
+  *top* rank's text, which is what you want when a 3-rank spell should be a single
+  one-point talent. The inspector cannot do that afterwards: lowering *Max rank*
+  there trims from the end, keeping rank 1's weaker wording.
+
+  An ability is not a talent, so two things are adjusted on the way in. Ranks are
+  capped at five, because `validate.js` refuses more and the save would fail — a
+  longer ladder (Lightning Bolt has ten) is thinned to five evenly spaced rungs,
+  keeping the first and last, and the tooltip says so. Ranks with no tooltip text
+  borrow from their neighbour, for the same reason.
+
 - **Custom talent** — a blank one you name and describe yourself.
 
 `reqPoints` is recalculated from the row whenever a talent moves.
@@ -534,9 +552,13 @@ src/favicon.svg     the tab icon, inlined by the build as a data URI
 deploy/             compose file + Cloudflare tunnel for the public site
 build.js            template + talents.json + editions/*.json + logos/*.png -> index.html
 src/library.json    every Classic / TBC / Wrath talent, for the edit-mode picker
+src/picker-library.json  the rest of the picker: the Forever and Cataclysm trees,
+                    and the spellbooks' abilities reshaped as talents
 src/validate.js     dataset rules, shared by the build, the editions and the save endpoint
 tools/build-edition.js  regenerates an edition from Wowhead's calculator data
 tools/build-library.js  regenerates library.json from Wowhead's calculator data
+tools/build-picker-library.js  rebuilds picker-library.json from what is already
+                    on disk - src/editions/*.json and src/spellbooks/*.json, no network
 test/run-tests.js   drives index.html in headless Chrome, asserts the talent rules
 Dockerfile          builds the page, then runs server.js as a non-root user
 docker-compose.yml  one service, one named volume

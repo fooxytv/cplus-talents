@@ -669,6 +669,10 @@ body.editing .tree-edit{display:block}
 .lib-row .badge.tbc{color:#7fd77f; border-color:#2f5a2f}
 .lib-row .badge.wotlk{color:#7fc4ff; border-color:#2c4d6b}
 .lib-row .badge.classic{color:#d9b26a; border-color:#5c4a24}
+.lib-row .badge.forever{color:#6fe0c8; border-color:#245049}
+.lib-row .badge.cataclysm{color:#ff9a6b; border-color:#6b3a24}
+/* an ability rather than a talent - from a spellbook, not the talent library */
+.lib-row .badge.spell{color:#c89bff; border-color:#4a3a6b}
 .lib-empty{color:#6b6c76; font-size:12px; padding:14px 2px}
 .ver-row{
   display:flex; align-items:center; gap:11px; padding:8px 10px;
@@ -774,7 +778,7 @@ body.editing .tree-edit{display:block}
       <button class="btn close" id="modal-close">Close</button>
     </div>
     <div class="tabs">
-      <button class="tab on" data-tab="library">From Classic / TBC / Wrath</button>
+      <button class="tab on" data-tab="library">From talents &amp; spellbooks</button>
       <button class="tab" data-tab="custom">Custom talent</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
@@ -3133,21 +3137,43 @@ function showTab(which) {
 
   body.innerHTML =
     '<div class="filters">' +
-      '<input id="l-q" placeholder="Search talents by name...">' +
-      '<select id="l-exp"><option value="">All expansions</option><option>Classic</option><option>TBC</option><option>WotLK</option></select>' +
+      '<input id="l-q" placeholder="Search talents and spells by name...">' +
+      '<select id="l-kind">' +
+        '<option value="">Talents &amp; spells</option>' +
+        '<option value="talent">Talents only</option>' +
+        '<option value="spell">Spells only</option>' +
+      '</select>' +
+      '<select id="l-exp"><option value="">All sources</option></select>' +
       '<select id="l-cls"><option value="">All classes</option></select>' +
     '</div><div class="lib-list" id="l-list"><div class="lib-empty">Loading library...</div></div>';
 
   const run = () => renderLibrary();
   document.getElementById("l-q").oninput = run;
+  document.getElementById("l-kind").onchange = run;
   document.getElementById("l-exp").onchange = run;
   document.getElementById("l-cls").onchange = run;
 
-  if (library) { fillClasses(); renderLibrary(); }
+  if (library) { fillFilters(); renderLibrary(); }
   else {
-    apiCall("/library").then(data => {
-      library = data.talents || [];
-      fillClasses(); renderLibrary();
+    /*
+     * Two files, two tools, one list. library.json is Wowhead's Classic / TBC
+     * / Wrath talents; picker-library.json is everything else this app already
+     * ships - the Forever and Cataclysm trees, and the spellbooks' abilities.
+     *
+     * The second is optional: an install that never ran
+     * build-picker-library.js still gets the Wowhead talents rather than an
+     * error, so this resolves it to empty lists instead of rejecting the pair.
+     */
+    Promise.all([
+      apiCall("/library"),
+      apiCall("/picker-library").catch(() => ({ talents: [], spells: [] })),
+    ]).then(([wowhead, extra]) => {
+      const mark = (list, kind) =>
+        (list || []).map(t => Object.assign({ kind: kind }, t));
+      library = mark(wowhead.talents, "talent")
+        .concat(mark(extra.talents, "talent"))
+        .concat(extra.spells || []);
+      fillFilters(); renderLibrary();
     }).catch(e => {
       document.getElementById("l-list").innerHTML =
         '<div class="lib-empty">Could not load the library - ' + esc(e.message) + '</div>';
@@ -3155,15 +3181,40 @@ function showTab(which) {
   }
 }
 
-function fillClasses() {
-  const sel = document.getElementById("l-cls");
-  if (!sel || sel.options.length > 1) return;
-  [...new Set(library.map(t => t.klass))].sort().forEach(c => {
-    const o = document.createElement("option");
-    o.textContent = c;
-    sel.appendChild(o);
-  });
-  if (library.some(t => t.klass === klass)) sel.value = klass;
+/*
+ * Both selects are filled from the data rather than hardcoded, because the
+ * sources are no longer a fixed three: building another spellbook adds its
+ * name here on the next load with no change to this file.
+ */
+function fillFilters() {
+  const cls = document.getElementById("l-cls");
+  if (cls && cls.options.length <= 1) {
+    [...new Set(library.map(t => t.klass))].sort().forEach(c => {
+      const o = document.createElement("option");
+      o.textContent = c;
+      cls.appendChild(o);
+    });
+    if (library.some(t => t.klass === klass)) cls.value = klass;
+  }
+
+  const exp = document.getElementById("l-exp");
+  if (exp && exp.options.length <= 1) {
+    // talents first in their own order, then the spellbooks alphabetically
+    const ORDER = ["Classic", "TBC", "WotLK"];
+    const seen = [...new Set(library.map(t => t.expansion))];
+    seen.sort((a, b) => {
+      const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
+      if (ia >= 0 && ib >= 0) return ia - ib;
+      if (ia >= 0) return -1;
+      if (ib >= 0) return 1;
+      return a.localeCompare(b);
+    });
+    seen.forEach(name => {
+      const o = document.createElement("option");
+      o.textContent = name;
+      exp.appendChild(o);
+    });
+  }
 }
 
 /**
@@ -3180,15 +3231,28 @@ function showTipForLib(t) {
   const e = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
   const ranks = Array.isArray(t.ranks) ? t.ranks : [];
 
+  const spell = t.kind === "spell";
+
   let h = '<div class="t-name">' + e(t.name) + '</div>';
-  h += '<div class="t-req" style="color:#8f8f98">' + e(t.expansion) + " · " +
-       e(t.klass) + " / " + e(t.tree) + '</div>';
+  h += '<div class="t-req" style="color:#8f8f98">' +
+       (spell ? e(t.source) + " · " + e(t.klass) + " ability · learned at " + t.level
+              : e(t.expansion) + " · " + e(t.klass) + " / " + e(t.tree)) + '</div>';
   if (t.maxRank > 1) h += '<div class="t-rank">' + t.maxRank + ' ranks</div>';
   h += '<div class="t-desc">' + e(ranks[0] || "No description.") + '</div>';
   if (t.maxRank > 1 && ranks.length > 1)
     h += '<div class="t-nexth">At rank ' + ranks.length + ':</div>' +
          '<div class="t-next">' + e(ranks[ranks.length - 1]) + '</div>';
-  h += '<div class="t-hint"><span>Click to add it here</span></div>';
+  // Say so rather than quietly losing ranks: a talent may have at most 5.
+  if (spell && t.fullRanks > t.maxRank)
+    h += '<div class="t-req">The spell has ' + t.fullRanks + ' ranks; a talent may have ' +
+         t.maxRank + ', so these are spread across the ladder.</div>';
+  h += '<div class="t-hint"><span>Click to add it here</span>' +
+       (t.maxRank > 1
+         ? '<span class="muted">Shift-click for one rank, at ' +
+           (spell && t.fullRanks > t.maxRank ? 'rank ' + t.fullRanks : 'rank ' + t.maxRank) +
+           '</span>'
+         : '') +
+       '</div>';
 
   hovered = null;            // the main view's tooltip refresh must not fight this
   tip.innerHTML = h;
@@ -3202,12 +3266,15 @@ function renderLibrary() {
   const q = document.getElementById("l-q").value.trim().toLowerCase();
   const exp = document.getElementById("l-exp").value;
   const cls = document.getElementById("l-cls").value;
+  const kindSel = document.getElementById("l-kind");
+  const kind = kindSel ? kindSel.value : "";
 
   // Replacing the rows below leaves any open tooltip orphaned - the node it
   // belonged to is gone, so its mouseleave will never fire.
   hideTip();
 
   const hits = library.filter(t =>
+    (!kind || (t.kind || "talent") === kind) &&
     (!exp || t.expansion === exp) &&
     (!cls || t.klass === cls) &&
     (!q || t.name.toLowerCase().includes(q))
@@ -3215,22 +3282,39 @@ function renderLibrary() {
 
   if (!hits.length) { list.innerHTML = '<div class="lib-empty">Nothing matches that search.</div>'; return; }
 
-  list.innerHTML = hits.map(t =>
-    '<div class="lib-row" data-key="' + esc(t.key) + '">' +
+  list.innerHTML = hits.map(t => {
+    const spell = t.kind === "spell";
+    const ranks = t.maxRank + ' rank' + (t.maxRank > 1 ? 's' : '');
+    // A spell has no tree to name, but it does have a level, which is the
+    // thing you actually want to know about an ability.
+    const meta = spell
+      ? esc(t.klass) + ' spell - learned at ' + t.level + ' - ' + ranks +
+        (t.fullRanks > t.maxRank ? ' of ' + t.fullRanks : '')
+      : esc(t.klass) + ' / ' + esc(t.tree) + ' - ' + ranks;
+    return '<div class="lib-row" data-key="' + esc(t.key) + '">' +
       '<img src="' + ICON(t.icon) + '" alt="" onerror="this.src=\'' + ICON("inv_misc_questionmark") + '\'">' +
       '<div><div class="nm">' + esc(t.name) + '</div>' +
-      '<div class="meta">' + esc(t.klass) + ' / ' + esc(t.tree) + ' - ' + t.maxRank + ' rank' + (t.maxRank > 1 ? 's' : '') + '</div></div>' +
-      '<span class="badge ' + t.expansion.toLowerCase() + '">' + esc(t.expansion) + '</span>' +
-    '</div>').join("");
+      '<div class="meta">' + meta + '</div></div>' +
+      '<span class="badge ' + (spell ? 'spell' : esc(t.expansion.toLowerCase())) + '">' +
+        esc(spell ? t.source : t.expansion) + '</span>' +
+    '</div>';
+  }).join("");
 
   list.querySelectorAll(".lib-row").forEach(rowEl => {
     const find = () => library.find(x => x.key === rowEl.dataset.key);
-    rowEl.onclick = () => {
+    rowEl.onclick = ev => {
       const t = find();
-      if (t) {
-        hideTip();                  // the row is about to vanish with the modal
-        insertTalent({ name: t.name, icon: t.icon, maxRank: t.maxRank, ranks: t.ranks.slice() });
-      }
+      if (!t) return;
+      hideTip();                    // the row is about to vanish with the modal
+      /*
+       * Shift takes the top rank alone. Wanting Lava Burst as a single
+       * one-point talent at its strongest is the common case, and the
+       * inspector cannot do it: lowering Max rank there trims from the end,
+       * which keeps rank 1 - the weakest text - and leaves you pasting the
+       * real wording in by hand.
+       */
+      const ranks = ev.shiftKey ? [t.ranks[t.ranks.length - 1]] : t.ranks.slice();
+      insertTalent({ name: t.name, icon: t.icon, maxRank: ranks.length, ranks: ranks });
     };
     rowEl.onmouseenter = () => { const t = find(); if (t) showTipForLib(t); };
     rowEl.onmouseleave = hideTip;

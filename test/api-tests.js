@@ -57,6 +57,29 @@ const json = (method, payload) => ({
   ok("library includes Death Knight talents",
     Array.isArray(lib) && lib.some(t => t.klass === "Death Knight"));
 
+  // ---- picker library ----
+  // The picker's other half: the editions this app ships, plus spellbook
+  // abilities. Served separately from /api/library so the two files keep their
+  // own ETags, so it gets its own check.
+  r = await call("/api/picker-library");
+  const extra = r.body || {};
+  const extraTalents = extra.talents, spells = extra.spells;
+  ok("picker library is served",
+    r.status === 200 && Array.isArray(extraTalents) && Array.isArray(spells),
+    Array.isArray(spells) ? extraTalents.length + " talents, " + spells.length + " spells"
+                          : "status " + r.status);
+  ok("it carries the Forever talents",
+    Array.isArray(extraTalents) && extraTalents.some(t => t.source === "Forever"));
+  ok("it carries the Cataclysm talents",
+    Array.isArray(extraTalents) && extraTalents.some(t => t.source === "Cataclysm"));
+  ok("picker library carries a description per rank",
+    [...(extraTalents || []), ...(spells || [])]
+      .every(s => Array.isArray(s.ranks) && s.ranks.length === s.maxRank));
+  ok("nothing arrives with more ranks than a talent may have",
+    [...(extraTalents || []), ...(spells || [])].every(s => s.maxRank >= 1 && s.maxRank <= 5));
+  ok("Lava Burst is pickable as a Shaman ability",
+    Array.isArray(spells) && spells.some(s => s.name === "Lava Burst" && s.klass === "Shaman"));
+
   // ---- saved builds ----
   const legal = "warrior-00000000000000000050050005005410051";
   r = await call("/api/builds", json("POST", { name: "api test build", code: legal }));

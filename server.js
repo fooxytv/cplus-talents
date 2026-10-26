@@ -159,6 +159,7 @@ const slug = k => k.toLowerCase().replace(/[^a-z]/g, "");
 
 const SHIPPED = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "talents.json"), "utf8"));
 const LIBRARY_PATH = path.join(ROOT, "src", "library.json");
+const PICKER_LIBRARY_PATH = path.join(ROOT, "src", "picker-library.json");
 const EDITION_DIR = path.join(ROOT, "src", "editions");
 const SPELLBOOK_DIR = path.join(ROOT, "src", "spellbooks");
 
@@ -709,6 +710,19 @@ async function api(req, res, url) {
       return sendJson(res, 404, { error: "library.json is missing - run: node tools/build-library.js" });
     }
     return sendFile(res, LIBRARY_PATH);
+  }
+
+  // The same picker's other half: the editions this app ships (Forever,
+  // Cataclysm) and the spellbooks' abilities. Served separately rather than
+  // merged into /library so each file keeps its own ETag - they are rebuilt by
+  // different tools, and usually not together.
+  if (parts[1] === "picker-library") {
+    if (req.method !== "GET") return sendJson(res, 405, { error: "method not allowed" });
+    if (!fs.existsSync(PICKER_LIBRARY_PATH)) {
+      return sendJson(res, 404, {
+        error: "picker-library.json is missing - run: node tools/build-picker-library.js" });
+    }
+    return sendFile(res, PICKER_LIBRARY_PATH);
   }
 
   if (parts[1] !== "builds") return sendJson(res, 404, { error: "unknown endpoint" });
