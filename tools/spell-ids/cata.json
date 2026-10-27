@@ -1,0 +1,59 @@
+{
+  "_": "Abilities CATACLYSM added, by spell id, for build-spellbook-ids.js. Spells a TALENT grants are left out - the Cataclysm trees are already in the picker. So is Arcane Brilliance: Cataclysm renamed vanilla's Arcane Intellect rather than adding anything.",
+  "classes": {
+    "Warrior": {
+      "Colossus Smash": 86346,
+      "Heroic Leap": 6544,
+      "Rallying Cry": 97462,
+      "Inner Rage": 1134
+    },
+    "Paladin": {
+      "Inquisition": 84963,
+      "Word of Glory": 85673,
+      "Guardian of Ancient Kings": 86150
+    },
+    "Hunter": {
+      "Cobra Shot": 77767,
+      "Trap Launcher": 77769,
+      "Camouflage": 51753,
+      "Aspect of the Fox": 82661
+    },
+    "Rogue": {
+      "Redirect": 73981,
+      "Recuperate": 73651,
+      "Combat Readiness": 74001,
+      "Smoke Bomb": 76577
+    },
+    "Priest": {
+      "Mind Spike": 73510,
+      "Inner Will": 73413,
+      "Leap of Faith": 73325,
+      "Heal": 2050
+    },
+    "Shaman": {
+      "Unleash Elements": 73680,
+      "Healing Rain": 73920,
+      "Spiritwalker's Grace": 79206
+    },
+    "Mage": {
+      "Flame Orb": 82731,
+      "Time Warp": 80353
+    },
+    "Warlock": {
+      "Fel Flame": 77799,
+      "Soulburn": 74434,
+      "Dark Intent": 80398,
+      "Demon Soul": 77801
+    },
+    "Druid": {
+      "Thrash": 77758,
+      "Stampeding Roar": 77761,
+      "Wild Mushroom": 88747
+    },
+    "Death Knight": {
+      "Outbreak": 77575,
+      "Necrotic Strike": 73975,
+      "Dark Simulacrum": 77606
+    }
+  }
+}

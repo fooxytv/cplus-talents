@@ -242,8 +242,17 @@ const json = (method, payload) => ({
     ok("a version can be read back in full",
       r.status === 200 && r.body.dataset && Object.keys(r.body.dataset).length === 9);
 
-    // restoring an older version brings its talents back
-    const oldest = versions[versions.length - 1];
+    /*
+     * Restoring an older version brings its talents back - but read the list
+     * again first. The server keeps the newest KEEP_VERSIONS and prunes on
+     * every save, so once a long-lived server reaches the cap, the save two
+     * steps up deletes exactly the version the earlier listing called oldest
+     * and this restores a 404. It passed for as long as it did only because a
+     * fresh database is never full.
+     */
+    r = await call("/api/talents/history");
+    const stillThere = r.body.versions || [];
+    const oldest = stillThere[stillThere.length - 1];
     r = await call("/api/talents/history/" + oldest.id + "/restore", { method: "POST" });
     ok("an older version restores", r.status === 200 && r.body.ok);
     r = await call("/api/talents");

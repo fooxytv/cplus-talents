@@ -154,6 +154,79 @@ ok("no talent is listed as a level-1 ability", (() => {
 ok("every spell has what the page needs to draw it",
    all.every(e => e.id && e.name && e.icon && Number.isFinite(e.level)));
 
+/* ---------------- the other books ---------------- */
+/*
+ * Forever came off a class page. The rest are built from spell ids resolved
+ * one at a time against their own expansion (tools/build-spellbook-ids.js),
+ * because the class pages now answer with a CloudFront block. What follows
+ * holds whichever books are present, so an install with only Forever still
+ * passes and a later real scrape is checked the same way.
+ */
+const BOOKS_DIR = path.join(ROOT, "src", "spellbooks");
+const CAPS = { classic: 60, tbc: 70, wotlk: 80, cata: 85, forever: 60 };
+/* The name has to match what library.json calls the era or the picker's one
+ * expansion filter splits in two. "Vanilla" and "Wrath" are the near misses. */
+const NAMES = { classic: "Classic", tbc: "TBC", wotlk: "WotLK", cata: "Cataclysm", forever: "Forever" };
+
+for (const file of fs.readdirSync(BOOKS_DIR).filter(f => f.endsWith(".json")).sort()) {
+  const key = path.basename(file, ".json");
+  const b = JSON.parse(fs.readFileSync(path.join(BOOKS_DIR, file), "utf8"));
+  const rows = Object.values(b.classes || {}).flat();
+
+  ok(`${key}: names its era the way library.json does`, b.name === NAMES[key]);
+  ok(`${key}: has spells`, rows.length > 0);
+  ok(`${key}: every spell is drawable`,
+     rows.every(e => e.id && e.name && e.icon && Number.isFinite(e.level)));
+  /*
+   * The id-built books drop a spell whose tooltip came back empty, so they
+   * carry none. Forever was scraped whole and has exactly one - Mutilate rank
+   * 1, which Wowhead itself shows blank - and build-picker-library.js fills it
+   * from the neighbouring rank rather than shipping an unsaveable talent.
+   */
+  const blank = rows.filter(e => !String(e.desc || "").trim());
+  ok(`${key}: every spell has tooltip text`,
+     key === "forever" ? blank.length <= 1 : blank.length === 0);
+  ok(`${key}: nothing sits above the level cap`,
+     rows.every(e => e.level >= 1 && e.level <= CAPS[key]));
+  ok(`${key}: no stray HTML survived the tooltip`,
+     rows.every(e => !/[<>]|&[a-z]+;/i.test(e.desc)));
+  ok(`${key}: an id appears once per class`, (() => {
+    for (const list of Object.values(b.classes)) {
+      const seen = new Set();
+      for (const e of list) { if (seen.has(e.id)) return false; seen.add(e.id); }
+    }
+    return true;
+  })());
+
+  // Only Wrath brought the Death Knight, and only from Wrath on does it exist.
+  const hasDk = !!(b.classes || {})["Death Knight"];
+  ok(`${key}: Death Knight is present only if the era had one`,
+     hasDk === (key === "wotlk" || key === "cata"));
+}
+
+/*
+ * The expansion books list what their expansion ADDED, so every entry should
+ * be learnt at or above that era's starting level - with the deliberate
+ * exceptions of abilities Blizzard added low down the ladder, and the Death
+ * Knight, who starts at 55.
+ */
+const LOW_BY_DESIGN = new Set([
+  "Righteous Defense", "Hand of Reckoning", "Dismantle", "Revive",
+  "Inner Rage", "Word of Glory", "Trap Launcher", "Recuperate", "Heal", "Soulburn",
+]);
+for (const [key, floor] of [["tbc", 61], ["wotlk", 71], ["cata", 81]]) {
+  const file = path.join(BOOKS_DIR, key + ".json");
+  if (!fs.existsSync(file)) continue;
+  const b = JSON.parse(fs.readFileSync(file, "utf8"));
+  const early = [];
+  for (const [klass, list] of Object.entries(b.classes)) {
+    if (klass === "Death Knight") continue;
+    for (const e of list) if (e.level < floor && !LOW_BY_DESIGN.has(e.name)) early.push(e.name);
+  }
+  ok(`${key}: nothing from an earlier era crept in`, early.length === 0);
+  if (early.length) failures.push("  early: " + early.slice(0, 8).join(", "));
+}
+
 console.log(`\n  ${passed} passed, ${failures.length} failed`);
 if (failures.length) {
   for (const f of failures) console.log("    FAIL  " + f);

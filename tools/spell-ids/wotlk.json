@@ -1,0 +1,68 @@
+{
+  "_": "Abilities WRATH OF THE LICH KING added, by spell id, for build-spellbook-ids.js. Death Knight is the whole class rather than a top-end handful, so its entries start at 55, not 71. Spells a TALENT grants (Penance, Wild Growth, Starfall, Chaos Bolt, Heart Strike...) are left out: library.json already puts the Wrath trees in the picker and they would otherwise appear twice.",
+  "classes": {
+    "Death Knight": {
+      "Death Grip": 49576,
+      "Icy Touch": 45477,
+      "Plague Strike": 45462,
+      "Blood Strike": 45902,
+      "Death Strike": 49998,
+      "Obliterate": 49020,
+      "Death Coil": 47541,
+      "Death and Decay": 43265,
+      "Blood Boil": 48721,
+      "Pestilence": 50842,
+      "Rune Strike": 56815,
+      "Mind Freeze": 47528,
+      "Anti-Magic Shell": 48707,
+      "Army of the Dead": 42650,
+      "Raise Dead": 46584,
+      "Horn of Winter": 57330,
+      "Blood Presence": 48266,
+      "Frost Presence": 48263,
+      "Unholy Presence": 48265
+    },
+    "Warrior": {
+      "Heroic Throw": 57755,
+      "Enraged Regeneration": 55694,
+      "Shattering Throw": 64382
+    },
+    "Paladin": {
+      "Divine Plea": 54428,
+      "Hand of Reckoning": 62124,
+      "Shield of Righteousness": 53600
+    },
+    "Hunter": {
+      "Kill Shot": 53351,
+      "Aspect of the Dragonhawk": 61846,
+      "Master's Call": 53271,
+      "Call Stabled Pet": 62757
+    },
+    "Rogue": {
+      "Fan of Knives": 51723,
+      "Dismantle": 51722,
+      "Tricks of the Trade": 57934
+    },
+    "Priest": {
+      "Mind Sear": 48045,
+      "Hymn of Hope": 64901,
+      "Divine Hymn": 64843
+    },
+    "Shaman": {
+      "Lava Burst": 51505,
+      "Hex": 51514
+    },
+    "Mage": {
+      "Frostfire Bolt": 44614,
+      "Mirror Image": 55342
+    },
+    "Warlock": {
+      "Demonic Circle: Summon": 48018,
+      "Demonic Circle: Teleport": 48020
+    },
+    "Druid": {
+      "Nourish": 50464,
+      "Revive": 50769
+    }
+  }
+}

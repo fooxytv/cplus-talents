@@ -28,9 +28,15 @@ const OUT_DIR = path.join(ROOT, "src", "spellbooks");
 
 const BOOKS = {
   forever: { name: "Forever", slug: "forever", maxLevel: 60 },
-  classic: { name: "Vanilla", slug: "classic", maxLevel: 60 },
+  /*
+   * These names have to match what library.json calls the same expansion -
+   * "Classic", not "Vanilla" - because the picker's expansion filter is built
+   * from both. Two names for one era would split it into two entries, neither
+   * holding everything. tools/build-spellbook-ids.js uses the same list.
+   */
+  classic: { name: "Classic", slug: "classic", maxLevel: 60 },
   tbc:     { name: "TBC",     slug: "tbc",     maxLevel: 70 },
-  wotlk:   { name: "Wrath",   slug: "wotlk",   maxLevel: 80 },
+  wotlk:   { name: "WotLK",   slug: "wotlk",   maxLevel: 80 },
   cata:    { name: "Cataclysm", slug: "cata",  maxLevel: 85 },
 };
 

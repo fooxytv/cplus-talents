@@ -2291,11 +2291,18 @@ async function renderBook() {
     : pool;
   const granted = q ? 0 : all.length - list.length;
 
+  /*
+   * A partial book holds only what its expansion added, because the class page
+   * that lists the rest is behind a block. Saying so matters here in a way it
+   * does not in the picker: this view reads as "everything a Shaman learns",
+   * and for TBC that would be 38 abilities and a wrong impression.
+   */
   note.textContent = book.name + " · " + klass + " · " +
     (q
       ? list.length + " match" + (list.length === 1 ? "" : "es") + " for “" + bookQuery.trim() + "”"
       : list.length + (bookShowTalents ? " abilities" : " trained from a trainer") +
-        (granted ? " · " + granted + " more are granted" : ""));
+        (granted ? " · " + granted + " more are granted" : "")) +
+    (book.partial ? " · only what " + book.name + " added, not the full class list" : "");
   location.replace("#" + encodeBook());
 
   if (!list.length) {

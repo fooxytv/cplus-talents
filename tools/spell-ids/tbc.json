@@ -1,0 +1,61 @@
+{
+  "_": "Abilities THE BURNING CRUSADE added, by spell id, for build-spellbook-ids.js. The name is what the id is expected to resolve to - it is checked against Wowhead and a disagreement is reported, so a mistyped id cannot ship quietly. No levels: the tooltip carries the real one. Spells a TALENT grants (Mangle, Earth Shield, Totem of Wrath, Mutilate...) are deliberately absent - library.json already puts the whole TBC tree in the picker, so listing them here would show them twice.",
+  "classes": {
+    "Warrior": {
+      "Spell Reflection": 23920,
+      "Commanding Shout": 469,
+      "Intervene": 3411,
+      "Victory Rush": 34428
+    },
+    "Paladin": {
+      "Avenging Wrath": 31884,
+      "Seal of Vengeance": 31801,
+      "Seal of Blood": 31892,
+      "Righteous Defense": 31789
+    },
+    "Hunter": {
+      "Steady Shot": 34120,
+      "Misdirection": 34477,
+      "Snake Trap": 34600,
+      "Aspect of the Viper": 34074
+    },
+    "Rogue": {
+      "Cloak of Shadows": 31224,
+      "Envenom": 32645,
+      "Shiv": 5938
+    },
+    "Priest": {
+      "Shadow Word: Death": 32379,
+      "Binding Heal": 32546,
+      "Prayer of Mending": 33076,
+      "Mass Dispel": 32375,
+      "Shadowfiend": 34433
+    },
+    "Shaman": {
+      "Bloodlust": 2825,
+      "Heroism": 32182,
+      "Water Shield": 24398,
+      "Wrath of Air Totem": 3738
+    },
+    "Mage": {
+      "Ice Lance": 30455,
+      "Molten Armor": 30482,
+      "Spellsteal": 30449,
+      "Invisibility": 66,
+      "Ritual of Refreshment": 43987
+    },
+    "Warlock": {
+      "Fel Armor": 28176,
+      "Incinerate": 29722,
+      "Seed of Corruption": 27243,
+      "Ritual of Souls": 29893,
+      "Soulshatter": 29858
+    },
+    "Druid": {
+      "Lifebloom": 33763,
+      "Flight Form": 33943,
+      "Swift Flight Form": 40120,
+      "Cyclone": 33786
+    }
+  }
+}

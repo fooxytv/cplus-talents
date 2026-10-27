@@ -109,11 +109,19 @@ kept for the session. That means this view needs the server — opened straight
 off disk it says so.
 
 ```bash
-node tools/build-spellbook.js forever
+node tools/build-spellbook.js forever        # from Wowhead's class page
+node tools/build-spellbook-ids.js all        # from a list of spell ids
 ```
 
-Only `forever.json` is built so far. That one took a different route from the
-talent editions, because Forever's data does not come the same way:
+There are two builders because there are two ways in, and the first one stopped
+working.
+
+### From the class page — `build-spellbook.js`
+
+This is the complete route: Wowhead's class page is the only place that lists
+*everything* a class learns. It built `forever.json`, and Forever took a
+different path from the talent editions because its data does not come the same
+way:
 
 - **Its talent payload has no abilities at all** — the four expansions carry an
   `abilities` block, Forever does not.
@@ -130,6 +138,48 @@ That page lists everything a class *could* have, which is more than a spellbook
 wants, so rows are kept only when `cat` is 7 (class abilities — weapon skills and
 racials come under other categories) and `skill` is non-empty, which is what
 drops the 326 Season of Discovery rune engravings that leak into the data.
+
+### From spell ids — `build-spellbook-ids.js`
+
+Those class pages now answer with a 944-byte CloudFront *Request blocked*, for
+every expansion and every class, so Classic, TBC, Wrath and Cataclysm could not
+be built that way. The **tooltip** endpoint is a different service and still
+answers:
+
+```
+https://nether.wowhead.com/tooltip/spell/<id>?dataEnv=<n>&locale=0
+```
+
+Given an id it returns that expansion's own name, icon, description *and*
+`Requires level N`. So everything a spellbook needs is reachable except the list
+of ids, and this tool supplies that:
+
+| Book | Where its ids come from |
+| --- | --- |
+| Classic | the pre-Forever ids already in `forever.json` — Forever's additions were given new ids in two high bands, so an id at or below 66,844 is original vanilla |
+| TBC, WotLK, Cataclysm | `tools/spell-ids/<id>.json`, a hand-kept `name → id` list of what that expansion added |
+
+Only the *membership* of the Classic list comes from Forever. Every id is then
+re-resolved at vanilla's `dataEnv`, so the words are vanilla's: its Lightning
+Bolt reads "428 to 477 Nature damage" where Forever's scales off spell power.
+Twenty-three spells come back under a different name, which is Forever having
+renamed them — Curse of Agony became Bane of Agony, as it later did in
+Cataclysm — and twenty-five ids turn out to be Forever's own inventions with
+low ids (Holy Strike, Seal of Fury) and are dropped for having no vanilla spell
+behind them.
+
+The names in the curated lists are **expectations, not output**. Each is checked
+against what Wowhead returns and a disagreement is reported, so a mistyped id
+shows up as a loud mismatch instead of a quietly wrong tooltip. Responses cache
+under the same key `build-edition.js` uses, so the two share their downloads.
+
+Two deliberate gaps. A spell with no `Requires level` is granted by a talent,
+and the trees already carry it, so it is dropped rather than listed twice.
+And a spell carried forward from an earlier expansion is not repeated: its
+higher ranks have ids of their own that only the class page could enumerate,
+and four near-identical Lightning Bolts would bury the picker. If the class
+pages ever unblock, `build-spellbook.js` closes both gaps and writes the same
+filenames.
 
 ## Compare board
 
@@ -455,7 +505,7 @@ Click **Edit mode** in the top bar (or open `/?edit=1`). The trees become a work
 
 Adding a talent offers two sources:
 
-- **From talents & spellbooks** — one searchable list of 3,332 entries, filtered by
+- **From talents & spellbooks** — one searchable list of 3,844 entries, filtered by
   kind, source and class. Hovering any row shows the usual tooltip, so you can read
   what something does before placing it. It holds:
 
@@ -463,7 +513,16 @@ Adding a talent offers two sources:
   | --- | --- |
   | Classic / TBC / WotLK | 1,840 talents from Wowhead (`library.json`), Death Knights included |
   | Forever, Cataclysm | 1,066 talents from the editions this app already ships |
-  | Spellbook | 426 class abilities — Lava Burst, Riptide, Victory Rush — reshaped as talents |
+  | Spellbooks | 938 class abilities reshaped as talents — Classic 397, Forever 426, TBC 38, WotLK 43, Cataclysm 34 |
+
+  A spellbook is named after the same era as the talents beside it, so one turn of
+  the **source** filter gives you both halves of an expansion. The four expansion
+  books list what that expansion *added*: Bloodlust and Prayer of Mending under TBC,
+  Death Grip and Hex under WotLK, Time Warp and Colossus Smash under Cataclysm.
+  Spells carried forward are not repeated — Lightning Bolt sits under Classic once,
+  with vanilla's own numbers, rather than four times. Nor are spells a *talent*
+  grants: the trees already carry those, and a second copy would arrive with a
+  meaningless "learned at 1".
 
   **Click** takes the whole rank ladder. **Shift-click** takes one rank carrying the
   *top* rank's text, which is what you want when a 3-rank spell should be a single
@@ -553,6 +612,9 @@ addon/test-addon.lua     36 assertions against a stubbed WoW client
 addon/test-roundtrip.js  the page's export, parsed by the real addon
 src/spellbooks/*.json  what each class learns and when, served on demand
 tools/build-spellbook.js  regenerates a spellbook from Wowhead's class pages
+tools/build-spellbook-ids.js  the same, from spell ids and the tooltip endpoint,
+                    for the expansions whose class pages are now blocked
+tools/spell-ids/*.json  the ids those books are built from, as name -> id
 src/favicon.svg     the tab icon, inlined by the build as a data URI
 deploy/             compose file + Cloudflare tunnel for the public site
 build.js            template + talents.json + editions/*.json + logos/*.png -> index.html
@@ -662,7 +724,8 @@ tool with no connection to Blizzard. If you reuse this, the bundled images and
 the talent data are not mine to relicense to you.
 
 - **Talent and ability data** comes from the endpoints Wowhead's own calculators
-  use, regenerated by `tools/build-edition.js` and `tools/build-spellbook.js`.
+  use, regenerated by `tools/build-edition.js`, `tools/build-spellbook.js` and
+  `tools/build-spellbook-ids.js`.
 - **Icons and tree art** load from Wowhead's CDN at runtime.
 - **Expansion logos and badges** in `src/logos/` and `src/edition-icons/` come
   from [Warcraft Wiki](https://warcraft.wiki.gg/), used to label the trees they

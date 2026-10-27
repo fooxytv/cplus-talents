@@ -226,10 +226,10 @@ function build() {
   }
 
   const books = new Set(spells.map(s => s.source));
-  const missing = ["Vanilla", "TBC", "Wrath", "Cataclysm"].filter(n => !books.has(n));
+  const missing = ["Classic", "TBC", "WotLK", "Cataclysm"].filter(n => !books.has(n));
   if (missing.length) {
     console.log("\n  no spellbook yet for: " + missing.join(", "));
-    console.log("  build one with: node tools/build-spellbook.js <classic|tbc|wotlk|cata>");
+    console.log("  build one with: node tools/build-spellbook-ids.js <classic|tbc|wotlk|cata>");
   }
 }
 

@@ -93,6 +93,8 @@ ok("every entry inserted as a talent passes the dataset validator", (() => {
 /* ---------------- which sources are here ---------------- */
 
 const sources = new Set(all.map(e => e.source));
+const talentSources = new Set(talents.map(e => e.source));
+const spellSources = new Set(spells.map(e => e.source));
 
 ok("Forever's talents are in the picker",
    talents.some(t => t.source === "Forever"));
@@ -105,8 +107,20 @@ ok("Cataclysm's talents are in the picker",
  * would appear twice in the picker.
  */
 for (const dupe of ["Vanilla", "Classic", "WotLK", "Wrath"]) {
-  ok(`"${dupe}" is not duplicated out of library.json`, !sources.has(dupe));
+  ok(`"${dupe}" talents are not duplicated out of library.json`, !talentSources.has(dupe));
 }
+
+/*
+ * SPELLS of the same name are a different matter, and wanted: library.json
+ * carries no abilities at all, so a Classic or Wrath spellbook adds rather
+ * than repeats. They are named to match the talents' expansion exactly, so the
+ * picker's one filter covers both halves of an era.
+ */
+for (const book of ["Classic", "TBC", "WotLK", "Cataclysm", "Forever"]) {
+  ok(`the ${book} spellbook is in the picker`, spellSources.has(book));
+}
+ok("no spellbook uses a second name for an era library.json already names",
+   !spellSources.has("Vanilla") && !spellSources.has("Wrath"));
 
 ok("Classic+ is not baked in - it is the one set that can be edited",
    !sources.has("Classic+"));
@@ -124,8 +138,14 @@ const lavaTalent = talents.find(t => t.name === "Lava Burst" && t.source === "Fo
 ok("Forever's own Lava Burst talent is there", !!lavaTalent);
 ok("and it is the single-rank one", lavaTalent && lavaTalent.maxRank === 1);
 
-// A ten-rank ladder is the case that would break a save.
-const bolt = spells.find(s => s.name === "Lightning Bolt" && s.klass === "Shaman");
+/*
+ * A ten-rank ladder is the case that would break a save. The source has to be
+ * pinned now that Classic has a Lightning Bolt of its own - vanilla's numbers
+ * against Forever's spell-power scaling - or this compares one book's ranks
+ * with the other's text.
+ */
+const bolt = spells.find(s =>
+  s.name === "Lightning Bolt" && s.klass === "Shaman" && s.source === "Forever");
 ok("Lightning Bolt survives the rank ceiling", !!bolt && bolt.maxRank === MAX_RANK);
 ok("and it records how many ranks it really had", !!bolt && bolt.fullRanks === 10);
 ok("the thinned ranks keep the weakest and the strongest", (() => {
@@ -148,6 +168,56 @@ ok("every class in the book is represented",
    new Set(spells.map(s => s.klass)).size >= 9);
 ok("the Forever talents cover every class",
    new Set(talents.filter(t => t.source === "Forever").map(t => t.klass)).size >= 9);
+
+/* ---------------- the expansion spellbooks ---------------- */
+
+// The ability this second round was asked for, by name. Forever stops at 60,
+// so a level-70 spell could only come from the TBC book.
+const bloodlust = spells.find(s => s.name === "Bloodlust");
+ok("Bloodlust is pickable", !!bloodlust);
+ok("Bloodlust is TBC's, at 70",
+   !!bloodlust && bloodlust.source === "TBC" && bloodlust.level === 70);
+ok("Bloodlust carries its real tooltip",
+   !!bloodlust && /30%/.test(bloodlust.ranks[0]));
+
+for (const [name, book, level] of [
+  ["Heroism", "TBC", 70],
+  ["Death Grip", "WotLK", 55],
+  ["Time Warp", "Cataclysm", 85],
+  ["Colossus Smash", "Cataclysm", 81],
+]) {
+  const hit = spells.find(s => s.name === name && s.source === book);
+  ok(`${name} is in the ${book} book at ${level}`, !!hit && hit.level === level);
+}
+
+/*
+ * The whole point of resolving each id against its own expansion rather than
+ * copying Forever's text: vanilla states flat damage, Classic+ scales off
+ * spell power. Same spell, same id, two different books.
+ */
+const vanillaBolt = spells.find(s =>
+  s.name === "Lightning Bolt" && s.klass === "Shaman" && s.source === "Classic");
+ok("Classic has its own Lightning Bolt", !!vanillaBolt);
+ok("and it reads as vanilla, not as Classic+",
+   !!vanillaBolt && !/Spell Power/i.test(vanillaBolt.ranks[0]) &&
+   !!bolt && /Spell Power/i.test(bolt.ranks[0]));
+
+/*
+ * A spell a talent grants has no trainer level, so it lands at 1. The trees
+ * are already in the picker out of library.json, so one here would be the
+ * same ability twice - once with a meaningless "learned at 1".
+ */
+ok("no expansion book lists a talent-granted spell at level 1",
+   spells.filter(s => ["TBC", "WotLK", "Cataclysm"].includes(s.source))
+         .every(s => s.level > 1));
+
+ok("Death Knight abilities exist only from Wrath on", (() => {
+  const dk = spells.filter(s => s.klass === "Death Knight");
+  return dk.length > 0 && dk.every(s => s.source === "WotLK" || s.source === "Cataclysm");
+})());
+
+ok("every spell names the book it came from",
+   spells.every(s => s.source && s.expansion === s.source));
 
 console.log(`\n  ${passed} passed, ${failures.length} failed`);
 if (failures.length) {
