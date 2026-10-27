@@ -277,6 +277,16 @@ loadDataset();
 // so there is always something to go back to, even on a fresh database
 if (q.histCount.get().n === 0) snapshot(SHIPPED, "talents this build shipped with");
 
+/*
+ * The levelling order the page appends to a code, after a "!" and before the
+ * fingerprint. Both of these have to stay identical to the pair in
+ * src/template.html, which is what writes them; test/api-tests.js saves a code
+ * carrying an order, which is the check that they still agree.
+ */
+const ORDER_MARK = "!";
+const ORDER_ALPHABET =
+  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 /**
  * Decodes a share code. Codes are positional, so one built against a different
  * talent layout would quietly land on the wrong talents - the trailing
@@ -300,6 +310,18 @@ function parseCode(code) {
   const dot = code.lastIndexOf(".");
   const stamp = dot > 0 ? code.slice(dot + 1) : null;
   if (stamp) code = code.slice(0, dot);
+
+  /*
+   * "shaman-05003!aabbb.1e9ff75" - everything after the "!" is the order the
+   * points were clicked in, which the page added so a shared link keeps its
+   * levelling path. The server does not need to read it, but it does have to
+   * take it off before the rank digits are checked: left on, it made every
+   * build with a levelling order - which is every build made by clicking -
+   * fail to save as "malformed".
+   */
+  const bang = code.indexOf(ORDER_MARK);
+  const order = bang >= 0 ? code.slice(bang + 1) : "";
+  if (bang >= 0) code = code.slice(0, bang);
 
   const dash = code.indexOf("-");
   const klass = edition.byKey.get(slug(dash < 0 ? code : code.slice(0, dash)));
@@ -327,6 +349,29 @@ function parseCode(code) {
     }
   }
   if (digits.length > n) return { ok: false, reason: "that build code is longer than this class has talents" };
+
+  /*
+   * Now that the class is known, the order can be checked. One base62
+   * character per point, two for a class with more talents than the alphabet
+   * has characters - Wrath's Death Knight has 88 - and every one of them has
+   * to name a talent this class actually has. The page only ever writes an
+   * order it can resolve, so a code that fails here has been tampered with or
+   * truncated, and storing it would hand the next reader a lie.
+   */
+  if (order) {
+    const width = n <= ORDER_ALPHABET.length ? 1 : 2;
+    let bad = order.length % width !== 0;
+    for (let at = 0; !bad && at < order.length; at += width) {
+      let v = 0;
+      for (const ch of order.slice(at, at + width)) {
+        const i = ORDER_ALPHABET.indexOf(ch);
+        if (i < 0) { bad = true; break; }
+        v = v * ORDER_ALPHABET.length + i;
+      }
+      if (v >= n) bad = true;
+    }
+    if (bad) return { ok: false, reason: "that build code's levelling order does not fit this class" };
+  }
 
   const perTree = [];
   let total = 0;

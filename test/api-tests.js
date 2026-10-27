@@ -81,10 +81,34 @@ const json = (method, payload) => ({
     Array.isArray(spells) && spells.some(s => s.name === "Lava Burst" && s.klass === "Shaman"));
 
   // ---- saved builds ----
-  const legal = "warrior-00000000000000000050050005005410051";
+  /*
+   * The code is built from whatever Warrior trees this server is actually
+   * serving, not written out by hand. A hand-written one only ever matched the
+   * shipped layout, so the moment someone edited Warrior in edit mode - which
+   * is what this app is for - every build assertion below failed with "a
+   * talent in that build has more ranks than it can hold", and the failure
+   * looked like a bug in the endpoint rather than a stale constant.
+   *
+   * Spending only in the top row keeps it legal whatever the layout: those
+   * talents cost no prior points and nothing gates them.
+   */
+  const warriorFlat = [];
+  for (const tree of dataset.Warrior.trees) {
+    for (const t of tree.talents.slice().sort((a, b) => (a.pos < b.pos ? -1 : 1))) {
+      warriorFlat.push(t);
+    }
+  }
+  const digits = warriorFlat.map(t =>
+    (!t.reqPoints && !t.prereq) ? String(t.maxRank) : "0").join("").replace(/0+$/, "");
+  const legalPoints = [...digits].reduce((n, d) => n + Number(d), 0);
+  const legal = "warrior-" + digits;
+  ok("a legal code can be built from the served trees",
+    digits.length > 0 && legalPoints > 0, digits.length + " talents, " + legalPoints + " points");
+
   r = await call("/api/builds", json("POST", { name: "api test build", code: legal }));
   const created = r.body;
-  ok("a legal build saves", r.status === 201 && created.id && created.points === 31, JSON.stringify(r.body).slice(0, 90));
+  ok("a legal build saves", r.status === 201 && created.id && created.points === legalPoints,
+    JSON.stringify(r.body).slice(0, 90));
 
   r = await call("/api/builds/" + created.id);
   ok("saved build reads back", r.status === 200 && r.body.code === legal);
@@ -108,6 +132,54 @@ const json = (method, payload) => ({
   ok("a stale stamp is refused by name",
     r.status === 400 && /different version of the Warrior talents/.test(r.body.error || ""),
     r.body && r.body.error);
+
+  /*
+   * The levelling order the page appends after a "!". The server has no use
+   * for it, but it has to take it off before reading the rank digits - leaving
+   * it on made every build made by clicking, which is every real build, fail
+   * to save as "that build code is malformed". The page had carried the order
+   * for two commits before anything asked the server to store one.
+   */
+  const ORDER_ALPHABET =
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const orderWidth = warriorFlat.length <= ORDER_ALPHABET.length ? 1 : 2;
+  const orderChar = v => {
+    let out = "", n = v;
+    for (let i = 0; i < orderWidth; i++) { out = ORDER_ALPHABET[n % 62] + out; n = Math.floor(n / 62); }
+    return out;
+  };
+
+  const ordered = legal + "!" +
+    Array.from({ length: 13 }, (_, i) => orderChar(i)).join("");
+  r = await call("/api/builds", json("POST", { name: "api test ordered", code: ordered }));
+  ok("a build carrying a levelling order saves", r.status === 201,
+    r.body && r.body.error);
+  const orderedId = r.status === 201 && r.body.id;
+  ok("and the order survives the round trip unaltered",
+    r.status === 201 && r.body.code === ordered);
+  ok("and it still counts the points, which sit before the order",
+    r.status === 201 && r.body.points === legalPoints);
+
+  r = await call("/api/builds", json("POST", {
+    name: "x", code: legal + "!" + orderChar(0) + orderChar(1) + "." + stamp }));
+  ok("an order sits between the digits and the fingerprint", r.status === 201,
+    r.body && r.body.error);
+  if (r.status === 201) await call("/api/builds/" + r.body.id, { method: "DELETE" });
+
+  r = await call("/api/builds", json("POST", { name: "x", code: legal + "!0*" }));
+  ok("an order with characters outside the alphabet is refused",
+    r.status === 400 && /levelling order/.test(r.body.error || ""), r.body && r.body.error);
+
+  // the index one past the last talent, which no class can have
+  const pastEnd = warriorFlat.length < Math.pow(62, orderWidth)
+    ? orderChar(warriorFlat.length) : null;
+  if (pastEnd) {
+    r = await call("/api/builds", json("POST", { name: "x", code: legal + "!" + pastEnd }));
+    ok("an order naming a talent the class does not have is refused",
+      r.status === 400 && /levelling order/.test(r.body.error || ""), r.body && r.body.error);
+  }
+
+  if (orderedId) await call("/api/builds/" + orderedId, { method: "DELETE" });
 
   r = await call("/api/builds/" + created.id, { method: "DELETE" });
   ok("a build deletes", r.status === 200);
@@ -232,6 +304,24 @@ const json = (method, payload) => ({
     ok("the last save was recorded", versions[0] && /saved from edit mode|history probe/.test(versions[0].note),
       versions[0] && versions[0].note);
 
+    /*
+     * A version this test knows the contents of, to restore later. Taking
+     * "the oldest in the list" assumed history predates the test, and on a
+     * long-lived server it no longer does: once the 60-version cap is full,
+     * the oldest surviving version can be an earlier run's own "API Test
+     * Talent" save, and then the restore works perfectly and the assertion
+     * fails anyway.
+     */
+    ok("the dataset this test started from is clean",
+      !dataset.Druid.trees.find(t => t.name === "Balance")
+        .talents.some(t => t.name === "API Test Talent"));
+    r = await call("/api/talents", json("PUT", { talents: dataset, note: "api test baseline" }));
+    ok("a known-clean baseline saves", r.status === 200);
+    r = await call("/api/talents/history");
+    const baseline = (r.body.versions || [])[0];
+    ok("the baseline is recorded", baseline && baseline.note === "api test baseline",
+      baseline && baseline.note);
+
     r = await call("/api/talents", json("PUT", { talents: edited, note: "history probe" }));
     ok("a save with a note records it", r.status === 200);
     r = await call("/api/talents/history");
@@ -242,19 +332,10 @@ const json = (method, payload) => ({
     ok("a version can be read back in full",
       r.status === 200 && r.body.dataset && Object.keys(r.body.dataset).length === 9);
 
-    /*
-     * Restoring an older version brings its talents back - but read the list
-     * again first. The server keeps the newest KEEP_VERSIONS and prunes on
-     * every save, so once a long-lived server reaches the cap, the save two
-     * steps up deletes exactly the version the earlier listing called oldest
-     * and this restores a 404. It passed for as long as it did only because a
-     * fresh database is never full.
-     */
-    r = await call("/api/talents/history");
-    const stillThere = r.body.versions || [];
-    const oldest = stillThere[stillThere.length - 1];
-    r = await call("/api/talents/history/" + oldest.id + "/restore", { method: "POST" });
-    ok("an older version restores", r.status === 200 && r.body.ok);
+    // back to the baseline saved above, which is known not to hold the probe talent
+    r = await call("/api/talents/history/" + baseline.id + "/restore", { method: "POST" });
+    ok("an older version restores", r.status === 200 && r.body.ok,
+      r.body && r.body.error);
     r = await call("/api/talents");
     ok("the restored talents are served",
       Object.keys(r.body.talents).length === 9 &&
