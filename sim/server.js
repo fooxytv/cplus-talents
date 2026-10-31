@@ -14,7 +14,7 @@
  *                   about twenty minutes to resolve)
  *   SIM_BOTS        30
  *   SIM_HARDCORE    1 to make death permanent
- *   BASE_PATH       /sim
+ *   BASE_PATH       /race
  */
 
 const http = require("http");
@@ -74,10 +74,10 @@ const CLASS_SPEC = (() => {
 /*
  * Where this is mounted. "" means the root of its own hostname, which is what
  * a dedicated subdomain wants - and an empty string is falsy, so `||` would
- * quietly put it back under /sim. Asking whether the variable was SET is the
+ * quietly put it back under /race. Asking whether the variable was SET is the
  * difference between "serve at the root" and "not configured".
  */
-const BASE = (process.env.BASE_PATH === undefined ? "/sim" : process.env.BASE_PATH)
+const BASE = (process.env.BASE_PATH === undefined ? "/race" : process.env.BASE_PATH)
   .replace(/\/+$/, "");
 const INTERMISSION_SECONDS = Number(pick("SIM_INTERMISSION", "intermission", 20));
 /*
@@ -393,7 +393,7 @@ const PAGE = path.join(__dirname, "public", "watch.html");
 
 // Read once at boot and the placeholders filled in, so the page never has to
 // guess where it is mounted - relative URLs break the moment someone lands on
-// /sim instead of /sim/.
+// /race instead of /race/.
 const HTML = fs.readFileSync(PAGE, "utf8")
   .split("__CALC__").join(CALC_BASE)
   .split("__BASE__").join(BASE)

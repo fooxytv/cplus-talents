@@ -21,133 +21,128 @@
   "_normalisedAgainst": "Shaman",
   "talents": {
     "Deadly Aspects": {
-      "power": 0.02407
+      "power": 0.02641
     },
     "Endurance Training": {},
     "Focused Fire": {},
     "Improved Aspect of the Monkey": {},
-    "Pathfinding": {},
     "Improved Revive Pet": {
-      "power": 0.02407,
+      "power": 0.02641,
       "sustain": 0.09237
     },
+    "Pathfinding": {},
     "Bestial Swiftness": {},
     "Unleashed Fury": {
-      "power": 0.00963
+      "power": 0.01056
     },
     "Improved Mend Pet": {
-      "power": 0.02407,
+      "power": 0.02641,
       "sustain": 0.09237
     },
     "Ferocity": {
-      "power": 0.01412
+      "power": 0.01549
     },
     "Summon Hawk": {},
     "Spirit Bond": {
       "sustain": 0.00543
     },
     "Intimidation": {
-      "power": 0.02407,
-      "defense": 0.04038
+      "power": 0.02641,
+      "defense": 0.04727
     },
     "Bestial Discipline": {
       "sustain": 0.09237
     },
     "Frenzy": {
-      "power": 0.02407
+      "power": 0.02641
     },
     "Bestial Wrath": {
-      "defense": 0.04038
+      "defense": 0.04727
     },
     "Hawk Eye": {},
     "Improved Concussive Shot": {
-      "defense": 0.00808
+      "defense": 0.00945
     },
     "Lethal Attacks": {
-      "power": 0.01348
+      "power": 0.01479
     },
     "Improved Stings": {
-      "power": 0.01711
+      "power": 0.02641
     },
     "Efficiency": {
       "sustain": 0.05868
     },
     "Careful Aim": {
-      "power": 0.02407
+      "power": 0.02641
     },
     "Rapid Killing": {
-      "power": 0.01444
+      "power": 0.01585
     },
     "Improved Arcane Shot": {},
     "Lone Wolf": {
-      "power": 0.01604
+      "power": 0.01761
     },
     "Trueshot Aura": {},
     "Mortal Shots": {
-      "power": 0.00963
-    },
-    "Improved Serpent Sting": {
-      "power": 0.00642
+      "power": 0.01056
     },
     "Rapid Recuperation": {
       "sustain": 0.09237
     },
     "Barrage": {
-      "power": 0.0107,
-      "aoe": 0.04
+      "power": 0.01174,
+      "aoe": 0.01
     },
     "Scatter Shot": {
-      "power": 0.01604,
-      "defense": 0.04038
+      "power": 0.01761,
+      "defense": 0.04727
     },
     "Ranged Weapon Specialization": {
-      "power": 0.00321
+      "power": 0.00352
     },
-    "Sniper Shot": {},
+    "Sniper Shot": {
+      "power": 0.01761
+    },
     "Improved Tracking": {},
     "Deflection": {
-      "defense": 0.03768
+      "defense": 0.02206
     },
     "Entrapment": {},
     "Savage Strikes": {
-      "power": 0.01412
+      "power": 0.01549
     },
     "Survivalist": {
-      "defense": 0.02692
+      "defense": 0.03151
     },
     "Improved Wing Clip": {
-      "defense": 0.01346
+      "defense": 0.01576
     },
     "Clever Traps": {},
     "Surefooted": {},
     "Deterrence": {
-      "defense": 0.08075
+      "defense": 0.09454
     },
     "Survival Tactics": {
-      "power": 0.02407
+      "power": 0.02641
     },
-    "Predator's Edge": {
-      "power": 0.02407
-    },
+    "Predator's Edge": {},
     "Counterattack": {
-      "power": 0.01604,
-      "defense": 0.04038
+      "power": 0.01761,
+      "defense": 0.04727
     },
     "Resourcefulness": {
       "sustain": 0.09237
     },
-    "Expose Prey": {
-      "power": 0.01444
-    },
+    "Expose Prey": {},
     "Survivalist's Discipline": {
-      "power": 0.02407
+      "power": 0.02641
     },
     "Strider Kick": {
-      "power": 0.01604
+      "power": 0.01761
     },
     "Lightning Reflexes": {},
     "Lacerating Strikes": {
-      "power": 0.02407
+      "power": 0.02641
     }
   }
 }

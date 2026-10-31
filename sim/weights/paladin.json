@@ -20,138 +20,123 @@
   "edition": "forever",
   "_normalisedAgainst": "Shaman",
   "talents": {
-    "Improved Holy Strike": {},
-    "Divine Strength": {},
-    "Divine Intellect": {},
-    "Healing Light": {
-      "sustain": 0.02502
-    },
     "Spiritual Focus": {
-      "power": 0.04243
+      "power": 0.04526
     },
-    "Improved Seals": {
-      "power": 0.02828
-    },
-    "Unyielding Faith": {
-      "defense": 0.00928
-    },
-    "Voice of Truth": {
-      "defense": 0.01856
+    "Divine Strength": {},
+    "Healing Light": {
+      "sustain": 0.03201
     },
     "Reverence": {
-      "sustain": 0.07597
+      "sustain": 0.09719
+    },
+    "Improved Seals": {
+      "power": 0.0181
     },
     "Purifying Power": {
-      "power": 0.042,
-      "sustain": 0.07597
+      "power": 0.04481,
+      "sustain": 0.09719
+    },
+    "Divine Favor": {},
+    "Illumination": {},
+    "Holy Conduit": {
+      "sustain": 0.09719,
+      "aoe": 0.0075
+    },
+    "Divine Precision": {
+      "power": 0.04526,
+      "defense": 0.01031
     },
     "Infusion of Light": {},
-    "Illumination": {},
-    "Divine Favor": {},
-    "Divine Precision": {
-      "power": 0.04243
-    },
-    "Holy Shock": {
-      "power": 0.04243
-    },
+    "Oath of Light": {},
     "Consecrated Ground": {
-      "aoe": 0.03
+      "aoe": 0.0075
     },
-    "Holy Power": {
-      "power": 0.03734
+    "Holy Shock": {},
+    "Boundless Light": {
+      "power": 0.04526
     },
-    "Light's Vigil": {
-      "power": 0.04243,
-      "sustain": 0.07597
-    },
-    "Toughness": {
-      "defense": 0.00619
-    },
+    "Holy Power": {},
+    "Light's Vigil": {},
+    "Divine Intellect": {},
     "Redoubt": {
-      "defense": 0.03713
+      "defense": 0.04123
     },
     "Precision": {
-      "power": 0.00905
+      "power": 0.00966
     },
     "Guardian's Favor": {},
-    "Anticipation": {},
-    "Improved Seal of Fury": {
-      "sustain": 0.04022,
-      "defense": 0.03713
-    },
-    "Improved Righteous Fury": {},
-    "Shield Specialization": {
-      "sustain": 0.01341,
-      "defense": 0.03713
-    },
     "Sacred Duty": {
-      "power": 0.00509,
-      "defense": 0.0198
+      "defense": 0.00859
     },
-    "Swift Judgement": {
-      "sustain": 0.07597
-    },
-    "One-Handed Weapon Specialization": {
-      "power": 0.01886
+    "Templar's Bulwark": {
+      "defense": 0.04123
     },
     "Improved Hammer of Justice": {},
-    "Templar's Bulwark": {
-      "defense": 0.03713
+    "Shield Specialization": {
+      "sustain": 0.02573,
+      "defense": 0.04123
+    },
+    "Toughness": {
+      "defense": 0.00687
+    },
+    "Swift Judgement": {},
+    "Improved Righteous Fury": {},
+    "Anticipation": {},
+    "Stoicism": {
+      "defense": 0.01031
+    },
+    "Holy Shield": {
+      "power": 0.03017,
+      "defense": 0.04123
     },
     "Reckoning": {},
     "Iron Creed": {},
-    "Holy Shield": {
-      "power": 0.02828,
-      "defense": 0.03713
+    "Shieldsworn": {
+      "defense": 0.01718
     },
     "Deflection": {
-      "defense": 0.00866
+      "defense": 0.00962
     },
     "Benediction": {
-      "sustain": 0.03217
+      "sustain": 0.04116
     },
     "Improved Judgement": {},
-    "Holy Conduit": {
-      "sustain": 0.07597,
-      "aoe": 0.03
-    },
     "Conviction": {
-      "power": 0.01245
-    },
-    "Vindication": {
-      "power": 0.00453
+      "power": 0.02655
     },
     "Sanctified Judgement": {
-      "sustain": 0.07597
+      "sustain": 0.09719
+    },
+    "Vindication": {},
+    "Unyielding Faith": {
+      "defense": 0.01031
     },
     "Seal of Command": {
-      "power": 0.04243,
-      "defense": 0.01856
+      "power": 0.03017,
+      "defense": 0.02062
     },
     "Pursuit of Justice": {},
     "Eye for an Eye": {
-      "power": 0.01414
+      "power": 0.01509
     },
     "Sacred Arbiter": {
-      "power": 0.04243
-    },
-    "Crusade": {
-      "power": 0.00566
+      "power": 0.04526
     },
     "Two-Handed Weapon Specialization": {
-      "power": 0.01697
+      "power": 0.04023,
+      "defense": 0.01833
+    },
+    "Turn Evil": {},
+    "Repentance": {
+      "defense": 0.02062
     },
     "Vengeance": {},
-    "Repentance": {
-      "defense": 0.01856
-    },
     "Champion of the Light": {
-      "power": 0.04243
+      "power": 0.04526
     },
-    "Instrument of Law": {
-      "power": 0.04243,
-      "defense": 0.02475
-    },
-    "Twist of Light": {}
+    "Unsealed Wrath": {
+      "power": 0.02112
+    }
   }
 }

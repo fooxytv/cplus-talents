@@ -8,7 +8,7 @@ Nothing here talks to the real game. It is a toy, and the only thing it is
 trying to be is *worth watching*.
 
 ```
-node sim/server.js                         watch it at localhost:5503/sim/
+node sim/server.js                         watch it at localhost:5503/race/
 node sim/run.js                            or run one headless and print the table
 node sim/run.js --bots 40 --hardcore       death is permanent
 node sim/run.js --seed 7                   the same seed is the same race
@@ -75,7 +75,7 @@ Four views across the top:
 | **Past races** | every finished race, redrawn in full |
 
 
-`sim/server.js` keeps one race running and serves the page at `/sim/`. When
+`sim/server.js` keeps one race running and serves the page at `/race/`. When
 everyone has finished or died it pauses briefly and starts another, so it can be
 left running and there is always something happening.
 
@@ -209,7 +209,7 @@ hand.
 
 All of those default from `config/race.json` rather than from the code.
 | `SIM_CALC_BASE` | where the calculator lives (default `/`) |
-| `BASE_PATH` | where the sim is mounted (default `/sim`) |
+| `BASE_PATH` | where the race is mounted (default `/race`) |
 
 ## Why the talents are the point
 

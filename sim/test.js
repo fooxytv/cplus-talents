@@ -988,8 +988,8 @@ async function armoryTests() {
  *
  * BASE_PATH="" means "serve at the root of my own hostname", which is what a
  * dedicated subdomain wants. An empty string is falsy, so `||` silently put it
- * back under /sim - the server answered either way, so the only visible symptom
- * was race.fooxy.tv/sim/ urls on a host that needed no prefix at all.
+ * back under /race - the server answered either way, so the only visible symptom
+ * was race.fooxy.tv/race/ urls on a host that needed no prefix at all.
  */
 const serverSrc = fs.readFileSync(path.join(__dirname, "server.js"), "utf8");
 

@@ -54,7 +54,7 @@ services:
     networks:
       - talents-net
 
-  # The levelling race, at talents.fooxy.tv/sim/. Its own container on purpose:
+  # The levelling race, at talents.fooxy.tv/race/. Its own container on purpose:
   # it runs a tick loop, and a runaway simulation should not be able to take the
   # calculator down with it. Same hostname, so the two share an origin and no
   # second DNS record is needed - see deploy/README.md for the tunnel route.
@@ -74,9 +74,9 @@ services:
       - sim-data:/data
     environment:
       SIM_DB: /data/sim.db
-      # /sim to sit under the calculator; set BASE_PATH= (empty) to serve at
+      # /race to sit under the calculator; set BASE_PATH= (empty) to serve at
       # the root of a hostname of its own - see deploy/README.md
-      BASE_PATH: "${BASE_PATH-/sim}"
+      BASE_PATH: "${BASE_PATH-/race}"
       # where "open this build in the calculator" should point
       SIM_CALC_BASE: "${SIM_CALC_BASE:-/}"
       # Left unset on purpose: bots, classes, speed and hardcore come from

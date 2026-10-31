@@ -21,160 +21,151 @@
   "_normalisedAgainst": "Shaman",
   "talents": {
     "Improved Heroic Strike": {
-      "sustain": 0.00813
+      "sustain": 0.00655
     },
     "Deflection": {
-      "defense": 0.00891
+      "defense": 0.00937
     },
     "Improved Rend": {
-      "power": 0.03283
+      "power": 0.03243
     },
     "Improved Charge": {
-      "sustain": 0.01423
+      "sustain": 0.01146
     },
     "Improved Tactical Mastery": {
-      "sustain": 0.00488
+      "sustain": 0.00393
     },
     "Improved Overpower": {
-      "power": 0.03283
+      "power": 0.03243
     },
     "Anger Management": {
-      "sustain": 0.05693
+      "sustain": 0.04585
     },
     "Deep Wounds": {
-      "power": 0.03283
+      "power": 0.03243
     },
     "Spearing Strike": {
-      "power": 0.02189
+      "power": 0.02162
     },
     "Two-Handed Weapon Specialization": {
-      "power": 0.00438
+      "power": 0.00432
     },
     "Impale": {
-      "power": 0.02189
+      "power": 0.02162
     },
-    "Bloodthrill": {
-      "power": 0.00788
-    },
+    "Bloodthrill": {},
     "Sweeping Strikes": {
-      "aoe": 0.0098
+      "aoe": 0.005
     },
     "Weaponmaster": {
-      "power": 0.03283
+      "power": 0.03243
     },
     "Improved Slam": {},
     "Improved Hamstring": {
-      "defense": 0.00636
+      "defense": 0.00669
     },
     "Mortal Strike": {
-      "power": 0.02189
+      "power": 0.02162
     },
     "Booming Voice": {
-      "aoe": 0.01224
+      "sustain": 0.05567
     },
     "Cruelty": {
-      "power": 0.00963
+      "power": 0.00951
     },
-    "Iron Will": {
-      "defense": 0.00382
-    },
+    "Lingering Rage": {},
     "Unbridled Wrath": {
-      "power": 0.00438
+      "power": 0.00432
     },
-    "Improved Cleave": {
-      "sustain": 0.01762,
-      "aoe": 0.00408
+    "Furious Precision": {
+      "power": 0.02306
     },
     "Piercing Howl": {
-      "aoe": 0.01224
+      "aoe": 0.00625
     },
     "Blood Craze": {
-      "sustain": 0.05422
-    },
-    "Boundless Rage": {
-      "sustain": 0.01084
+      "sustain": 0.04366
     },
     "Dual Wield Specialization": {
-      "power": 0.03283,
-      "sustain": 0.06913
+      "power": 0.03243,
+      "sustain": 0.05567
     },
     "Raging Blows": {
-      "sustain": 0.05286,
-      "aoe": 0.01224
+      "sustain": 0.04257,
+      "aoe": 0.00625
     },
     "Enrage": {
-      "power": 0.00438
+      "power": 0.00432
     },
     "Improved Execute": {
-      "sustain": 0.02643
+      "sustain": 0.02129
     },
-    "Precision": {
-      "power": 0.007
+    "Improved Berserker Rage": {
+      "sustain": 0.0131
     },
     "Death Wish": {
-      "power": 0.03283,
-      "defense": 0.01909
+      "power": 0.03243,
+      "defense": 0.02008
     },
     "Improved Intercept": {},
-    "Improved Berserker Rage": {
-      "sustain": 0.01626
-    },
     "Flurry": {
-      "power": 0.03064
+      "power": 0.03027
+    },
+    "Gore Drinker": {
+      "sustain": 0.01474
     },
     "Bloodthirst": {
-      "power": 0.03283
+      "power": 0.03243
+    },
+    "Improved Bloodrage": {
+      "sustain": 0.05567
     },
     "Shield Specialization": {
-      "sustain": 0.00651,
-      "defense": 0.03819
+      "sustain": 0.00524,
+      "defense": 0.04017
+    },
+    "Iron Will": {
+      "defense": 0.00402
     },
     "Anticipation": {},
-    "Improved Bloodrage": {
-      "sustain": 0.06913
-    },
-    "Toughness": {
-      "defense": 0.00636
+    "Improved Revenge": {
+      "power": 0.03243
     },
     "Improved Thunder Clap": {
-      "sustain": 0.01762,
-      "aoe": 0.00408
+      "sustain": 0.01419,
+      "aoe": 0.00208
     },
     "Last Stand": {},
     "Master of Defense": {
-      "sustain": 0.01626,
-      "defense": 0.03819
-    },
-    "Improved Revenge": {
-      "power": 0.03283
-    },
-    "Defiance": {
-      "defense": 0.01909
-    },
-    "Improved Sunder Armor": {
-      "sustain": 0.01762
+      "sustain": 0.0131,
+      "defense": 0.04017
     },
     "Improved Disarm": {},
+    "Defiance": {
+      "defense": 0.02008
+    },
+    "Improved Sunder Armor": {
+      "sustain": 0.01419
+    },
     "Vanguard": {},
+    "Improved Shield Bash": {
+      "defense": 0.04017
+    },
     "Improved Shield Wall": {
-      "defense": 0.00796
+      "defense": 0.00837
     },
     "Concussion Blow": {
-      "defense": 0.01909
-    },
-    "Improved Shield Bash": {
-      "defense": 0.03819
-    },
-    "Bastion": {
-      "power": 0.00876,
-      "defense": 0.00764
+      "defense": 0.02008
     },
     "Focused Rage": {
-      "sustain": 0.01762
+      "sustain": 0.01419
+    },
+    "Bastion": {
+      "power": 0.00865,
+      "defense": 0.00803
     },
     "Shield Slam": {
-      "power": 0.03283,
-      "defense": 0.03819
+      "defense": 0.04017
     }
   }
 }

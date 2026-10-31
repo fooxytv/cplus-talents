@@ -396,7 +396,7 @@ the server, which is the right shape for a LAN and the wrong one for the interne
 
 ## Levelling race
 
-A separate little app in [`sim/`](sim/), served at `/sim/`: bots roll a Shaman,
+A separate little app in [`sim/`](sim/), served at `/race/`: bots roll a Shaman,
 pick their own talents level by level, and grind to 60 — and what they picked is
 what decides who wins. Every talent carries a weight across power, sustain,
 defense and AoE, those feed an XP-per-hour model, and the finishing order tracks
@@ -412,7 +412,7 @@ for the model and its dials, and [`deploy/README.md`](deploy/README.md) for the
 tunnel route.
 
 ```bash
-node sim/server.js          # localhost:5503/sim/
+node sim/server.js          # localhost:5503/race/
 node sim/run.js             # or headless, straight to a results table
 node sim/test.js
 ```

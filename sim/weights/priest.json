@@ -21,137 +21,129 @@
   "_normalisedAgainst": "Shaman",
   "talents": {
     "Power in Light": {
-      "power": 0.00479
+      "power": 0.00514
     },
     "Wand Specialization": {
-      "power": 0.03595
+      "power": 0.03859
     },
     "Twin Disciplines": {},
     "Silent Resolve": {
-      "defense": 0.03589
+      "defense": 0.05383
     },
     "Holy Precision": {
-      "power": 0.03595
+      "power": 0.03859
     },
-    "Improved Power Word: Shield": {
-      "defense": 0.02871
-    },
+    "Mental Strength": {},
     "Martyrdom": {
-      "power": 0.03595,
-      "defense": 0.04307
+      "power": 0.03859,
+      "defense": 0.0646
     },
     "Mental Agility": {
-      "sustain": 0.04693
+      "sustain": 0.03769
     },
     "Inner Focus": {
-      "sustain": 0.06648
+      "sustain": 0.05339
+    },
+    "Improved Power Word: Shield": {
+      "defense": 0.04307
     },
     "Meditation": {
-      "sustain": 0.06648
+      "sustain": 0.05339
     },
     "Improved Inner Fire": {},
-    "Mental Strength": {},
-    "Soul Warding": {
-      "power": 0.03236,
-      "sustain": 0.06648,
-      "defense": 0.04307
-    },
     "Improved Mana Burn": {},
+    "Soul Warding": {
+      "power": 0.03473,
+      "sustain": 0.05339,
+      "defense": 0.0646
+    },
     "Penance": {
-      "power": 0.03595,
-      "aoe": 0.06
+      "aoe": 0.01
     },
     "Renewed Hope": {
-      "power": 0.02109
+      "power": 0.02264
     },
     "Divine Aegis": {
-      "sustain": 0.02738,
-      "defense": 0.02153
+      "sustain": 0.02198,
+      "defense": 0.0323
     },
     "Power Infusion": {
-      "power": 0.03595,
-      "sustain": 0.06648
+      "power": 0.03859,
+      "sustain": 0.05339
     },
     "Twilight Focus": {
-      "defense": 0.04307
+      "power": 0.03859
     },
     "Improved Renew": {
-      "sustain": 0.02738
+      "sustain": 0.02198
     },
     "Holy Specialization": {},
     "Spell Warding": {
-      "power": 0.00959
+      "power": 0.01029
     },
     "Divine Fury": {},
     "Holy Nova": {
-      "power": 0.03595,
-      "aoe": 0.06
+      "power": 0.02572,
+      "aoe": 0.01
     },
     "Blessed Recovery": {},
     "Inspiration": {},
     "Holy Reach": {},
     "Improved Healing": {
-      "sustain": 0.06648
+      "sustain": 0.05339
     },
     "Searing Light": {
-      "power": 0.03595,
-      "sustain": 0.01955
+      "power": 0.03859,
+      "sustain": 0.0157
     },
-    "Binding Heal": {
-      "power": 0.03595,
-      "sustain": 0.03129
-    },
+    "Holy Binding": {},
     "Litany of Light": {},
     "Spirit of Redemption": {},
     "Spiritual Guidance": {
-      "power": 0.02397
+      "power": 0.02572
     },
     "Spiritual Healing": {
-      "sustain": 0.01825
+      "sustain": 0.01466
     },
     "Prayer of Mending": {},
     "Shadow Focus": {
-      "power": 0.00767
+      "power": 0.00823
     },
     "Blackout": {
-      "defense": 0.00431
+      "defense": 0.00646
     },
-    "Spirit Tap": {},
-    "Shadow Affinity": {
-      "defense": 0.02871
+    "Spirit Tap": {
+      "sustain": 0.05339
     },
+    "Improved Mind Blast": {},
     "Improved Shadow Word: Pain": {},
     "Shadow Reach": {},
-    "Improved Mind Blast": {},
     "Improved Psychic Scream": {},
-    "Mind Flay": {
-      "power": 0.03595
-    },
+    "Mind Flay": {},
     "Improved Mind Flay": {
-      "power": 0.01198
+      "power": 0.01286
     },
-    "Improved Fade": {},
+    "Dark Inspiration": {},
     "Vampiric Embrace": {
-      "power": 0.03595
+      "power": 0.03859
     },
-    "Shadow Weaving": {
-      "power": 0.03595
-    },
+    "Shadow Weaving": {},
     "Silence": {
-      "defense": 0.02153
+      "defense": 0.0323
     },
     "Devouring Contagion": {
-      "sustain": 0.06648
+      "sustain": 0.05339,
+      "aoe": 0.005
     },
     "Early Demise": {
-      "power": 0.03595
+      "power": 0.03859
     },
     "Darkness": {
-      "power": 0.01822
+      "power": 0.01955
     },
     "Shadowform": {
-      "power": 0.03595,
-      "sustain": 0.06648
+      "power": 0.03859,
+      "sustain": 0.05339
     }
   }
 }

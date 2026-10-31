@@ -24,143 +24,137 @@
       "sustain": 0.02619
     },
     "Suppression": {
-      "power": 0.01726,
-      "defense": 0.00975
+      "power": 0.01587,
+      "defense": 0.01477
     },
     "Improved Corruption": {
-      "power": 0.00647
+      "power": 0.00595
     },
-    "Malediction": {
-      "power": 0.0027
-    },
-    "Soul Harvesting": {
+    "Grim Reach": {},
+    "Soul Harvest": {
       "sustain": 0.09894
     },
     "Improved Drains": {
       "sustain": 0.01746
     },
     "Improved Bane of Agony": {
-      "power": 0.01349
+      "power": 0.0124
     },
     "Fel Concentration": {
-      "sustain": 0.01746,
-      "defense": 0.03657
+      "power": 0.0186,
+      "sustain": 0.01746
     },
     "Amplify Curse": {},
     "Pandemic": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.01746
     },
     "Malevolence": {},
     "Nightfall": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.02619
     },
     "Curse of Exhaustion": {},
     "Siphon Life": {},
     "Soul Siphon": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.01746
     },
     "Shadow Mastery": {
-      "power": 0.0027
+      "power": 0.00496
     },
     "Wrack": {
-      "power": 0.02023
+      "power": 0.0124
     },
     "Improved Health Funnel": {
-      "defense": 0.03657
+      "defense": 0.05537
     },
     "Improved Imp": {
-      "power": 0.02023,
-      "defense": 0.03657
+      "power": 0.0186,
+      "defense": 0.05537
     },
     "Demonic Embrace": {
-      "defense": 0.01828
+      "defense": 0.02769
     },
     "Unholy Power": {
-      "power": 0.00539
+      "power": 0.00496
     },
     "Demonic Aegis": {},
     "Improved Voidwalker": {},
     "Fel Vitality": {},
     "Demonic Energies": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.04947
     },
     "Improved Sayaad": {
-      "power": 0.00944
+      "power": 0.00868
     },
     "Demonic Sacrifice": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.05238
     },
     "Master Summoner": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.09894
     },
     "Decimation": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.0291
     },
     "Fel Domination": {
-      "power": 0.02023,
+      "power": 0.0186,
       "sustain": 0.09894
     },
     "Demonic Brand": {
-      "power": 0.02023
+      "power": 0.0186
     },
     "Improved Felhunter": {
-      "power": 0.02023
+      "power": 0.0186
     },
     "Soul Link": {
-      "power": 0.01349
+      "power": 0.0124
     },
     "Demonic Knowledge": {
-      "power": 0.02023
+      "power": 0.0186
     },
     "Master Demonologist": {
-      "power": 0.00539
+      "power": 0.00496
     },
     "Demonic Pact": {},
     "Destructive Reach": {},
     "Improved Shadow Bolt": {},
     "Bane": {},
     "Molten Skin": {
-      "defense": 0.01706
+      "defense": 0.02584
     },
     "Cataclysm": {
       "sustain": 0.06984
     },
     "Aftermath": {},
     "Ruin": {
-      "power": 0.02023
+      "power": 0.0186
     },
-    "Shadowburn": {
-      "power": 0.02023
-    },
+    "Shadowburn": {},
     "Intensity": {
-      "defense": 0.03657
+      "power": 0.0186
     },
     "Agonizing Flames": {
-      "power": 0.01978
+      "power": 0.01818
     },
-    "Conflagrate": {
-      "power": 0.02023
-    },
+    "Conflagrate": {},
     "Pyroclasm": {
-      "defense": 0.00914,
-      "aoe": 0.06
+      "defense": 0.01384,
+      "aoe": 0.015
     },
     "Bane of Havoc": {},
     "Fire and Brimstone": {
-      "power": 0.02023
+      "power": 0.0186
     },
     "Shadow and Flame": {
-      "power": 0.02023
+      "power": 0.0186
     },
     "Incinerate": {
-      "power": 0.02023
+      "power": 0.0124
     }
   }
 }

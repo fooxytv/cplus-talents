@@ -22,51 +22,51 @@
   "talents": {
     "Improved Gouge": {},
     "Remorseless Attacks": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Malice": {
-      "power": 0.01545
+      "power": 0.01498
     },
     "Ruthlessness": {},
     "Murder": {
-      "power": 0.00658
+      "power": 0.00637
     },
     "Improved Slice and Dice": {
-      "power": 0.01726
+      "power": 0.01673
     },
     "Relentless Strikes": {},
     "Improved Expose Armor": {
       "sustain": 0.07903
     },
     "Lethality": {
-      "power": 0.00658
+      "power": 0.00637
     },
     "Vile Poisons": {
-      "power": 0.02466,
+      "power": 0.0239,
       "defense": 0.03367
     },
     "Cold Blood": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Improved Poisons": {
-      "power": 0.01644
+      "power": 0.01593
     },
     "Vigor": {
       "sustain": 0.04863
     },
     "Mutilate": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Improved Kidney Shot": {
-      "power": 0.00822,
+      "power": 0.00797,
       "defense": 0.01578
     },
     "Seal Fate": {},
     "Venom": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Improved Eviscerate": {
-      "power": 0.02192
+      "power": 0.02125
     },
     "Improved Sinister Strike": {
       "sustain": 0.07903
@@ -75,19 +75,19 @@
       "defense": 0.01473
     },
     "Puncturing Wounds": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Deflection": {
       "defense": 0.02946
     },
     "Precision": {
-      "power": 0.00526
+      "power": 0.0051
     },
     "Endurance": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Riposte": {
-      "power": 0.01644
+      "power": 0.01593
     },
     "Improved Sprint": {},
     "Improved Kick": {
@@ -97,24 +97,24 @@
       "sustain": 0.15806
     },
     "Dual Wield Specialization": {
-      "power": 0.01644
+      "power": 0.01593
     },
     "Blade Flurry": {
-      "power": 0.02466,
-      "aoe": 0.08
+      "power": 0.0239,
+      "aoe": 0.02
     },
     "Hack and Slash": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Weapon Expertise": {},
     "Aggression": {
-      "power": 0.00658
+      "power": 0.00637
     },
     "Adrenaline Rush": {},
     "Camouflage": {},
     "Master of Deception": {},
     "Opportunity": {
-      "power": 0.01644
+      "power": 0.01593
     },
     "Setup": {
       "defense": 0.06313
@@ -124,34 +124,34 @@
       "sustain": 0.20669
     },
     "Improved Ambush": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Initiative": {},
     "Ghostly Strike": {
-      "power": 0.01644,
+      "power": 0.01593,
       "defense": 0.06313
     },
     "Improved Distract": {
-      "aoe": 0.02
+      "aoe": 0.005
     },
     "Heightened Senses": {},
     "Premeditation": {},
     "Serrated Blades": {
-      "power": 0.02466
+      "power": 0.0239
     },
     "Dirty Deeds": {
       "sustain": 0.07903
     },
     "Preparation": {},
     "Hemorrhage": {
-      "power": 0.01644
+      "power": 0.01593
     },
     "Quietus": {
-      "power": 0.00329
+      "power": 0.00319
     },
     "Cutthroat": {},
     "Thousand Cuts": {
-      "power": 0.01644,
+      "power": 0.01593,
       "sustain": 0.08511
     }
   }

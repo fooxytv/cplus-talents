@@ -118,7 +118,7 @@ The named volume `talent-data` survives rebuilds. `docker compose down` keeps it
 
 ## The levelling race
 
-The race at `/sim/` is a second container on the same hostname, so there is no
+The race at `/race/` is a second container on the same hostname, so there is no
 extra DNS record to create — but the tunnel needs to know which of the two gets
 a request.
 
@@ -145,7 +145,7 @@ SIM_CALC_BASE=https://talents.fooxy.tv/
 ```
 
 `BASE_PATH=` with nothing after it means "the root". It has to be *set* and
-empty - unset means "use the default", which is `/sim`.
+empty - unset means "use the default", which is `/race`.
 
 `SIM_CALC_BASE` has to become absolute, or "open this build in the calculator"
 would point at `race.fooxy.tv` and 404.
@@ -158,12 +158,13 @@ One origin, no new DNS record, but the tunnel has to match on path. Add a route
 | | |
 |---|---|
 | Subdomain | `talents` |
-| Path | `sim/*` |
+| Path | `race/*` |
 | Service | `http://sim:8080` |
 
 Order matters. The existing route has no path and therefore matches everything,
-so a `sim/*` rule placed under it never fires. `sim` is the compose service
-name, the same way the first route points at `talents:8080`.
+so a `race/*` rule placed under it never fires. `sim` is the compose service
+name - the container keeps its old name while the public path is `/race` - the
+same way the first route points at `talents:8080`.
 
 Nothing in the app depends on sharing an origin with the calculator: the two
 only link to each other, and the sim keeps its own browser storage.
@@ -171,7 +172,7 @@ only link to each other, and the sim keeps its own browser storage.
 Check it on the LAN first, before touching the tunnel:
 
 ```bash
-curl -s localhost:5503/sim/api/health
+curl -s localhost:5503/race/api/health
 ```
 
 Dials, all optional in `.env`:

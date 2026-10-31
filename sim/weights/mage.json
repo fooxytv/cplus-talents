@@ -21,148 +21,145 @@
   "_normalisedAgainst": "Shaman",
   "talents": {
     "Wand Specialization": {
-      "power": 0.02426
-    },
-    "Arcane Focus": {
-      "power": 0.00518
+      "power": 0.02029
     },
     "Improved Channeling": {
-      "defense": 0.03304
-    },
-    "Arcane Subtlety": {
-      "defense": 0.03304
-    },
-    "Magic Absorption": {
-      "sustain": 0.0151,
-      "defense": 0.0022
-    },
-    "Arcane Concentration": {
-      "sustain": 0.05704
+      "power": 0.02029
     },
     "Arcane Resilience": {
-      "defense": 0.03304
+      "defense": 0.04004
+    },
+    "Arcane Subtlety": {
+      "defense": 0.04004
+    },
+    "Magic Absorption": {
+      "sustain": 0.01443,
+      "defense": 0.00267
+    },
+    "Arcane Concentration": {
+      "sustain": 0.05451
+    },
+    "Missile Barrage": {
+      "sustain": 0.05451
     },
     "Arcane Geometry": {},
     "Arcane Impact": {
-      "power": 0.01423
+      "power": 0.0119
     },
     "Arcane Blast": {
-      "power": 0.02426,
-      "sustain": 0.05704
+      "power": 0.02029,
+      "sustain": 0.05451
     },
     "Arcane Shielding": {
-      "defense": 0.03304
+      "defense": 0.04004
     },
     "Improved Counterspell": {
-      "defense": 0.00826
+      "defense": 0.01001
     },
     "Arcane Meditation": {
-      "sustain": 0.05704
+      "sustain": 0.05451
     },
-    "Missile Barrage": {
-      "sustain": 0.05704
+    "Arcane Wrath": {
+      "power": 0.01352
     },
     "Presence of Mind": {},
     "Arcane Mind": {
-      "power": 0.02426,
-      "sustain": 0.05704
+      "power": 0.02029,
+      "sustain": 0.05451
     },
     "Arcane Instability": {
-      "power": 0.01035
+      "power": 0.00866
     },
     "Arcane Power": {
-      "power": 0.01617
-    },
-    "Wake of Fire": {
-      "power": 0.02426
+      "power": 0.01352
     },
     "Incineration": {
-      "power": 0.01423
+      "power": 0.0119
     },
-    "Improved Fireball": {},
+    "Accelerant": {},
     "Ignite": {
-      "power": 0.01617
+      "power": 0.01352
     },
     "Flame Throwing": {},
     "Impact": {
-      "defense": 0.00551
+      "defense": 0.00667
     },
     "Burning Soul": {
-      "power": 0.02426,
-      "defense": 0.03304
+      "power": 0.02029,
+      "defense": 0.04004
     },
     "Improved Flamestrike": {
-      "power": 0.02426
+      "power": 0.02029
     },
     "Pyroblast": {
-      "power": 0.02426
+      "power": 0.01352
     },
+    "Improved Fire Blast": {},
     "Improved Scorch": {
-      "power": 0.02426
+      "power": 0.02029
     },
     "Improved Fire Ward": {},
-    "Hot Streak": {
-      "power": 0.02426
+    "Heating Up": {
+      "power": 0.02029
     },
     "Master of Elements": {
-      "sustain": 0.05704
+      "sustain": 0.05451
     },
     "Critical Mass": {
-      "power": 0.01423
+      "power": 0.0119
     },
     "Blast Wave": {
-      "power": 0.02426,
-      "aoe": 0.04
+      "aoe": 0.01
     },
     "Fire Power": {
-      "power": 0.00647
+      "power": 0.01082
     },
     "Combustion": {
-      "power": 0.02426
+      "power": 0.02029
     },
     "Frost Warding": {
-      "defense": 0.03304
+      "defense": 0.04004
     },
     "Improved Frostbolt": {},
-    "Elemental Precision": {
-      "power": 0.00518
+    "Precision": {
+      "power": 0.00866
     },
     "Ice Shards": {
-      "power": 0.02426
+      "power": 0.02029
     },
-    "Permafrost": {
-      "power": 0.01245
-    },
-    "Improved Frost Nova": {},
     "Frostbite": {},
-    "Piercing Ice": {
-      "power": 0.00647
+    "Improved Frost Nova": {},
+    "Permafrost": {
+      "power": 0.01041
     },
     "Frost Channeling": {
-      "sustain": 0.05704,
-      "defense": 0.02203
-    },
-    "Ice Lance": {
-      "power": 0.01617
+      "sustain": 0.05451,
+      "defense": 0.02669
     },
     "Improved Blizzard": {
-      "aoe": 0.01333
+      "aoe": 0.00333
+    },
+    "Ice Lance": {
+      "power": 0.01352
     },
     "Arctic Reach": {
-      "aoe": 0.02
+      "aoe": 0.005
     },
     "Ice Block": {},
     "Shatter": {
-      "power": 0.02426
+      "power": 0.02029
     },
     "Improved Cone of Cold": {
-      "power": 0.02426
+      "power": 0.02029
     },
     "Cold Snap": {},
     "Fingers of Frost": {},
-    "Winter's Chill": {},
+    "Winter's Chill": {
+      "power": 0.02029
+    },
     "Ice Barrier": {
-      "defense": 0.01377
+      "power": 0.02029,
+      "defense": 0.04004
     }
   }
 }

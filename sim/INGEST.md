@@ -43,20 +43,20 @@ All writes are `POST`, all need `X-Ingest-Key` (or `?key=`).
 # start a race that tracks real characters
 curl -X POST -H "X-Ingest-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{"id":"launch","name":"Forever launch","startedAt":"2026-11-04T23:00:00Z"}' \
-  https://talents.fooxy.tv/sim/api/ingest/race
+  https://talents.fooxy.tv/race/api/ingest/race
 
 # add somebody
 curl -X POST -H "X-Ingest-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{"raceId":"launch","name":"Bella","klass":"Druid","race":"Night Elf",
        "faction":"Alliance","realm":"Wild Growth","region":"us","source":"armory"}' \
-  https://talents.fooxy.tv/sim/api/ingest/character
+  https://talents.fooxy.tv/race/api/ingest/character
 
 # one reading, or a batch — a bad row fails on its own without losing the rest
 curl -X POST -H "X-Ingest-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{"raceId":"launch","observations":[
         {"botId":"Bella","source":"armory","level":18,"observedAt":"2026-11-05T04:00:00Z"},
         {"botId":"Thrallgar","source":"armory","level":22}]}' \
-  https://talents.fooxy.tv/sim/api/ingest
+  https://talents.fooxy.tv/race/api/ingest
 ```
 
 An observation may carry `level`, `xp` + `xpMax`, `played`, `talents`, a `note`,
@@ -67,8 +67,8 @@ except `botId` and `source`; `source` must be one of `manual`, `armory`,
 Reading back needs no key — it only ever describes the data:
 
 ```
-GET /sim/api/race/launch              the race, same shape as a simulated one
-GET /sim/api/race/launch/provenance   where the numbers came from, and how old
+GET /race/api/race/launch              the race, same shape as a simulated one
+GET /race/api/race/launch/provenance   where the numbers came from, and how old
 ```
 
 ## Talents

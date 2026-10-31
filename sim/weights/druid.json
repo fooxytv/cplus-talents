@@ -21,139 +21,140 @@
   "_normalisedAgainst": "Shaman",
   "talents": {
     "Improved Wrath": {
-      "power": 0.02896,
-      "sustain": 0.05597
+      "power": 0.02484,
+      "sustain": 0.05657
     },
     "Genesis": {
-      "sustain": 0.00461
+      "sustain": 0.00932
     },
     "Moonglow": {
-      "sustain": 0.05597
+      "sustain": 0.05657
     },
     "Improved Moonfire": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Nature's Majesty": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Nature's Reach": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Improved Entangling Roots": {
-      "power": 0.02896,
-      "defense": 0.00577
+      "power": 0.02484,
+      "defense": 0.00798
     },
     "Nature's Splendor": {},
     "Insect Swarm": {
-      "power": 0.02896
+      "power": 0.0106
     },
     "Vengeance": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Improved Starfire": {
-      "power": 0.0139,
-      "defense": 0.00346
+      "power": 0.01192,
+      "defense": 0.00479
     },
     "Overgrowth": {
-      "defense": 0.00865
+      "defense": 0.01196
     },
     "Nature's Grace": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Eclipse": {},
     "Moonfury": {
-      "power": 0.00772
+      "power": 0.00662
     },
     "Moonkin Form": {
-      "power": 0.02896
+      "power": 0.02484
     },
     "Ferocity": {
-      "sustain": 0.00395,
-      "aoe": 0.008
-    },
-    "Heart of the Wild": {
-      "sustain": 0.02107
-    },
-    "Feral Swiftness": {
-      "defense": 0.03461
-    },
-    "Feral Instinct": {
-      "power": 0.02896,
-      "aoe": 0.01333
-    },
-    "Brutal Impact": {
-      "defense": 0.00865
-    },
-    "Thick Hide": {},
-    "Savage Fury": {
-      "power": 0.01931,
-      "aoe": 0.02
-    },
-    "Feral Charge": {
-      "defense": 0.0173
-    },
-    "Sharpened Claws": {
-      "power": 0.02896
-    },
-    "Shredding Attacks": {
-      "sustain": 0.01427
-    },
-    "Mangle": {},
-    "Predatory Strikes": {
-      "power": 0.02896
-    },
-    "Primal Fury": {},
-    "Predatory Instincts": {
-      "power": 0.01931
-    },
-    "Leader of the Pack": {
-      "power": 0.02549
-    },
-    "King of the Jungle": {},
-    "Natural Reaction": {
-      "defense": 0.03461
-    },
-    "Rend and Tear": {
-      "power": 0.01158
-    },
-    "Berserk": {
-      "power": 0.02896,
-      "defense": 0.0173
-    },
-    "Nature's Focus": {
-      "defense": 0.0323
+      "sustain": 0.00399,
+      "aoe": 0.002
     },
     "Furor": {},
+    "Feral Swiftness": {
+      "defense": 0.04785
+    },
+    "Feral Instinct": {
+      "power": 0.02484,
+      "aoe": 0.00333
+    },
+    "Brutal Impact": {
+      "defense": 0.01196
+    },
+    "Thick Hide": {},
+    "Shredding Attacks": {
+      "sustain": 0.01442
+    },
+    "Savage Fury": {
+      "power": 0.01656,
+      "aoe": 0.005
+    },
+    "Feral Charge": {
+      "defense": 0.02393
+    },
+    "Sharpened Claws": {
+      "power": 0.02484
+    },
+    "Predatory Strikes": {
+      "power": 0.02484
+    },
+    "Lacerate": {
+      "power": 0.01656
+    },
+    "Predatory Discipline": {
+      "power": 0.01656
+    },
+    "Blood Frenzy": {},
+    "Leader of the Pack": {
+      "power": 0.02186
+    },
+    "Natural Instinct": {
+      "power": 0.0207
+    },
+    "Rend and Tear": {
+      "power": 0.00994
+    },
+    "Natural Reaction": {
+      "defense": 0.04785
+    },
+    "Primal Bite": {},
+    "Shifting Power": {
+      "sustain": 0.01997
+    },
+    "Nature's Focus": {
+      "power": 0.02484
+    },
+    "Heart of the Wild": {
+      "sustain": 0.0213
+    },
     "Naturalist": {
-      "power": 0.0085
-    },
-    "Subtlety": {
-      "defense": 0.02307
-    },
-    "Natural Shapeshifter": {
-      "sustain": 0.05597
+      "power": 0.01457
     },
     "Reflection": {
-      "sustain": 0.05597
+      "sustain": 0.05657
+    },
+    "Natural Shapeshifter": {
+      "sustain": 0.05657
+    },
+    "Subtlety": {
+      "defense": 0.0319
     },
     "Gift of Nature": {},
-    "Gift of the Earthmother": {},
+    "Bloom": {},
     "Tranquil Spirit": {
-      "sustain": 0.0237
+      "sustain": 0.02396
     },
     "Improved Rejuvenation": {},
     "Swiftmend": {},
     "Nature's Swiftness": {},
     "Living Spirit": {
-      "sustain": 0.02634
+      "sustain": 0.02662
     },
     "Improved Tranquility": {
-      "defense": 0.03461
+      "defense": 0.04785
     },
     "Improved Regrowth": {},
-    "Wild Growth": {
-      "power": 0.02896,
-      "sustain": 0.05597
-    }
+    "Wild Growth": {}
   }
 }
